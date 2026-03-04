@@ -1,0 +1,793 @@
+import { ColumnDef } from "@tanstack/react-table";
+import { Avatar } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Pencil } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { supabase } from "@/lib/supabase/supabaseClient";
+import { DatePicker } from "@/components/ui/date-picker";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import axios from "axios";
+
+async function getSignedUrl(url) {
+	if (!url) return "";
+	const match = url.match(
+		/storage\/v1\/object\/(?:public|sign)\/([^/]+)\/(.+)$/,
+	);
+	if (!match) return url;
+	const { data, error } = await supabase.storage
+		.from(match[1])
+		.createSignedUrl(match[2], 60 * 10);
+	return data?.signedUrl || url;
+}
+
+function getStatusBadge(status) {
+	let color = "bg-gray-300";
+	let text = "Non vérifié";
+	switch (status) {
+		case "pending":
+			color = "bg-yellow-400";
+			text = "En attente";
+			break;
+		case "verified":
+			color = "bg-green-600";
+			text = "Vérifié";
+			break;
+		case "rejected":
+			color = "bg-red-600";
+			text = "Refusé";
+			break;
+	}
+	return (
+		<Badge className='bg-white text-black flex items-center gap-2 border border-gray-300 shadow-sm'>
+			<span
+				className={`inline-block w-2 h-2 rounded-full ${color}`}></span>
+			{text}
+		</Badge>
+	);
+}
+
+function getProfileStatusBadge(status) {
+	let color = "bg-gray-300";
+	let text = "Non défini";
+	switch (status) {
+		case "pending":
+			color = "bg-yellow-400";
+			text = "En attente";
+			break;
+		case "verified":
+			color = "bg-green-600";
+			text = "Vérifié";
+			break;
+		case "rejected":
+			color = "bg-red-600";
+			text = "Refusé";
+			break;
+		case "suspended":
+			color = "bg-orange-600";
+			text = "Suspendu";
+			break;
+	}
+	return (
+		<Badge className='bg-white text-black flex items-center gap-2 border border-gray-300 shadow-sm'>
+			<span
+				className={`inline-block w-2 h-2 rounded-full ${color}`}></span>
+			{text}
+		</Badge>
+	);
+}
+
+function SocialSecurityModal({ row }) {
+	const [open, setOpen] = useState(false);
+	const [status, setStatus] = useState(
+		row.original.social_security_verification_status,
+	);
+	const [socialSecurityNumber, setSocialSecurityNumber] = useState(
+		row.original.social_security_number || "",
+	);
+	const [docType, setDocType] = useState(
+		row.original.social_security_doc_type || "",
+	);
+	const [signedUrl, setSignedUrl] = useState("");
+	const [previewUrl, setPreviewUrl] = useState(null);
+
+	const docTypeLabel = {
+		carte_vitale: "Carte Vitale",
+		social_security_certificate: "Attestation de Securité Sociale",
+		other: "Autre document",
+	};
+
+	useEffect(() => {
+		async function signUrl() {
+			if (row.original.social_security_document_url) {
+				setSignedUrl(
+					await getSignedUrl(
+						row.original.social_security_document_url,
+					),
+				);
+			}
+		}
+		signUrl();
+	}, [row.original.social_security_document_url]);
+
+	const handleChange = async () => {
+		await supabase
+			.from("profiles")
+			.update({
+				social_security_verification_status: status,
+				social_security_number: socialSecurityNumber,
+				social_security_doc_type: docType,
+			})
+			.eq("id", row.original.id);
+		row.original.social_security_verification_status = status; // Met à jour le badge dans le tableau
+		setOpen(false);
+		// ...toast, etc.
+	};
+
+	return (
+		<Dialog open={open} onOpenChange={setOpen}>
+			<DialogTrigger asChild>
+				<span style={{ cursor: "pointer" }}>
+					{getStatusBadge(
+						row.original.social_security_verification_status,
+					)}
+				</span>
+			</DialogTrigger>
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle>Vérification Sécurité Sociale</DialogTitle>
+				</DialogHeader>
+				<div className='mb-2 text-sm text-gray-700 font-semibold'>
+					Type de document :{" "}
+					{docTypeLabel[row.original.social_security_doc_type] ||
+						"Non renseigné"}
+				</div>
+				<div className='flex flex-col gap-4 mt-2'>
+					{/* Image du document */}
+					{signedUrl && (
+						<img
+							src={signedUrl}
+							alt='Document Sécurité Sociale'
+							className='w-full max-w-xs rounded border cursor-pointer'
+							onClick={() => setPreviewUrl(signedUrl)}
+						/>
+					)}
+					{/* Modal d’aperçu grand format */}
+					{previewUrl && (
+						<Dialog
+							open={true}
+							onOpenChange={() => setPreviewUrl(null)}>
+							<DialogContent>
+								<DialogTitle>
+									<VisuallyHidden>
+										Aperçu du document Sécurité Sociale
+									</VisuallyHidden>
+								</DialogTitle>
+								<img
+									src={previewUrl}
+									alt='Aperçu document'
+									className='w-full max-w-2xl mx-auto rounded border'
+								/>
+							</DialogContent>
+						</Dialog>
+					)}
+					{/* Numéro de sécurité sociale */}
+					<div>
+						<label className='block text-sm mb-1'>
+							Numéro de sécurité sociale
+						</label>
+						<input
+							type='text'
+							className='border rounded px-2 py-1 w-full'
+							value={socialSecurityNumber}
+							onChange={(e) =>
+								setSocialSecurityNumber(e.target.value)
+							}
+						/>
+					</div>
+					{/* Statut */}
+					<div>
+						<label className='block text-sm mb-1'>Statut</label>
+						<div className='flex gap-2'>
+							{["pending", "verified", "rejected"].map((s) => (
+								<button
+									key={s}
+									className={`border rounded px-3 py-2 ${status === s ? "bg-blue-100 border-blue-500" : ""}`}
+									onClick={() => setStatus(s)}>
+									{s === "pending"
+										? "En attente"
+										: s === "verified"
+											? "Validé"
+											: "Refusé"}
+								</button>
+							))}
+						</div>
+					</div>
+					<button
+						className='mt-4 bg-blue-600 text-white px-4 py-2 rounded'
+						onClick={handleChange}>
+						Enregistrer
+					</button>
+				</div>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
+function StatusModal({ row, updateRowStatus }) {
+	const [open, setOpen] = useState(false);
+	const [selected, setSelected] = useState(row.original.profile_status);
+
+	const statuses = [
+		{ value: "pending", label: "En attente" },
+		{ value: "verified", label: "Vérifié" },
+		{ value: "rejected", label: "Refusé" },
+		{ value: "suspended", label: "Suspendu" },
+	];
+
+	const handleChange = async () => {
+		const { error } = await supabase
+			.from("profiles")
+			.update({ profile_status: selected })
+			.eq("id", row.original.id);
+		if (error) {
+			toast.error("Erreur lors de la mise à jour");
+		} else {
+			toast.success("Statut mis à jour !");
+			setOpen(false);
+			updateRowStatus(selected); // Met à jour le badge dans le tableau
+		}
+	};
+
+	return (
+		<Dialog open={open} onOpenChange={setOpen}>
+			<DialogTrigger asChild>
+				<span
+					onClick={() => setOpen(true)}
+					style={{ cursor: "pointer" }}>
+					{getProfileStatusBadge(row.original.profile_status)}
+				</span>
+			</DialogTrigger>
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle>Changer le statut du profil</DialogTitle>
+				</DialogHeader>
+				<div className='flex flex-col gap-2 mt-2'>
+					{statuses.map((s) => (
+						<button
+							key={s.value}
+							className={`border rounded px-3 py-2 ${selected === s.value ? "bg-blue-100 border-blue-500" : ""}`}
+							onClick={() => setSelected(s.value)}>
+							{s.label}
+						</button>
+					))}
+				</div>
+				<button
+					className='mt-4 bg-blue-600 text-white px-4 py-2 rounded'
+					onClick={handleChange}>
+					Enregistrer
+				</button>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
+function flagEmoji(code) {
+	if (!code) return "";
+	const codePoints = code
+		.toUpperCase()
+		.split("")
+		.map((c) => 127397 + c.charCodeAt());
+	return String.fromCodePoint(...codePoints);
+}
+
+function IdVerificationModal({ row }) {
+	const [open, setOpen] = useState(false);
+	const [status, setStatus] = useState(row.original.id_verification_status);
+	const [validityDate, setValidityDate] = useState(
+		row.original.id_validity_date,
+	);
+	const [nationalityQuery, setNationalityQuery] = useState("");
+	const [nationalitySuggestions, setNationalitySuggestions] = useState([]);
+	const [selectedNationality, setSelectedNationality] = useState(null);
+	// Afficher la nationalité à l'ouverture si le code existe
+	useEffect(() => {
+		async function fetchNationality() {
+			const code = row.original.nationality;
+			if (!code) return;
+			if (!countriesCacheRef.current) {
+				const res = await axios.get(
+					"https://restcountries.com/v3.1/all?fields=cca2,translations,flags",
+				);
+				countriesCacheRef.current = res.data;
+			}
+			const found = countriesCacheRef.current.find(
+				(c) => c.cca2 === code,
+			);
+			if (found) {
+				setSelectedNationality({
+					code: found.cca2,
+					name: found.translations?.fra?.common || found.cca2,
+					flag: flagEmoji(found.cca2),
+				});
+				setNationalityQuery(
+					found.translations?.fra?.common || found.cca2,
+				);
+			}
+		}
+		fetchNationality();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [row.original.nationality]);
+	const [selectedNationalityCode, setSelectedNationalityCode] =
+		useState(null);
+	const [loadingNationalities, setLoadingNationalities] = useState(false);
+	// ...existing code...
+	const countriesCacheRef = useRef(null);
+	const searchTimeoutRef = useRef(null);
+	const [signedUrls, setSignedUrls] = useState([]);
+	const [previewUrl, setPreviewUrl] = useState(null);
+
+	const idType = row.original.id_type;
+	const urls = (() => {
+		if (idType === "national_id") {
+			return [
+				row.original.national_id_front_url,
+				row.original.national_id_back_url,
+			];
+		}
+		if (idType === "passport") {
+			return [row.original.passport_url];
+		}
+		if (idType === "residence_permit") {
+			return [
+				row.original.residence_permit_front_url,
+				row.original.residence_permit_back_url,
+			];
+		}
+		return [];
+	})();
+
+	useEffect(() => {
+		async function signUrls() {
+			const results = await Promise.all(
+				urls.map((url) => getSignedUrl(url)),
+			);
+			setSignedUrls(results);
+		}
+		signUrls();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [
+		row.original.national_id_front_url,
+		row.original.national_id_back_url,
+		row.original.passport_url,
+		row.original.residence_permit_front_url,
+		row.original.residence_permit_back_url,
+	]);
+
+	const searchNationality = async (query) => {
+		if (query.length < 3) {
+			setNationalitySuggestions([]);
+			return;
+		}
+		setLoadingNationalities(true);
+		try {
+			if (!countriesCacheRef.current) {
+				const res = await axios.get(
+					"https://restcountries.com/v3.1/all?fields=cca2,translations,flags",
+				);
+				countriesCacheRef.current = res.data;
+			}
+			const lower = query.toLowerCase();
+			const results = countriesCacheRef.current
+				.filter((c) => {
+					const frName = c.translations?.fra?.common || "";
+					return frName.toLowerCase().includes(lower);
+				})
+				.slice(0, 8)
+				.map((c) => ({
+					code: c.cca2,
+					name: c.translations?.fra?.common || c.cca2,
+					flag: flagEmoji(c.cca2),
+				}));
+			setNationalitySuggestions(results);
+		} catch (e) {
+			console.error("searchNationality error:", e);
+		} finally {
+			setLoadingNationalities(false);
+		}
+	};
+
+	const handleNationalityChange = (text) => {
+		setNationalityQuery(text);
+		if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+		searchTimeoutRef.current = setTimeout(
+			() => searchNationality(text),
+			300,
+		);
+	};
+
+	const handleSelectNationality = async (country) => {
+		console.log("Nationalité sélectionnée:", country);
+		setSelectedNationality(country);
+		setSelectedNationalityCode(country.code);
+		setNationalityQuery(country.name);
+		setNationalitySuggestions([]);
+	};
+
+	const handleChange = async () => {
+		const { error } = await supabase
+			.from("profiles")
+			.update({
+				id_verification_status: status,
+				id_validity_date: validityDate,
+				nationality: selectedNationalityCode,
+			})
+			.eq("id", row.original.id);
+		if (error) {
+			toast.error("Erreur lors de la mise à jour");
+		} else {
+			toast.success("Données mises à jour !");
+			setOpen(false);
+			row.original.id_verification_status = status;
+			row.original.id_validity_date = validityDate;
+			row.original.nationality = selectedNationalityCode;
+		}
+	};
+
+	const idTypeLabel = {
+		national_id: "Carte nationale d'identité",
+		passport: "Passeport",
+		residence_permit: "Titre de séjour",
+	};
+
+	return (
+		<>
+			<Dialog open={open} onOpenChange={setOpen}>
+				<DialogTrigger asChild>
+					<span
+						onClick={() => setOpen(true)}
+						style={{ cursor: "pointer" }}>
+						{getStatusBadge(row.original.id_verification_status)}
+					</span>
+				</DialogTrigger>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Vérification d'identité</DialogTitle>
+					</DialogHeader>
+					<div>
+						<label className='block text-sm mb-1'>
+							Date de naissance
+						</label>
+						<DatePicker
+							value={
+								row.original.birthday
+									? new Date(row.original.birthday)
+									: null
+							}
+							onChange={(date) => {
+								// Ici, tu peux gérer la mise à jour locale ou côté supabase si besoin
+								// Exemple local :
+								row.original.birthday = date
+									? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+									: "";
+							}}
+							format='yyyy-MM-dd'
+							className='w-full'
+						/>
+					</div>
+					<div className='mb-2 text-sm text-gray-700 font-semibold'>
+						Type de document :{" "}
+						{idTypeLabel[idType] || "Non renseigné"}
+					</div>
+					<div className='flex flex-col gap-4 mt-2'>
+						{/* Affichage direct des images signées */}
+						{/* {signedUrls.map((url, idx) =>
+						url ? (
+							<img
+								key={idx}
+								src={url}
+								alt={`Document ${idx + 1}`}
+								className='w-full max-w-xs rounded border'
+							/>
+						) : null,
+					)} */}
+						<div className='flex flex-col gap-4'>
+							{idType === "national_id" && (
+								<div className='flex flex-wrap'>
+									{signedUrls[0] && (
+										<div className='w-1/2 pr-1'>
+											<p className='text-xs'>Recto :</p>
+											<img
+												src={signedUrls[0]}
+												alt='Recto CNI'
+												className='w-full max-w-xs rounded border'
+												onClick={() =>
+													setPreviewUrl(signedUrls[0])
+												}
+											/>
+										</div>
+									)}
+									{signedUrls[1] && (
+										<div className='w-1/2 pl-1'>
+											<p className='text-xs'>Verso :</p>
+											<img
+												src={signedUrls[1]}
+												alt='Verso CNI'
+												className='w-full max-w-xs rounded border'
+												onClick={() =>
+													setPreviewUrl(signedUrls[1])
+												}
+											/>
+										</div>
+									)}
+								</div>
+							)}
+							{idType === "passport" && signedUrls[0] && (
+								<img
+									src={signedUrls[0]}
+									alt='Passeport'
+									className='w-full max-w-xs rounded border'
+									onClick={() => setPreviewUrl(signedUrls[0])}
+								/>
+							)}
+							{idType === "residence_permit" && (
+								<div className='flex gap-4'>
+									{signedUrls[0] && (
+										<div className='w-1/2 pr-1'>
+											<p className='text-xs'>Recto :</p>
+											<img
+												src={signedUrls[0]}
+												alt='Recto Titre de séjour'
+												className='w-full max-w-xs rounded border'
+												onClick={() =>
+													setPreviewUrl(signedUrls[0])
+												}
+											/>
+										</div>
+									)}
+									{signedUrls[1] && (
+										<div className='w-1/2 pl-1'>
+											<p className='text-xs'>Verso :</p>
+											<img
+												src={signedUrls[1]}
+												alt='Verso Titre de séjour'
+												className='w-full max-w-xs rounded border'
+												onClick={() =>
+													setPreviewUrl(signedUrls[1])
+												}
+											/>
+										</div>
+									)}
+								</div>
+							)}
+						</div>
+						{/* Nationalité */}
+						{["residence_permit"].includes(idType) && (
+							<div>
+								<label className='block text-sm mb-1'>
+									Nationalité
+								</label>
+								<input
+									type='text'
+									className='border rounded px-2 py-1 w-full'
+									value={nationalityQuery}
+									onChange={(e) =>
+										handleNationalityChange(e.target.value)
+									}
+								/>
+								{loadingNationalities && (
+									<div className='text-xs text-gray-400'>
+										Recherche...
+									</div>
+								)}
+								{nationalitySuggestions.length > 0 && (
+									<ul className='border rounded bg-white mt-1 max-h-40 overflow-auto'>
+										{nationalitySuggestions.map((c) => (
+											<li
+												key={c.code}
+												className='px-2 py-1 cursor-pointer hover:bg-blue-100 flex items-center gap-2'
+												onClick={() =>
+													handleSelectNationality(c)
+												}>
+												<span>{c.flag}</span>
+												<span>{c.name}</span>
+											</li>
+										))}
+									</ul>
+								)}
+								{selectedNationality && (
+									<div className='mt-2 text-sm text-green-700'>
+										Sélectionné : {selectedNationality.flag}{" "}
+										{selectedNationality.name}
+									</div>
+								)}
+							</div>
+						)}
+						{/* Date de validité */}
+						<div>
+							<label className='block text-sm mb-1'>
+								Date de validité
+							</label>
+							<DatePicker
+								value={
+									validityDate ? new Date(validityDate) : null
+								}
+								onChange={(date) => {
+									if (date) {
+										// Correction : format local YYYY-MM-DD
+										const year = date.getFullYear();
+										const month = String(
+											date.getMonth() + 1,
+										).padStart(2, "0");
+										const day = String(
+											date.getDate(),
+										).padStart(2, "0");
+										setValidityDate(
+											`${year}-${month}-${day}`,
+										);
+									} else {
+										setValidityDate("");
+									}
+								}}
+								format='yyyy-MM-dd'
+								className='w-full'
+							/>
+						</div>
+						{/* Statut */}
+						<div>
+							<label className='block text-sm mb-1'>Statut</label>
+							<div className='flex gap-2'>
+								{["pending", "verified", "rejected"].map(
+									(s) => (
+										<button
+											key={s}
+											className={`border rounded px-3 py-2 ${status === s ? "bg-blue-100 border-blue-500" : ""}`}
+											onClick={() => setStatus(s)}>
+											{s === "pending"
+												? "En attente"
+												: s === "verified"
+													? "Validé"
+													: "Refusé"}
+										</button>
+									),
+								)}
+							</div>
+						</div>
+						{/* Bouton enregistrer */}
+						<button
+							className='mt-4 bg-blue-600 text-white px-4 py-2 rounded'
+							onClick={handleChange}>
+							Enregistrer
+						</button>
+					</div>
+				</DialogContent>
+			</Dialog>
+			{/* Modal d’aperçu grand format */}
+			{previewUrl && (
+				<Dialog open={true} onOpenChange={() => setPreviewUrl(null)}>
+					<DialogTitle>
+						<VisuallyHidden>Aperçu du document</VisuallyHidden>
+					</DialogTitle>
+					<DialogContent>
+						<img
+							src={previewUrl}
+							alt='Aperçu document'
+							className='w-full max-w-2xl mx-auto rounded border'
+						/>
+					</DialogContent>
+				</Dialog>
+			)}
+		</>
+	);
+}
+
+export const dashboardColumns = [
+	{
+		accessorKey: "avatar_url",
+		header: "Avatar",
+		cell: ({ row }) => (
+			<Avatar>
+				<img
+					src={row.original.avatar_url}
+					alt='avatar'
+					className='h-8 w-8 rounded-full'
+				/>
+			</Avatar>
+		),
+	},
+	{
+		id: "fullname",
+		header: "Nom & Prénom",
+		cell: ({ row }) =>
+			`${row.original.lastname || ""} ${row.original.firstname || ""}`,
+	},
+	// {
+	// 	accessorKey: "email",
+	// 	header: "Email",
+	// },
+	{
+		id: "city_postcode",
+		header: "Ville",
+		cell: ({ row }) =>
+			`${row.original.city || ""} ${row.original.department_code ? "(" + row.original.department_code + ")" : ""}`,
+	},
+	{
+		accessorKey: "gender",
+		header: "Genre",
+	},
+	{
+		accessorKey: "profile_status",
+		header: "Statut du profil",
+		cell: ({ row, table }) => {
+			const updateRowStatus = (newStatus) => {
+				row.original.profile_status = newStatus;
+				if (table.options.data) {
+					table.options.data = table.options.data.map((r) =>
+						r.id === row.original.id
+							? { ...r, profile_status: newStatus }
+							: r,
+					);
+				}
+			};
+			return <StatusModal row={row} updateRowStatus={updateRowStatus} />;
+		},
+	},
+	{
+		accessorKey: "id_verification_status",
+		header: "ID vérif. status",
+		cell: ({ row }) => {
+			return !row.original.id_type ? (
+				<Badge className='bg-gray-200 text-gray-600 border border-gray-300'>
+					Aucun document envoyé
+				</Badge>
+			) : (
+				<IdVerificationModal row={row} />
+			);
+		},
+	},
+	{
+		accessorKey: "social_security_verification_status",
+		header: "Sécu vérif. status",
+		cell: ({ row }) => {
+			return !row.original.social_security_verification_status ? (
+				<Badge className='bg-gray-200 text-gray-600 border border-gray-300 cursor-default'>
+					Aucun document envoyé
+				</Badge>
+			) : (
+				<SocialSecurityModal row={row} />
+			);
+		},
+	},
+	// {
+	// 	accessorKey: "id",
+	// 	header: "ID",
+	// },
+	{
+		id: "actions",
+		header: "Actions",
+		cell: ({ row }) => (
+			<Button
+				variant='outline'
+				size='sm'
+				onClick={() => {
+					if (typeof window !== "undefined") {
+						const event = new CustomEvent("openProfileDrawer", {
+							detail: row.original,
+						});
+						window.dispatchEvent(event);
+					}
+				}}>
+				<Pencil className='w-4 h-4' />
+			</Button>
+		),
+		enableSorting: false,
+	},
+];
