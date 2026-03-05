@@ -65,9 +65,8 @@ function getCompanyStatusBadge(status) {
 }
 
 function getBucketAndPath(url) {
-	const match = url.match(
-		/storage\/v1\/object\/(?:public|sign)\/([^/]+)\/(.+)$/,
-	);
+	// Gère tous les types Supabase : public, authenticated, sign, etc.
+	const match = url.match(/storage\/v1\/object\/[^/]+\/([^/]+)\/([^?#]+)/);
 	if (!match) return null;
 	return { bucket: match[1], path: match[2] };
 }
@@ -80,6 +79,15 @@ function ImageWithSignedUrl({ url, alt }) {
 	useEffect(() => {
 		setError(false);
 		setLoading(true);
+
+		// URL déjà signée → directe
+		if (url.includes("token=")) {
+			setSignedUrl(url);
+			setLoading(false);
+			return;
+		}
+
+		// Signe TOUJOURS pour contourner le RLS, même sur bucket public
 		const info = getBucketAndPath(url);
 		if (!info) {
 			setSignedUrl("");
@@ -88,7 +96,7 @@ function ImageWithSignedUrl({ url, alt }) {
 		}
 		supabase.storage
 			.from(info.bucket)
-			.createSignedUrl(info.path, 60 * 10) // 10 min
+			.createSignedUrl(decodeURIComponent(info.path), 60 * 10)
 			.then(({ data, error }) => {
 				if (data?.signedUrl) {
 					setSignedUrl(data.signedUrl);
