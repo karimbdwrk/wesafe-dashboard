@@ -31,6 +31,46 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import axios from "axios";
 
+async function sendDocumentStatusNotification({ doc, tableName, newStatus }) {
+	const {
+		data: { user },
+	} = await supabase.auth.getUser();
+	if (!user || !doc.user_id) return;
+
+	const entityTypeMap = {
+		user_diplomas: "diploma_review",
+		user_certifications: "certification_review",
+		user_cnaps_cards: "cnaps_card_review",
+	};
+
+	const docLabelMap = {
+		user_diplomas: "diplôme",
+		user_certifications: "certification",
+		user_cnaps_cards: "carte CNAPS",
+	};
+
+	const statusLabelMap = {
+		verified: "Vérifié",
+		rejected: "Refusé",
+		pending: "En attente",
+	};
+
+	const entityType = entityTypeMap[tableName] ?? "document_review";
+	const docLabel = docLabelMap[tableName] ?? "document";
+	const statusText = statusLabelMap[newStatus] ?? newStatus;
+
+	await supabase.from("notifications").insert({
+		actor_id: user.id,
+		recipient_id: doc.user_id,
+		type: "document_status_update",
+		title: `Votre ${docLabel} a été mis à jour`,
+		body: `Le statut de votre ${doc.type || docLabel} est désormais : ${statusText}.`,
+		entity_type: entityType,
+		entity_id: doc.id,
+		is_read: false,
+	});
+}
+
 async function getSignedUrl(url) {
 	if (!url) return "";
 
@@ -783,6 +823,11 @@ function DocumentStatusDialog({
 			toast.error("Erreur lors de la mise à jour");
 		} else {
 			toast.success("Statut mis à jour !");
+			await sendDocumentStatusNotification({
+				doc,
+				tableName,
+				newStatus: status,
+			});
 			onOpenChange(false);
 			onUpdated({ ...doc, status });
 		}
