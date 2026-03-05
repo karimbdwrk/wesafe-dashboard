@@ -2,7 +2,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Pencil } from "lucide-react";
+import { Pencil, ExternalLink } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import {
 	Dialog,
@@ -11,6 +11,13 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+	Sheet,
+	SheetContent,
+	SheetHeader,
+	SheetTitle,
+} from "@/components/ui/sheet";
+import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase/supabaseClient";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -19,13 +26,33 @@ import axios from "axios";
 
 async function getSignedUrl(url) {
 	if (!url) return "";
-	const match = url.match(
-		/storage\/v1\/object\/(?:public|sign)\/([^/]+)\/(.+)$/,
-	);
-	if (!match) return url;
+
+	// URL déjà signée (token présent) → on la retourne directement
+	if (url.includes("token=")) return url;
+
+	// Gère tous les types Supabase : public, authenticated, sign, etc.
+	// On signe TOUJOURS pour contourner les politiques RLS, même sur bucket public
+	const match = url.match(/storage\/v1\/object\/[^/]+\/([^/]+)\/([^?#]+)/);
+	if (!match) {
+		console.warn("[getSignedUrl] URL non reconnue :", url);
+		return url;
+	}
+
+	const bucket = match[1];
+	const path = decodeURIComponent(match[2]);
+
 	const { data, error } = await supabase.storage
-		.from(match[1])
-		.createSignedUrl(match[2], 60 * 10);
+		.from(bucket)
+		.createSignedUrl(path, 60 * 10);
+
+	if (error) {
+		console.error("[getSignedUrl] Erreur :", error.message, {
+			bucket,
+			path,
+		});
+		return url;
+	}
+
 	return data?.signedUrl || url;
 }
 
@@ -689,6 +716,282 @@ function IdVerificationModal({ row }) {
 	);
 }
 
+function getGlobalDocStatus(docs) {
+	if (!docs || docs.length === 0) return null;
+	if (docs.some((d) => d.status === "rejected")) return "rejected";
+	if (docs.some((d) => d.status === "pending")) return "pending";
+	return "verified";
+}
+
+function DocumentStatusDialog({ doc, tableName, onUpdated }) {
+	const [open, setOpen] = useState(false);
+	const [status, setStatus] = useState(doc.status);
+	const [signedUrl, setSignedUrl] = useState("");
+	const [loadingUrl, setLoadingUrl] = useState(false);
+	const [imgError, setImgError] = useState(false);
+	const [previewOpen, setPreviewOpen] = useState(false);
+
+	useEffect(() => {
+		if (open && doc.document_url) {
+			setLoadingUrl(true);
+			setImgError(false);
+			console.log(
+				"[DocumentStatusDialog] document_url brut :",
+				doc.document_url,
+			);
+			getSignedUrl(doc.document_url).then((url) => {
+				console.log("[DocumentStatusDialog] URL signée :", url);
+				setSignedUrl(url);
+				setLoadingUrl(false);
+			});
+		} else if (open && !doc.document_url) {
+			console.warn(
+				"[DocumentStatusDialog] Pas de document_url pour ce doc :",
+				doc,
+			);
+		}
+	}, [open, doc.document_url]);
+
+	// On vérifie l'extension sur l'URL originale (plus fiable que sur l'URL signée)
+	const isImage =
+		doc.document_url &&
+		/\.(jpg|jpeg|png|gif|webp|avif|bmp|tiff?)(\?|$)/i.test(
+			doc.document_url,
+		);
+
+	const handleUpdate = async () => {
+		const { error } = await supabase
+			.from(tableName)
+			.update({ status })
+			.eq("id", doc.id);
+		if (error) {
+			toast.error("Erreur lors de la mise à jour");
+		} else {
+			toast.success("Statut mis à jour !");
+			setOpen(false);
+			onUpdated({ ...doc, status });
+		}
+	};
+
+	return (
+		<>
+			<Dialog open={open} onOpenChange={setOpen}>
+				<DialogTrigger asChild>
+					<button
+						type='button'
+						className='focus:outline-none'
+						onClick={() => setOpen(true)}>
+						{getStatusBadge(doc.status)}
+					</button>
+				</DialogTrigger>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Modifier le statut</DialogTitle>
+					</DialogHeader>
+					<div className='space-y-4'>
+						{doc.document_url &&
+							(loadingUrl ? (
+								<div className='flex items-center justify-center h-24 text-sm text-gray-400'>
+									Chargement du document…
+								</div>
+							) : signedUrl && isImage && !imgError ? (
+								<div className='flex flex-col items-center gap-2'>
+									<img
+										src={signedUrl}
+										alt='Document'
+										className='max-h-48 w-auto rounded border cursor-zoom-in object-contain'
+										onClick={() => setPreviewOpen(true)}
+										title='Cliquer pour agrandir'
+										onError={() => {
+											console.error(
+												"[DocumentStatusDialog] Erreur chargement image :",
+												signedUrl,
+											);
+											setImgError(true);
+										}}
+									/>
+									<span className='text-xs text-gray-400'>
+										Cliquez sur l'image pour l'agrandir
+									</span>
+								</div>
+							) : signedUrl ? (
+								<a
+									href={signedUrl}
+									target='_blank'
+									rel='noopener noreferrer'
+									className='flex items-center gap-2 text-blue-600 underline text-sm'>
+									<ExternalLink className='w-4 h-4' />
+									{imgError
+										? "Image non affichable — Voir le document"
+										: "Voir le document"}
+								</a>
+							) : null)}
+						<div className='flex gap-2'>
+							{["pending", "verified", "rejected"].map((s) => (
+								<button
+									key={s}
+									type='button'
+									className={`border rounded px-3 py-2 text-sm ${
+										status === s
+											? "bg-blue-100 border-blue-500"
+											: ""
+									}`}
+									onClick={() => setStatus(s)}>
+									{s === "pending"
+										? "En attente"
+										: s === "verified"
+											? "Vérifié"
+											: "Refusé"}
+								</button>
+							))}
+						</div>
+						<button
+							type='button'
+							className='w-full bg-blue-600 text-white px-4 py-2 rounded text-sm'
+							onClick={handleUpdate}>
+							Enregistrer
+						</button>
+					</div>
+				</DialogContent>
+			</Dialog>
+			{previewOpen && (
+				<Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+					<DialogContent className='max-w-3xl'>
+						<DialogHeader>
+							<DialogTitle>
+								<VisuallyHidden>
+									Aperçu du document
+								</VisuallyHidden>
+							</DialogTitle>
+						</DialogHeader>
+						<img
+							src={signedUrl}
+							alt='Aperçu document'
+							className='w-full rounded border object-contain max-h-[80vh]'
+						/>
+					</DialogContent>
+				</Dialog>
+			)}
+		</>
+	);
+}
+
+function UserDocumentsSheet({ userId, tableName, typeLabel, badgeLabel }) {
+	const [open, setOpen] = useState(false);
+	const [docs, setDocs] = useState([]);
+	const [loading, setLoading] = useState(false);
+
+	useEffect(() => {
+		if (open) {
+			setLoading(true);
+			supabase
+				.from(tableName)
+				.select("*")
+				.eq("user_id", userId)
+				.then(({ data }) => {
+					setDocs(data || []);
+					setLoading(false);
+				});
+		}
+	}, [open, userId, tableName]);
+
+	const globalStatus = getGlobalDocStatus(docs);
+	let dotColor = "bg-gray-400";
+	if (globalStatus === "verified") dotColor = "bg-green-500";
+	else if (globalStatus === "pending") dotColor = "bg-yellow-400";
+	else if (globalStatus === "rejected") dotColor = "bg-red-500";
+
+	return (
+		<>
+			<button
+				type='button'
+				className='focus:outline-none'
+				onClick={() => setOpen(true)}>
+				<Badge
+					variant='outline'
+					className='inline-flex items-center gap-2 cursor-pointer'>
+					<span className={`w-2 h-2 rounded-full ${dotColor}`} />
+					{badgeLabel}
+				</Badge>
+			</button>
+			<Sheet open={open} onOpenChange={setOpen}>
+				<SheetContent
+					side='right'
+					className='w-[480px] overflow-y-auto max-h-screen p-4'>
+					<SheetHeader>
+						<SheetTitle>{typeLabel}</SheetTitle>
+					</SheetHeader>
+					{loading ? (
+						<div className='text-sm text-gray-400 mt-4'>
+							Chargement...
+						</div>
+					) : docs.length === 0 ? (
+						<div className='text-sm text-gray-400 mt-4'>
+							Aucun document
+						</div>
+					) : (
+						<div className='mt-4 flex flex-col gap-4'>
+							{docs.map((doc) => (
+								<Card key={doc.id}>
+									<CardContent className='p-4 space-y-2'>
+										<div className='flex items-center justify-between'>
+											<span className='font-semibold text-sm'>
+												{doc.type}
+											</span>
+											<DocumentStatusDialog
+												doc={doc}
+												tableName={tableName}
+												onUpdated={(updated) =>
+													setDocs((prev) =>
+														prev.map((d) =>
+															d.id === updated.id
+																? updated
+																: d,
+														),
+													)
+												}
+											/>
+										</div>
+										{doc.number && (
+											<div className='text-xs text-gray-600'>
+												N° {doc.number}
+											</div>
+										)}
+										{doc.expires_at && (
+											<div className='text-xs text-gray-600'>
+												Expire le{" "}
+												{new Date(
+													doc.expires_at,
+												).toLocaleDateString("fr-FR")}
+											</div>
+										)}
+										{doc.obtained_at && (
+											<div className='text-xs text-gray-600'>
+												Obtenu le{" "}
+												{new Date(
+													doc.obtained_at,
+												).toLocaleDateString("fr-FR")}
+											</div>
+										)}
+										{doc.issued_at && (
+											<div className='text-xs text-gray-600'>
+												Délivré le{" "}
+												{new Date(
+													doc.issued_at,
+												).toLocaleDateString("fr-FR")}
+											</div>
+										)}
+									</CardContent>
+								</Card>
+							))}
+						</div>
+					)}
+				</SheetContent>
+			</Sheet>
+		</>
+	);
+}
+
 export const dashboardColumns = [
 	{
 		accessorKey: "avatar_url",
@@ -770,6 +1073,45 @@ export const dashboardColumns = [
 	// 	accessorKey: "id",
 	// 	header: "ID",
 	// },
+	{
+		id: "cnaps",
+		header: "CNAPS",
+		cell: ({ row }) => (
+			<UserDocumentsSheet
+				userId={row.original.id}
+				tableName='user_cnaps_cards'
+				typeLabel='Cartes CNAPS'
+				badgeLabel='CNAPS'
+			/>
+		),
+		enableSorting: false,
+	},
+	{
+		id: "diplomas",
+		header: "Diplômes",
+		cell: ({ row }) => (
+			<UserDocumentsSheet
+				userId={row.original.id}
+				tableName='user_diplomas'
+				typeLabel='Diplômes'
+				badgeLabel='Diplômes'
+			/>
+		),
+		enableSorting: false,
+	},
+	{
+		id: "certifications",
+		header: "Certifications",
+		cell: ({ row }) => (
+			<UserDocumentsSheet
+				userId={row.original.id}
+				tableName='user_certifications'
+				typeLabel='Certifications'
+				badgeLabel='Certifs'
+			/>
+		),
+		enableSorting: false,
+	},
 	{
 		id: "actions",
 		header: "Actions",
