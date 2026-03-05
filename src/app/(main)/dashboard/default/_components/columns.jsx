@@ -2,7 +2,14 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Pencil, ExternalLink } from "lucide-react";
+import {
+	Pencil,
+	ExternalLink,
+	FileText,
+	Calendar,
+	Hash,
+	ChevronRight,
+} from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import {
 	Dialog,
@@ -723,8 +730,13 @@ function getGlobalDocStatus(docs) {
 	return "verified";
 }
 
-function DocumentStatusDialog({ doc, tableName, onUpdated }) {
-	const [open, setOpen] = useState(false);
+function DocumentStatusDialog({
+	doc,
+	tableName,
+	onUpdated,
+	open,
+	onOpenChange,
+}) {
 	const [status, setStatus] = useState(doc.status);
 	const [signedUrl, setSignedUrl] = useState("");
 	const [loadingUrl, setLoadingUrl] = useState(false);
@@ -735,29 +747,32 @@ function DocumentStatusDialog({ doc, tableName, onUpdated }) {
 		if (open && doc.document_url) {
 			setLoadingUrl(true);
 			setImgError(false);
-			console.log(
-				"[DocumentStatusDialog] document_url brut :",
-				doc.document_url,
-			);
 			getSignedUrl(doc.document_url).then((url) => {
-				console.log("[DocumentStatusDialog] URL signée :", url);
 				setSignedUrl(url);
 				setLoadingUrl(false);
 			});
-		} else if (open && !doc.document_url) {
-			console.warn(
-				"[DocumentStatusDialog] Pas de document_url pour ce doc :",
-				doc,
-			);
+		}
+		if (!open) {
+			setSignedUrl("");
+			setPreviewOpen(false);
 		}
 	}, [open, doc.document_url]);
 
-	// On vérifie l'extension sur l'URL originale (plus fiable que sur l'URL signée)
 	const isImage =
 		doc.document_url &&
 		/\.(jpg|jpeg|png|gif|webp|avif|bmp|tiff?)(\?|$)/i.test(
 			doc.document_url,
 		);
+
+	const statusConfig = {
+		pending: {
+			label: "En attente",
+			variant: "outline",
+			dot: "bg-yellow-400",
+		},
+		verified: { label: "Vérifié", variant: "outline", dot: "bg-green-500" },
+		rejected: { label: "Refusé", variant: "outline", dot: "bg-red-500" },
+	};
 
 	const handleUpdate = async () => {
 		const { error } = await supabase
@@ -768,92 +783,88 @@ function DocumentStatusDialog({ doc, tableName, onUpdated }) {
 			toast.error("Erreur lors de la mise à jour");
 		} else {
 			toast.success("Statut mis à jour !");
-			setOpen(false);
+			onOpenChange(false);
 			onUpdated({ ...doc, status });
 		}
 	};
 
 	return (
 		<>
-			<Dialog open={open} onOpenChange={setOpen}>
-				<DialogTrigger asChild>
-					<button
-						type='button'
-						className='focus:outline-none'
-						onClick={() => setOpen(true)}>
-						{getStatusBadge(doc.status)}
-					</button>
-				</DialogTrigger>
-				<DialogContent>
+			<Dialog open={open} onOpenChange={onOpenChange}>
+				<DialogContent className='sm:max-w-lg'>
 					<DialogHeader>
-						<DialogTitle>Modifier le statut</DialogTitle>
+						<DialogTitle className='flex items-center gap-2'>
+							<FileText className='w-5 h-5 text-blue-500' />
+							{doc.type || "Document"}
+						</DialogTitle>
 					</DialogHeader>
-					<div className='space-y-4'>
-						{doc.document_url &&
-							(loadingUrl ? (
-								<div className='flex items-center justify-center h-24 text-sm text-gray-400'>
-									Chargement du document…
-								</div>
-							) : signedUrl && isImage && !imgError ? (
-								<div className='flex flex-col items-center gap-2'>
+
+					<div className='space-y-5'>
+						{/* Aperçu du document */}
+						{doc.document_url && (
+							<div className='rounded-lg border bg-muted/40 p-3 flex items-center justify-center min-h-[120px]'>
+								{loadingUrl ? (
+									<span className='text-sm text-muted-foreground animate-pulse'>
+										Chargement…
+									</span>
+								) : signedUrl && isImage && !imgError ? (
 									<img
 										src={signedUrl}
 										alt='Document'
-										className='max-h-48 w-auto rounded border cursor-zoom-in object-contain'
+										className='max-h-52 w-auto rounded cursor-zoom-in object-contain'
 										onClick={() => setPreviewOpen(true)}
 										title='Cliquer pour agrandir'
-										onError={() => {
-											console.error(
-												"[DocumentStatusDialog] Erreur chargement image :",
-												signedUrl,
-											);
-											setImgError(true);
-										}}
+										onError={() => setImgError(true)}
 									/>
-									<span className='text-xs text-gray-400'>
-										Cliquez sur l'image pour l'agrandir
-									</span>
-								</div>
-							) : signedUrl ? (
-								<a
-									href={signedUrl}
-									target='_blank'
-									rel='noopener noreferrer'
-									className='flex items-center gap-2 text-blue-600 underline text-sm'>
-									<ExternalLink className='w-4 h-4' />
-									{imgError
-										? "Image non affichable — Voir le document"
-										: "Voir le document"}
-								</a>
-							) : null)}
-						<div className='flex gap-2'>
-							{["pending", "verified", "rejected"].map((s) => (
-								<button
-									key={s}
-									type='button'
-									className={`border rounded px-3 py-2 text-sm ${
-										status === s
-											? "bg-blue-100 border-blue-500"
-											: ""
-									}`}
-									onClick={() => setStatus(s)}>
-									{s === "pending"
-										? "En attente"
-										: s === "verified"
-											? "Vérifié"
-											: "Refusé"}
-								</button>
-							))}
+								) : signedUrl ? (
+									<a
+										href={signedUrl}
+										target='_blank'
+										rel='noopener noreferrer'
+										className='flex items-center gap-2 text-blue-600 hover:underline text-sm font-medium'>
+										<ExternalLink className='w-4 h-4' />
+										{imgError
+											? "Image non affichable — Ouvrir le fichier"
+											: "Voir le document"}
+									</a>
+								) : null}
+							</div>
+						)}
+
+						{/* Statut */}
+						<div className='space-y-2'>
+							<p className='text-sm font-medium text-muted-foreground'>
+								Statut du document
+							</p>
+							<div className='grid grid-cols-3 gap-2'>
+								{Object.entries(statusConfig).map(
+									([s, cfg]) => (
+										<button
+											key={s}
+											type='button'
+											className={`flex items-center justify-center gap-2 border rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+												status === s
+													? "bg-blue-50 border-blue-500 text-blue-700"
+													: "hover:bg-muted"
+											}`}
+											onClick={() => setStatus(s)}>
+											<span
+												className={`w-2 h-2 rounded-full ${cfg.dot}`}
+											/>
+											{cfg.label}
+										</button>
+									),
+								)}
+							</div>
 						</div>
-						<button
-							type='button'
-							className='w-full bg-blue-600 text-white px-4 py-2 rounded text-sm'
-							onClick={handleUpdate}>
+
+						<Button className='w-full' onClick={handleUpdate}>
 							Enregistrer
-						</button>
+						</Button>
 					</div>
 				</DialogContent>
 			</Dialog>
+
 			{previewOpen && (
 				<Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
 					<DialogContent className='max-w-3xl'>
@@ -876,10 +887,103 @@ function DocumentStatusDialog({ doc, tableName, onUpdated }) {
 	);
 }
 
+const statusDotColor = {
+	pending: "bg-yellow-400",
+	verified: "bg-green-500",
+	rejected: "bg-red-500",
+};
+const statusLabel = {
+	pending: "En attente",
+	verified: "Vérifié",
+	rejected: "Refusé",
+};
+
+function DocCard({ doc, onClick }) {
+	const dot = statusDotColor[doc.status] || "bg-gray-400";
+	const label = statusLabel[doc.status] || "Non vérifié";
+
+	return (
+		<button
+			type='button'
+			className='w-full text-left focus:outline-none group'
+			onClick={onClick}>
+			<Card className='transition-all duration-150 border hover:border-blue-400 hover:shadow-md group-focus-visible:ring-2 group-focus-visible:ring-blue-400'>
+				<CardContent className='p-4'>
+					<div className='flex items-start justify-between gap-3'>
+						{/* Icône + titre */}
+						<div className='flex items-center gap-3 min-w-0'>
+							<div className='flex-shrink-0 w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center'>
+								<FileText className='w-5 h-5 text-blue-500' />
+							</div>
+							<div className='min-w-0'>
+								<p className='font-semibold text-sm truncate'>
+									{doc.type || "Document"}
+								</p>
+								{doc.number && (
+									<p className='flex items-center gap-1 text-xs text-muted-foreground mt-0.5'>
+										<Hash className='w-3 h-3' />
+										{doc.number}
+									</p>
+								)}
+							</div>
+						</div>
+						{/* Statut + chevron */}
+						<div className='flex items-center gap-2 flex-shrink-0'>
+							<Badge
+								variant='outline'
+								className='flex items-center gap-1.5 text-xs'>
+								<span
+									className={`w-1.5 h-1.5 rounded-full ${dot}`}
+								/>
+								{label}
+							</Badge>
+							<ChevronRight className='w-4 h-4 text-muted-foreground group-hover:text-blue-500 transition-colors' />
+						</div>
+					</div>
+
+					{/* Dates */}
+					{(doc.expires_at || doc.obtained_at || doc.issued_at) && (
+						<div className='mt-3 pt-3 border-t flex flex-wrap gap-x-4 gap-y-1'>
+							{doc.expires_at && (
+								<span className='flex items-center gap-1 text-xs text-muted-foreground'>
+									<Calendar className='w-3 h-3' />
+									Expire le{" "}
+									{new Date(
+										doc.expires_at,
+									).toLocaleDateString("fr-FR")}
+								</span>
+							)}
+							{doc.obtained_at && (
+								<span className='flex items-center gap-1 text-xs text-muted-foreground'>
+									<Calendar className='w-3 h-3' />
+									Obtenu le{" "}
+									{new Date(
+										doc.obtained_at,
+									).toLocaleDateString("fr-FR")}
+								</span>
+							)}
+							{doc.issued_at && (
+								<span className='flex items-center gap-1 text-xs text-muted-foreground'>
+									<Calendar className='w-3 h-3' />
+									Délivré le{" "}
+									{new Date(doc.issued_at).toLocaleDateString(
+										"fr-FR",
+									)}
+								</span>
+							)}
+						</div>
+					)}
+				</CardContent>
+			</Card>
+		</button>
+	);
+}
+
 function UserDocumentsSheet({ userId, tableName, typeLabel, badgeLabel }) {
 	const [open, setOpen] = useState(false);
 	const [docs, setDocs] = useState([]);
 	const [loading, setLoading] = useState(false);
+	const [selectedDoc, setSelectedDoc] = useState(null);
 
 	useEffect(() => {
 		if (open) {
@@ -896,10 +1000,7 @@ function UserDocumentsSheet({ userId, tableName, typeLabel, badgeLabel }) {
 	}, [open, userId, tableName]);
 
 	const globalStatus = getGlobalDocStatus(docs);
-	let dotColor = "bg-gray-400";
-	if (globalStatus === "verified") dotColor = "bg-green-500";
-	else if (globalStatus === "pending") dotColor = "bg-yellow-400";
-	else if (globalStatus === "rejected") dotColor = "bg-red-500";
+	const dotColor = statusDotColor[globalStatus] || "bg-gray-400";
 
 	return (
 		<>
@@ -914,80 +1015,64 @@ function UserDocumentsSheet({ userId, tableName, typeLabel, badgeLabel }) {
 					{badgeLabel}
 				</Badge>
 			</button>
+
 			<Sheet open={open} onOpenChange={setOpen}>
 				<SheetContent
 					side='right'
-					className='w-[480px] overflow-y-auto max-h-screen p-4'>
-					<SheetHeader>
-						<SheetTitle>{typeLabel}</SheetTitle>
+					className='w-[480px] overflow-y-auto max-h-screen p-5'>
+					<SheetHeader className='mb-5'>
+						<SheetTitle className='flex items-center gap-2'>
+							<FileText className='w-5 h-5 text-blue-500' />
+							{typeLabel}
+						</SheetTitle>
 					</SheetHeader>
+
 					{loading ? (
-						<div className='text-sm text-gray-400 mt-4'>
-							Chargement...
+						<div className='flex flex-col gap-3'>
+							{[1, 2].map((i) => (
+								<div
+									key={i}
+									className='h-20 rounded-xl bg-muted animate-pulse'
+								/>
+							))}
 						</div>
 					) : docs.length === 0 ? (
-						<div className='text-sm text-gray-400 mt-4'>
-							Aucun document
+						<div className='flex flex-col items-center justify-center py-16 text-muted-foreground'>
+							<FileText className='w-10 h-10 mb-3 opacity-30' />
+							<p className='text-sm'>Aucun document envoyé</p>
 						</div>
 					) : (
-						<div className='mt-4 flex flex-col gap-4'>
+						<div className='flex flex-col gap-3'>
 							{docs.map((doc) => (
-								<Card key={doc.id}>
-									<CardContent className='p-4 space-y-2'>
-										<div className='flex items-center justify-between'>
-											<span className='font-semibold text-sm'>
-												{doc.type}
-											</span>
-											<DocumentStatusDialog
-												doc={doc}
-												tableName={tableName}
-												onUpdated={(updated) =>
-													setDocs((prev) =>
-														prev.map((d) =>
-															d.id === updated.id
-																? updated
-																: d,
-														),
-													)
-												}
-											/>
-										</div>
-										{doc.number && (
-											<div className='text-xs text-gray-600'>
-												N° {doc.number}
-											</div>
-										)}
-										{doc.expires_at && (
-											<div className='text-xs text-gray-600'>
-												Expire le{" "}
-												{new Date(
-													doc.expires_at,
-												).toLocaleDateString("fr-FR")}
-											</div>
-										)}
-										{doc.obtained_at && (
-											<div className='text-xs text-gray-600'>
-												Obtenu le{" "}
-												{new Date(
-													doc.obtained_at,
-												).toLocaleDateString("fr-FR")}
-											</div>
-										)}
-										{doc.issued_at && (
-											<div className='text-xs text-gray-600'>
-												Délivré le{" "}
-												{new Date(
-													doc.issued_at,
-												).toLocaleDateString("fr-FR")}
-											</div>
-										)}
-									</CardContent>
-								</Card>
+								<DocCard
+									key={doc.id}
+									doc={doc}
+									onClick={() => setSelectedDoc(doc)}
+								/>
 							))}
 						</div>
 					)}
 				</SheetContent>
 			</Sheet>
+
+			{selectedDoc && (
+				<DocumentStatusDialog
+					doc={selectedDoc}
+					tableName={tableName}
+					open={!!selectedDoc}
+					onOpenChange={(v) => {
+						if (!v) setSelectedDoc(null);
+					}}
+					onUpdated={(updated) => {
+						setDocs((prev) =>
+							prev.map((d) =>
+								d.id === updated.id ? updated : d,
+							),
+						);
+						setSelectedDoc(null);
+					}}
+				/>
+			)}
 		</>
 	);
 }
