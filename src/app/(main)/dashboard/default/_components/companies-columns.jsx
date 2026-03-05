@@ -70,30 +70,31 @@ export const companiesColumns = [
 		cell: ({ row }) => {
 			const status = row.original.kbis_verification_status;
 			const hasKbis = !!row.original.kbis_url;
-			let color = "bg-gray-400";
+			let dotColor = "bg-gray-400";
 			let label = "Aucun document envoyé";
 			let clickable = false;
 
 			if (hasKbis) {
 				clickable = true;
 				if (status === "verified") {
-					color = "bg-green-500";
+					dotColor = "bg-green-500";
 					label = "Vérifié";
 				} else if (status === "pending") {
-					color = "bg-yellow-400";
+					dotColor = "bg-yellow-400";
 					label = "En attente";
 				} else if (status === "rejected") {
-					color = "bg-red-500";
+					dotColor = "bg-red-500";
 					label = "Refusé";
 				}
 			}
 
 			const badge = (
-				<span
-					className={`inline-flex items-center gap-2 border rounded-full px-3 py-1 text-sm font-medium bg-white border-gray-300 ${!clickable ? "text-gray-400" : "cursor-pointer"}`}>
-					<span className={`w-2 h-2 rounded-full ${color}`} />
+				<Badge
+					variant='outline'
+					className={`inline-flex items-center gap-2 ${!clickable ? "text-gray-400" : "cursor-pointer"}`}>
+					<span className={`w-2 h-2 rounded-full ${dotColor}`} />
 					{label}
-				</span>
+				</Badge>
 			);
 
 			return clickable ? (
@@ -129,19 +130,24 @@ export const companiesColumns = [
 		header: "Statut entreprise",
 		cell: ({ row }) => {
 			const status = row.original.company_status;
-			let color = "gray";
+			let color = "outline";
+			let dotColor = "bg-gray-400";
 			let label = "Non défini";
 			if (status === "active") {
-				color = "bg-green-500";
+				color = "outline";
+				dotColor = "bg-green-500";
 				label = "Active";
 			} else if (status === "pending") {
-				color = "bg-yellow-400";
+				color = "outline";
+				dotColor = "bg-yellow-400";
 				label = "En attente";
 			} else if (status === "inactive") {
-				color = "bg-gray-400";
+				color = "outline";
+				dotColor = "bg-gray-400";
 				label = "Inactive";
 			} else if (status === "suspended") {
-				color = "bg-red-500";
+				color = "outline";
+				dotColor = "bg-red-500";
 				label = "Suspendue";
 			}
 			return (
@@ -156,11 +162,45 @@ export const companiesColumns = [
 						window.dispatchEvent(event);
 					}}
 					title='Modifier le statut'>
-					<span className='inline-flex items-center gap-2 border rounded-full px-3 py-1 text-sm font-medium bg-white border-gray-300 cursor-pointer'>
-						<span className={`w-2 h-2 rounded-full ${color}`} />
+					<Badge
+						variant={color}
+						className='inline-flex items-center gap-2 cursor-pointer'>
+						<span className={`w-2 h-2 rounded-full ${dotColor}`} />
 						{label}
-					</span>
+					</Badge>
 				</button>
+			);
+		},
+		size: 120,
+	},
+	{
+		accessorKey: "subscription_status",
+		header: "Abonnement",
+		cell: ({ row }) => {
+			const status = row.original.subscription_status;
+			let color = "outline";
+			let dotColor = "bg-gray-400";
+			let label = "Non défini";
+			if (status === "standard") {
+				color = "outline";
+				dotColor = "bg-gray-400";
+				label = "Standard";
+			} else if (status === "standard_plus") {
+				color = "outline";
+				dotColor = "bg-blue-500";
+				label = "Standard Plus";
+			} else if (status === "premium") {
+				color = "outline";
+				dotColor = "bg-green-500";
+				label = "Premium";
+			}
+			return (
+				<Badge
+					variant={color}
+					className='inline-flex items-center gap-2'>
+					<span className={`w-2 h-2 rounded-full ${dotColor}`} />
+					{label}
+				</Badge>
 			);
 		},
 		size: 120,
