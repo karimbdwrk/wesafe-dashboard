@@ -231,6 +231,26 @@ const jobsColumns = [
 			);
 		},
 	},
+	{
+		id: "actions",
+		header: "",
+		cell: ({ row }) => (
+			<Button
+				variant='ghost'
+				size='icon'
+				onClick={() =>
+					window.dispatchEvent(
+						new CustomEvent("openJobSheet", {
+							detail: row.original,
+						}),
+					)
+				}>
+				<Pencil className='w-4 h-4' />
+			</Button>
+		),
+		enableSorting: false,
+		size: 40,
+	},
 ];
 
 export function DataTable({
@@ -260,6 +280,10 @@ export function DataTable({
 	const [companySheetOpen, setCompanySheetOpen] = useState(false);
 	const [formDataCompany, setFormDataCompany] = useState({});
 
+	const [jobSheetOpen, setJobSheetOpen] = useState(false);
+	const [selectedJob, setSelectedJob] = useState(null);
+	const [jobFormData, setJobFormData] = useState({});
+
 	useEffect(() => {
 		function handleOpenCompanySheet(e) {
 			setSelectedCompany(e.detail);
@@ -277,6 +301,18 @@ export function DataTable({
 				"openCompanySheet",
 				handleOpenCompanySheet,
 			);
+		};
+	}, []);
+
+	useEffect(() => {
+		function handleOpenJobSheet(e) {
+			setSelectedJob(e.detail);
+			setJobFormData({ title: e.detail.title || "" });
+			setJobSheetOpen(true);
+		}
+		window.addEventListener("openJobSheet", handleOpenJobSheet);
+		return () => {
+			window.removeEventListener("openJobSheet", handleOpenJobSheet);
 		};
 	}, []);
 
@@ -1469,6 +1505,57 @@ export function DataTable({
 								value={formDataCompany.description}
 								onChange={handleChangeCompany}
 								className='border rounded px-2 py-1 w-full min-h-[80px]'
+							/>
+						</div>
+						<Button type='submit' className='w-full mt-4'>
+							Mettre à jour
+						</Button>
+					</form>
+				</SheetContent>
+			</Sheet>
+			<Sheet open={jobSheetOpen} onOpenChange={setJobSheetOpen}>
+				<SheetContent
+					side='right'
+					className='w-[400px] overflow-y-auto max-h-screen p-4'>
+					<SheetHeader>
+						<SheetTitle>Modifier l'offre d'emploi</SheetTitle>
+					</SheetHeader>
+					<form
+						onSubmit={async (e) => {
+							e.preventDefault();
+							const { error } = await supabase
+								.from("jobs")
+								.update({ title: jobFormData.title })
+								.eq("id", selectedJob.id);
+							if (error) {
+								toast.error("Erreur : " + error.message);
+							} else {
+								toast.success("Offre mise à jour !");
+								setJobsData((prev) =>
+									prev.map((j) =>
+										j.id === selectedJob.id
+											? { ...j, ...jobFormData }
+											: j,
+									),
+								);
+								setJobSheetOpen(false);
+							}
+						}}
+						className='space-y-4 mt-4'>
+						<div>
+							<label className='block text-sm font-medium mb-1'>
+								Titre
+							</label>
+							<input
+								name='title'
+								value={jobFormData.title ?? ""}
+								onChange={(e) =>
+									setJobFormData((prev) => ({
+										...prev,
+										title: e.target.value,
+									}))
+								}
+								className='border rounded px-2 py-1 w-full'
 							/>
 						</div>
 						<Button type='submit' className='w-full mt-4'>
