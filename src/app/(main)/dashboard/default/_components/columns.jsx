@@ -763,13 +763,6 @@ function IdVerificationModal({ row }) {
 	);
 }
 
-function getGlobalDocStatus(docs) {
-	if (!docs || docs.length === 0) return null;
-	if (docs.some((d) => d.status === "rejected")) return "rejected";
-	if (docs.some((d) => d.status === "pending")) return "pending";
-	return "verified";
-}
-
 function DocumentStatusDialog({
 	doc,
 	tableName,
@@ -952,7 +945,7 @@ function DocCard({ doc, onClick }) {
 			type='button'
 			className='w-full text-left focus:outline-none group'
 			onClick={onClick}>
-			<Card className='transition-all duration-150 border hover:border-blue-400 hover:shadow-md group-focus-visible:ring-2 group-focus-visible:ring-blue-400'>
+			<Card className='transition-all duration-150 border hover:border-blue-400 hover:shadow-md group-focus-visible:ring-2 group-focus-visible:ring-blue-400 cursor-pointer'>
 				<CardContent className='p-4'>
 					<div className='flex items-start justify-between gap-3'>
 						{/* Icône + titre */}
@@ -1024,11 +1017,80 @@ function DocCard({ doc, onClick }) {
 	);
 }
 
+function computeSummary(data) {
+	if (!data || data.length === 0) return null;
+	const s = { verified: 0, pending: 0, rejected: 0 };
+	data.forEach((d) => {
+		if (s[d.status] !== undefined) s[d.status]++;
+	});
+	return s;
+}
+
+function DocStatusSummary({ summary, loading }) {
+	if (loading) {
+		return (
+			<span className='w-1.5 h-1.5 rounded-full bg-gray-300 animate-pulse ml-1' />
+		);
+	}
+	if (!summary) {
+		return <span className='text-xs text-muted-foreground ml-1'>—</span>;
+	}
+	return (
+		<span className='flex items-center gap-1 ml-1'>
+			{summary.verified > 0 && (
+				<span className='flex items-center gap-0.5'>
+					<span className='w-1.5 h-1.5 rounded-full bg-green-500' />
+					<span className='text-xs text-green-700 font-medium'>
+						{summary.verified}
+					</span>
+				</span>
+			)}
+			{summary.pending > 0 && (
+				<span className='flex items-center gap-0.5'>
+					<span className='w-1.5 h-1.5 rounded-full bg-yellow-400' />
+					<span className='text-xs text-yellow-600 font-medium'>
+						{summary.pending}
+					</span>
+				</span>
+			)}
+			{summary.rejected > 0 && (
+				<span className='flex items-center gap-0.5'>
+					<span className='w-1.5 h-1.5 rounded-full bg-red-500' />
+					<span className='text-xs text-red-600 font-medium'>
+						{summary.rejected}
+					</span>
+				</span>
+			)}
+		</span>
+	);
+}
+
 function UserDocumentsSheet({ userId, tableName, typeLabel, badgeLabel }) {
 	const [open, setOpen] = useState(false);
 	const [docs, setDocs] = useState([]);
 	const [loading, setLoading] = useState(false);
 	const [selectedDoc, setSelectedDoc] = useState(null);
+	const [statusSummary, setStatusSummary] = useState(null);
+	const [summaryLoading, setSummaryLoading] = useState(true);
+
+	// Fetch léger au montage pour afficher le résumé dans le badge du tableau
+	useEffect(() => {
+		supabase
+			.from(tableName)
+			.select("id, status")
+			.eq("user_id", userId)
+			.then(({ data }) => {
+				setStatusSummary(computeSummary(data));
+				setSummaryLoading(false);
+			});
+	}, [userId, tableName]);
+
+	// Sync le résumé quand les docs complets sont chargés (sheet ouverte)
+	useEffect(() => {
+		if (docs.length > 0) {
+			setStatusSummary(computeSummary(docs));
+		}
+	}, [docs]);
 
 	useEffect(() => {
 		if (open) {
@@ -1044,9 +1106,6 @@ function UserDocumentsSheet({ userId, tableName, typeLabel, badgeLabel }) {
 		}
 	}, [open, userId, tableName]);
 
-	const globalStatus = getGlobalDocStatus(docs);
-	const dotColor = statusDotColor[globalStatus] || "bg-gray-400";
-
 	return (
 		<>
 			<button
@@ -1055,9 +1114,12 @@ function UserDocumentsSheet({ userId, tableName, typeLabel, badgeLabel }) {
 				onClick={() => setOpen(true)}>
 				<Badge
 					variant='outline'
-					className='inline-flex items-center gap-2 cursor-pointer'>
-					<span className={`w-2 h-2 rounded-full ${dotColor}`} />
+					className='inline-flex items-center gap-1.5 cursor-pointer'>
 					{badgeLabel}
+					<DocStatusSummary
+						summary={statusSummary}
+						loading={summaryLoading}
+					/>
 				</Badge>
 			</button>
 
