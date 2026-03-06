@@ -982,15 +982,28 @@ function DocCard({ doc, onClick }) {
 					{/* Dates */}
 					{(doc.expires_at || doc.obtained_at || doc.issued_at) && (
 						<div className='mt-3 pt-3 border-t flex flex-wrap gap-x-4 gap-y-1'>
-							{doc.expires_at && (
-								<span className='flex items-center gap-1 text-xs text-muted-foreground'>
-									<Calendar className='w-3 h-3' />
-									Expire le{" "}
-									{new Date(
-										doc.expires_at,
-									).toLocaleDateString("fr-FR")}
-								</span>
-							)}
+							{doc.expires_at &&
+								(() => {
+									const expDate = new Date(doc.expires_at);
+									const isExpired = expDate < new Date();
+									return isExpired ? (
+										<span className='flex items-center gap-1 text-xs text-red-600 font-medium'>
+											<Calendar className='w-3 h-3' />
+											Expiré depuis le{" "}
+											{expDate.toLocaleDateString(
+												"fr-FR",
+											)}
+										</span>
+									) : (
+										<span className='flex items-center gap-1 text-xs text-muted-foreground'>
+											<Calendar className='w-3 h-3' />
+											Expire le{" "}
+											{expDate.toLocaleDateString(
+												"fr-FR",
+											)}
+										</span>
+									);
+								})()}
 							{doc.obtained_at && (
 								<span className='flex items-center gap-1 text-xs text-muted-foreground'>
 									<Calendar className='w-3 h-3' />
