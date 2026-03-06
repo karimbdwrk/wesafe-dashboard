@@ -39,6 +39,7 @@ import { CompaniesTable } from "../../../../../components/data-table/companies-t
 import { DataTable as DataTableNew } from "../../../../../components/data-table/data-table";
 import { DataTablePagination } from "../../../../../components/data-table/data-table-pagination";
 import { DataTableViewOptions } from "../../../../../components/data-table/data-table-view-options";
+import { DataTableColumnHeader } from "../../../../../components/data-table/data-table-column-header";
 import { withDndColumn } from "../../../../../components/data-table/table-utils";
 import { dashboardColumns } from "./columns";
 import { companiesColumns } from "./companies-columns";
@@ -148,6 +149,90 @@ function formatDateDDMMYYYY(date) {
 	return `${dd}-${mm}-${yyyy}`;
 }
 
+const contractTypeLabel = {
+	full_time: "CDI",
+	part_time: "CDD",
+	freelance: "Freelance",
+	internship: "Stage",
+	apprentice: "Alternance",
+};
+
+const jobsColumns = [
+	{
+		accessorKey: "title",
+		header: ({ column }) => (
+			<DataTableColumnHeader column={column} title='Titre' />
+		),
+		cell: ({ row }) => (
+			<span className='font-medium'>{row.original.title || "—"}</span>
+		),
+	},
+	{
+		accessorKey: "city",
+		header: ({ column }) => (
+			<DataTableColumnHeader column={column} title='Ville' />
+		),
+		cell: ({ row }) => (
+			<span className='text-sm'>{row.original.city || "—"}</span>
+		),
+	},
+	{
+		accessorKey: "category",
+		header: ({ column }) => (
+			<DataTableColumnHeader column={column} title='Catégorie' />
+		),
+		cell: ({ row }) =>
+			row.original.category ? (
+				<Badge variant='outline'>{row.original.category}</Badge>
+			) : (
+				<span className='text-xs text-muted-foreground'>—</span>
+			),
+	},
+	{
+		id: "company_avatar",
+		header: "Entreprise",
+		cell: ({ row }) => {
+			const logoUrl = row.original.companies?.logo_url;
+			const name = row.original.companies?.name;
+			return (
+				<div className='flex items-center gap-2'>
+					{logoUrl ? (
+						<img
+							src={logoUrl}
+							alt={name || "logo"}
+							className='h-8 w-8 rounded-full object-cover border shrink-0'
+						/>
+					) : (
+						<div className='h-8 w-8 rounded-full bg-muted border flex items-center justify-center shrink-0'>
+							<span className='text-xs text-muted-foreground'>
+								{name?.[0]?.toUpperCase() || "?"}
+							</span>
+						</div>
+					)}
+					<span className='text-sm truncate max-w-[120px]'>
+						{name || "—"}
+					</span>
+				</div>
+			);
+		},
+		enableSorting: false,
+	},
+	{
+		accessorKey: "contract_type",
+		header: ({ column }) => (
+			<DataTableColumnHeader column={column} title='Contrat' />
+		),
+		cell: ({ row }) => {
+			const ct = row.original.contract_type;
+			return ct ? (
+				<Badge variant='secondary'>{contractTypeLabel[ct] ?? ct}</Badge>
+			) : (
+				<span className='text-xs text-muted-foreground'>—</span>
+			);
+		},
+	},
+];
+
 export function DataTable({
 	data: initialData,
 	companies: initialCompaniesData,
@@ -155,6 +240,7 @@ export function DataTable({
 	const [data, setData] = React.useState(initialData);
 	const [companiesData, setCompaniesData] =
 		React.useState(initialCompaniesData);
+	const [jobsData, setJobsData] = useState([]);
 	const [communeResults, setCommuneResults] = useState([]);
 	const [selectedCommune, setSelectedCommune] = useState(null);
 
@@ -354,6 +440,21 @@ export function DataTable({
 		setCompaniesData(initialCompaniesData);
 	}, [initialCompaniesData]);
 
+	useEffect(() => {
+		supabase
+			.from("jobs")
+			.select("*, companies(name, logo_url)")
+			.order("created_at", { ascending: false })
+			.then(({ data, error }) => {
+				if (error) {
+					console.error("Erreur fetch jobs:", error);
+				} else {
+					console.log("Jobs data:", data);
+					setJobsData(data || []);
+				}
+			});
+	}, []);
+
 	// Initialise la date de naissance au chargement du profil
 	useEffect(() => {
 		if (selectedProfile && selectedProfile.birthday) {
@@ -457,6 +558,12 @@ export function DataTable({
 	const companiesTable = useDataTableInstance({
 		data: companiesData ?? [],
 		columns: companiesColumns,
+		getRowId: (row) => row.id?.toString?.() || String(row.id),
+	});
+
+	const jobsTable = useDataTableInstance({
+		data: jobsData ?? [],
+		columns: jobsColumns,
 		getRowId: (row) => row.id?.toString?.() || String(row.id),
 	});
 
@@ -582,8 +689,8 @@ export function DataTable({
 							<SelectItem value='companies'>
 								Entreprises
 							</SelectItem>
-							<SelectItem value='key-personnel'>
-								Key Personnel
+							<SelectItem value='jobs'>
+								Offres d'emploi
 							</SelectItem>
 							<SelectItem value='focus-documents'>
 								Focus Documents
@@ -596,8 +703,8 @@ export function DataTable({
 							Entreprises
 							<Badge variant='secondary'>3</Badge>
 						</TabsTrigger>
-						<TabsTrigger value='key-personnel'>
-							Key Personnel <Badge variant='secondary'>2</Badge>
+						<TabsTrigger value='jobs'>
+							Offres d'emploi <Badge variant='secondary'>2</Badge>
 						</TabsTrigger>
 						<TabsTrigger value='focus-documents'>
 							Focus Documents
@@ -638,8 +745,11 @@ export function DataTable({
 					</div>
 					<DataTablePagination table={companiesTable} />
 				</TabsContent>
-				<TabsContent value='key-personnel' className='flex flex-col'>
-					<div className='aspect-video w-full flex-1 rounded-lg border border-dashed' />
+				<TabsContent value='jobs' className='flex flex-col gap-4'>
+					<div className='overflow-hidden rounded-lg border'>
+						<DataTableNew table={jobsTable} columns={jobsColumns} />
+					</div>
+					<DataTablePagination table={jobsTable} />
 				</TabsContent>
 				<TabsContent value='focus-documents' className='flex flex-col'>
 					<div className='aspect-video w-full flex-1 rounded-lg border border-dashed' />
