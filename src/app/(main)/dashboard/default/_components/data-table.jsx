@@ -159,6 +159,35 @@ const contractTypeLabel = {
 
 const jobsColumns = [
 	{
+		id: "company_avatar",
+		header: "Entreprise",
+		cell: ({ row }) => {
+			const logoUrl = row.original.companies?.logo_url;
+			const name = row.original.companies?.name;
+			return (
+				<div className='flex items-center gap-2'>
+					{logoUrl ? (
+						<img
+							src={logoUrl}
+							alt={name || "logo"}
+							className='h-8 w-8 rounded-full object-cover border shrink-0'
+						/>
+					) : (
+						<div className='h-8 w-8 rounded-full bg-muted border flex items-center justify-center shrink-0'>
+							<span className='text-xs text-muted-foreground'>
+								{name?.[0]?.toUpperCase() || "?"}
+							</span>
+						</div>
+					)}
+					<span className='text-sm truncate max-w-[120px]'>
+						{name || "—"}
+					</span>
+				</div>
+			);
+		},
+		enableSorting: false,
+	},
+	{
 		accessorKey: "title",
 		header: ({ column }) => (
 			<DataTableColumnHeader column={column} title='Titre' />
@@ -189,7 +218,132 @@ const jobsColumns = [
 			),
 	},
 	{
-		id: "company_avatar",
+		accessorKey: "contract_type",
+		header: ({ column }) => (
+			<DataTableColumnHeader column={column} title='Contrat' />
+		),
+		cell: ({ row }) => {
+			const ct = row.original.contract_type;
+			return ct ? (
+				<Badge variant='secondary'>{contractTypeLabel[ct] ?? ct}</Badge>
+			) : (
+				<span className='text-xs text-muted-foreground'>—</span>
+			);
+		},
+	},
+	{
+		accessorKey: "is_archived",
+		header: ({ column }) => (
+			<DataTableColumnHeader column={column} title='Archivé' />
+		),
+		cell: ({ row }) => {
+			const archived = row.original.is_archived;
+			return archived ? (
+				<Badge
+					variant='outline'
+					className='flex items-center gap-1.5 w-fit'>
+					<span className='w-1.5 h-1.5 rounded-full bg-red-500 shrink-0' />
+					Archivé
+				</Badge>
+			) : (
+				<Badge
+					variant='outline'
+					className='flex items-center gap-1.5 w-fit'>
+					<span className='w-1.5 h-1.5 rounded-full bg-green-500 shrink-0' />
+					Publié
+				</Badge>
+			);
+		},
+	},
+	{
+		accessorKey: "status",
+		header: ({ column }) => (
+			<DataTableColumnHeader column={column} title='Statut' />
+		),
+		cell: ({ row }) => {
+			const status = row.original.status;
+			const config = {
+				draft: { dot: "bg-yellow-400", label: "Brouillon" },
+				published: { dot: "bg-green-500", label: "Publié" },
+				archived: { dot: "bg-red-500", label: "Archivé" },
+			};
+			const { dot, label } = config[status] ?? {
+				dot: "bg-gray-400",
+				label: status ?? "—",
+			};
+			return (
+				<button
+					type='button'
+					className='focus:outline-none'
+					onClick={() =>
+						window.dispatchEvent(
+							new CustomEvent("openJobStatusDialog", {
+								detail: row.original,
+							}),
+						)
+					}>
+					<Badge
+						variant='outline'
+						className='flex items-center gap-1.5 w-fit cursor-pointer'>
+						<span
+							className={`w-1.5 h-1.5 rounded-full ${dot} shrink-0`}
+						/>
+						{label}
+					</Badge>
+				</button>
+			);
+		},
+	},
+	{
+		id: "applications_count",
+		header: ({ column }) => (
+			<DataTableColumnHeader column={column} title='Candidatures' />
+		),
+		cell: ({ row }) => {
+			const count = row.original.applications?.[0]?.count ?? 0;
+			return (
+				<Badge
+					variant={count > 0 ? "secondary" : "outline"}
+					className='tabular-nums'>
+					{count}
+				</Badge>
+			);
+		},
+		enableSorting: false,
+	},
+	{
+		id: "actions",
+		header: "",
+		cell: ({ row }) => (
+			<Button
+				variant='ghost'
+				size='icon'
+				onClick={() =>
+					window.dispatchEvent(
+						new CustomEvent("openJobSheet", {
+							detail: row.original,
+						}),
+					)
+				}>
+				<Pencil className='w-4 h-4' />
+			</Button>
+		),
+		enableSorting: false,
+		size: 40,
+	},
+];
+
+const applicationStatusConfig = {
+	applied: { dot: "bg-blue-500", label: "Candidature" },
+	selected: { dot: "bg-yellow-400", label: "Sélectionné" },
+	contract_sent: { dot: "bg-purple-500", label: "Contrat envoyé" },
+	contract_signed_pro: { dot: "bg-green-500", label: "Contrat signé" },
+	rejected: { dot: "bg-red-500", label: "Refusé" },
+};
+
+const applicationsColumns = [
+	{
+		id: "company",
 		header: "Entreprise",
 		cell: ({ row }) => {
 			const logoUrl = row.original.companies?.logo_url;
@@ -218,38 +372,76 @@ const jobsColumns = [
 		enableSorting: false,
 	},
 	{
-		accessorKey: "contract_type",
+		id: "job_title",
+		accessorFn: (row) => row.jobs?.title ?? "",
 		header: ({ column }) => (
-			<DataTableColumnHeader column={column} title='Contrat' />
+			<DataTableColumnHeader column={column} title="Offre d'emploi" />
 		),
-		cell: ({ row }) => {
-			const ct = row.original.contract_type;
-			return ct ? (
-				<Badge variant='secondary'>{contractTypeLabel[ct] ?? ct}</Badge>
-			) : (
-				<span className='text-xs text-muted-foreground'>—</span>
-			);
-		},
+		cell: ({ row }) => (
+			<span className='font-medium text-sm truncate block'>
+				{row.original.jobs?.title || "—"}
+			</span>
+		),
+		size: 200,
 	},
 	{
-		id: "actions",
-		header: "",
-		cell: ({ row }) => (
-			<Button
-				variant='ghost'
-				size='icon'
-				onClick={() =>
-					window.dispatchEvent(
-						new CustomEvent("openJobSheet", {
-							detail: row.original,
-						}),
-					)
-				}>
-				<Pencil className='w-4 h-4' />
-			</Button>
-		),
+		id: "candidate",
+		header: "Candidat",
+		cell: ({ row }) => {
+			const avatarUrl = row.original.profiles?.avatar_url;
+			const firstname = row.original.profiles?.firstname || "";
+			const lastname = row.original.profiles?.lastname || "";
+			const fullName = `${lastname} ${firstname}`.trim() || "—";
+			return (
+				<div className='flex items-center gap-2'>
+					{avatarUrl ? (
+						<img
+							src={avatarUrl}
+							alt={fullName}
+							className='h-8 w-8 rounded-full object-cover border shrink-0'
+						/>
+					) : (
+						<div className='h-8 w-8 rounded-full bg-muted border flex items-center justify-center shrink-0'>
+							<span className='text-xs text-muted-foreground'>
+								{(
+									lastname?.[0] ||
+									firstname?.[0] ||
+									"?"
+								).toUpperCase()}
+							</span>
+						</div>
+					)}
+					<span className='text-sm truncate max-w-[140px]'>
+						{fullName}
+					</span>
+				</div>
+			);
+		},
 		enableSorting: false,
-		size: 40,
+	},
+	{
+		id: "current_status",
+		accessorKey: "current_status",
+		header: ({ column }) => (
+			<DataTableColumnHeader column={column} title='Statut' />
+		),
+		cell: ({ row }) => {
+			const status = row.original.current_status;
+			const config = applicationStatusConfig[status] || {
+				dot: "bg-gray-400",
+				label: status ?? "—",
+			};
+			return (
+				<Badge
+					variant='outline'
+					className='flex items-center gap-1.5 w-fit'>
+					<span
+						className={`w-1.5 h-1.5 rounded-full ${config.dot} shrink-0`}
+					/>
+					{config.label}
+				</Badge>
+			);
+		},
 	},
 ];
 
@@ -261,6 +453,7 @@ export function DataTable({
 	const [companiesData, setCompaniesData] =
 		React.useState(initialCompaniesData);
 	const [jobsData, setJobsData] = useState([]);
+	const [applicationsData, setApplicationsData] = useState([]);
 	const [communeResults, setCommuneResults] = useState([]);
 	const [selectedCommune, setSelectedCommune] = useState(null);
 
@@ -283,6 +476,8 @@ export function DataTable({
 	const [jobSheetOpen, setJobSheetOpen] = useState(false);
 	const [selectedJob, setSelectedJob] = useState(null);
 	const [jobFormData, setJobFormData] = useState({});
+	const [jobStatusDialogOpen, setJobStatusDialogOpen] = useState(false);
+	const [newJobStatus, setNewJobStatus] = useState("");
 
 	useEffect(() => {
 		function handleOpenCompanySheet(e) {
@@ -307,7 +502,10 @@ export function DataTable({
 	useEffect(() => {
 		function handleOpenJobSheet(e) {
 			setSelectedJob(e.detail);
-			setJobFormData({ title: e.detail.title || "" });
+			setJobFormData({
+				title: e.detail.title || "",
+				is_archived: e.detail.is_archived ?? false,
+			});
 			setJobSheetOpen(true);
 		}
 		window.addEventListener("openJobSheet", handleOpenJobSheet);
@@ -315,6 +513,44 @@ export function DataTable({
 			window.removeEventListener("openJobSheet", handleOpenJobSheet);
 		};
 	}, []);
+
+	useEffect(() => {
+		function handleOpenJobStatusDialog(e) {
+			setSelectedJob(e.detail);
+			setNewJobStatus(e.detail.status || "");
+			setJobStatusDialogOpen(true);
+		}
+		window.addEventListener(
+			"openJobStatusDialog",
+			handleOpenJobStatusDialog,
+		);
+		return () => {
+			window.removeEventListener(
+				"openJobStatusDialog",
+				handleOpenJobStatusDialog,
+			);
+		};
+	}, []);
+
+	async function handleUpdateJobStatus() {
+		const { error } = await supabase
+			.from("jobs")
+			.update({ status: newJobStatus })
+			.eq("id", selectedJob.id);
+		if (!error) {
+			toast.success("Statut mis à jour !");
+			setJobStatusDialogOpen(false);
+			setJobsData((prev) =>
+				prev.map((j) =>
+					j.id === selectedJob.id
+						? { ...j, status: newJobStatus }
+						: j,
+				),
+			);
+		} else {
+			toast.error("Erreur : " + error.message);
+		}
+	}
 
 	function handleChangeCompany(e) {
 		setFormDataCompany({
@@ -479,7 +715,7 @@ export function DataTable({
 	useEffect(() => {
 		supabase
 			.from("jobs")
-			.select("*, companies(name, logo_url)")
+			.select("*, companies(name, logo_url), applications(count)")
 			.order("created_at", { ascending: false })
 			.then(({ data, error }) => {
 				if (error) {
@@ -487,6 +723,22 @@ export function DataTable({
 				} else {
 					console.log("Jobs data:", data);
 					setJobsData(data || []);
+				}
+			});
+	}, []);
+
+	useEffect(() => {
+		supabase
+			.from("applications")
+			.select(
+				"*, jobs(title), companies!company_id(name, logo_url), profiles!candidate_id(firstname, lastname, avatar_url)",
+			)
+			.order("created_at", { ascending: false })
+			.then(({ data, error }) => {
+				if (error) {
+					console.error("Erreur fetch applications:", error);
+				} else {
+					setApplicationsData(data || []);
 				}
 			});
 	}, []);
@@ -600,6 +852,12 @@ export function DataTable({
 	const jobsTable = useDataTableInstance({
 		data: jobsData ?? [],
 		columns: jobsColumns,
+		getRowId: (row) => row.id?.toString?.() || String(row.id),
+	});
+
+	const applicationsTable = useDataTableInstance({
+		data: applicationsData ?? [],
+		columns: applicationsColumns,
 		getRowId: (row) => row.id?.toString?.() || String(row.id),
 	});
 
@@ -728,8 +986,8 @@ export function DataTable({
 							<SelectItem value='jobs'>
 								Offres d'emploi
 							</SelectItem>
-							<SelectItem value='focus-documents'>
-								Focus Documents
+							<SelectItem value='applications'>
+								Candidatures
 							</SelectItem>
 						</SelectContent>
 					</Select>
@@ -742,8 +1000,8 @@ export function DataTable({
 						<TabsTrigger value='jobs'>
 							Offres d'emploi <Badge variant='secondary'>2</Badge>
 						</TabsTrigger>
-						<TabsTrigger value='focus-documents'>
-							Focus Documents
+						<TabsTrigger value='applications'>
+							Candidatures
 						</TabsTrigger>
 					</TabsList>
 					<div className='flex items-center gap-2'>
@@ -787,8 +1045,16 @@ export function DataTable({
 					</div>
 					<DataTablePagination table={jobsTable} />
 				</TabsContent>
-				<TabsContent value='focus-documents' className='flex flex-col'>
-					<div className='aspect-video w-full flex-1 rounded-lg border border-dashed' />
+				<TabsContent
+					value='applications'
+					className='flex flex-col gap-4'>
+					<div className='overflow-hidden rounded-lg border'>
+						<DataTableNew
+							table={applicationsTable}
+							columns={applicationsColumns}
+						/>
+					</div>
+					<DataTablePagination table={applicationsTable} />
 				</TabsContent>
 			</Tabs>
 			<Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
@@ -1525,7 +1791,10 @@ export function DataTable({
 							e.preventDefault();
 							const { error } = await supabase
 								.from("jobs")
-								.update({ title: jobFormData.title })
+								.update({
+									title: jobFormData.title,
+									is_archived: jobFormData.is_archived,
+								})
 								.eq("id", selectedJob.id);
 							if (error) {
 								toast.error("Erreur : " + error.message);
@@ -1558,12 +1827,83 @@ export function DataTable({
 								className='border rounded px-2 py-1 w-full'
 							/>
 						</div>
+						<div className='flex items-center justify-between'>
+							<Label
+								htmlFor='job-is-archived'
+								className='text-sm font-medium'>
+								Archivé
+							</Label>
+							<Switch
+								id='job-is-archived'
+								checked={jobFormData.is_archived ?? false}
+								onCheckedChange={(checked) =>
+									setJobFormData((prev) => ({
+										...prev,
+										is_archived: checked,
+									}))
+								}
+							/>
+						</div>
 						<Button type='submit' className='w-full mt-4'>
 							Mettre à jour
 						</Button>
 					</form>
 				</SheetContent>
 			</Sheet>
+			<Dialog
+				open={jobStatusDialogOpen}
+				onOpenChange={setJobStatusDialogOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Modifier le statut de l'offre</DialogTitle>
+					</DialogHeader>
+					<div className='flex flex-col gap-4'>
+						<div className='flex gap-2 justify-center'>
+							{[
+								{
+									value: "draft",
+									dot: "bg-yellow-400",
+									label: "Brouillon",
+								},
+								{
+									value: "published",
+									dot: "bg-green-500",
+									label: "Publié",
+								},
+								{
+									value: "archived",
+									dot: "bg-red-500",
+									label: "Archivé",
+								},
+							].map(({ value, dot, label }) => (
+								<button
+									key={value}
+									type='button'
+									className={`focus:outline-none ${newJobStatus === value ? "ring-2 ring-primary rounded-full" : ""}`}
+									onClick={() => setNewJobStatus(value)}>
+									<Badge
+										variant='outline'
+										className='flex items-center gap-1.5 px-4 py-2 cursor-pointer'>
+										<span
+											className={`w-1.5 h-1.5 rounded-full ${dot} shrink-0`}
+										/>
+										{label}
+									</Badge>
+								</button>
+							))}
+						</div>
+						<Button
+							onClick={handleUpdateJobStatus}
+							disabled={
+								!newJobStatus ||
+								newJobStatus === selectedJob?.status
+							}
+							className='w-full'>
+							Mettre à jour
+						</Button>
+					</div>
+				</DialogContent>
+			</Dialog>
 			<Dialog
 				open={companyDialogOpen}
 				onOpenChange={setCompanyDialogOpen}>
