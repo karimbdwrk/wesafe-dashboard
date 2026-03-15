@@ -344,6 +344,34 @@ const jobsColumns = [
 		enableSorting: false,
 	},
 	{
+		accessorKey: "start_date",
+		header: ({ column }) => (
+			<DataTableColumnHeader column={column} title='Début' />
+		),
+		cell: ({ row }) => {
+			const d = row.original.start_date;
+			return (
+				<span className='text-sm text-muted-foreground whitespace-nowrap'>
+					{d ? new Date(d).toLocaleDateString("fr-FR") : "—"}
+				</span>
+			);
+		},
+	},
+	{
+		accessorKey: "end_date",
+		header: ({ column }) => (
+			<DataTableColumnHeader column={column} title='Fin' />
+		),
+		cell: ({ row }) => {
+			const d = row.original.end_date;
+			return (
+				<span className='text-sm text-muted-foreground whitespace-nowrap'>
+					{d ? new Date(d).toLocaleDateString("fr-FR") : "—"}
+				</span>
+			);
+		},
+	},
+	{
 		id: "actions",
 		header: "",
 		cell: ({ row }) => (
