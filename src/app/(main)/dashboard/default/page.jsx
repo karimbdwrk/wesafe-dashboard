@@ -12,7 +12,9 @@ export default function Page() {
 
 	useEffect(() => {
 		async function fetchProfiles() {
-			const { data, error } = await supabase.from("profiles").select("*");
+			const { data, error } = await supabase
+				.from("profiles")
+				.select("*, signature_status, signature_url");
 			if (error) {
 				console.error("Erreur Supabase:", error.message);
 			} else {
