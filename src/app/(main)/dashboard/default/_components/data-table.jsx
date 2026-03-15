@@ -4,7 +4,7 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
 
-import { Plus, Pencil, Copy, Venus, Mars } from "lucide-react";
+import { Plus, Pencil, Copy, Venus, Mars, Zap } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,12 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Calendar } from "@/components/ui/calendar";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
 	Select,
 	SelectContent,
@@ -193,7 +199,28 @@ const jobsColumns = [
 			<DataTableColumnHeader column={column} title='Titre' />
 		),
 		cell: ({ row }) => (
-			<span className='font-medium'>{row.original.title || "—"}</span>
+			<div className='flex items-center gap-1.5'>
+				<span className='font-medium'>{row.original.title || "—"}</span>
+				{row.original.isLastMinute && (
+					<TooltipProvider>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Zap
+									className='w-3.5 h-3.5 text-yellow-500 shrink-0 cursor-default'
+									fill='currentColor'
+								/>
+							</TooltipTrigger>
+							<TooltipContent className='flex items-center gap-1.5'>
+								<Zap
+									className='w-3 h-3 text-yellow-500'
+									fill='currentColor'
+								/>
+								<span>Last Minute</span>
+							</TooltipContent>
+						</Tooltip>
+					</TooltipProvider>
+				)}
+			</div>
 		),
 	},
 	{
