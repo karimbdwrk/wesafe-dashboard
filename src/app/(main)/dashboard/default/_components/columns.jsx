@@ -90,7 +90,7 @@ async function getSignedUrl(url) {
 
 	const { data, error } = await supabase.storage
 		.from(bucket)
-		.createSignedUrl(path, 60 * 10);
+		.createSignedUrl(path, 60 * 60 * 24);
 
 	if (error) {
 		console.error("[getSignedUrl] Erreur :", error.message, {
@@ -1315,6 +1315,54 @@ export const dashboardColumns = [
 				badgeLabel='Certifs'
 			/>
 		),
+		enableSorting: false,
+	},
+	{
+		id: "signature_status",
+		accessorKey: "signature_status",
+		header: "Signature",
+		cell: ({ row }) => {
+			const status = row.original.signature_status;
+			if (!status) {
+				return (
+					<Badge
+						variant='outline'
+						className='text-muted-foreground cursor-default'>
+						Aucune signature
+					</Badge>
+				);
+			}
+			const config = {
+				pending: { dot: "bg-yellow-400", label: "En attente" },
+				verified: { dot: "bg-green-500", label: "Vérifiée" },
+				rejected: { dot: "bg-red-500", label: "Refusée" },
+			};
+			const { dot, label } = config[status] ?? {
+				dot: "bg-gray-400",
+				label: status,
+			};
+			return (
+				<button
+					type='button'
+					className='focus:outline-none'
+					onClick={() =>
+						window.dispatchEvent(
+							new CustomEvent("openSignatureDialog", {
+								detail: row.original,
+							}),
+						)
+					}>
+					<Badge
+						variant='outline'
+						className='flex items-center gap-1.5 w-fit cursor-pointer'>
+						<span
+							className={`w-1.5 h-1.5 rounded-full ${dot} shrink-0`}
+						/>
+						{label}
+					</Badge>
+				</button>
+			);
+		},
 		enableSorting: false,
 	},
 	{
