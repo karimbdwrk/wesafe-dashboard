@@ -14,7 +14,8 @@ export default function Page() {
 		async function fetchProfiles() {
 			const { data, error } = await supabase
 				.from("profiles")
-				.select("*, signature_status, signature_url");
+				.select("*, signature_status, signature_url")
+				.order("created_at", { ascending: false });
 			if (error) {
 				console.error("Erreur Supabase:", error.message);
 			} else {
