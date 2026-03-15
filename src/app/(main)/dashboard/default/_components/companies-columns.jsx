@@ -242,6 +242,102 @@ export const companiesColumns = [
 	// 	size: 300,
 	// },
 	{
+		id: "signature_status",
+		accessorKey: "signature_status",
+		header: "Signature",
+		cell: ({ row }) => {
+			const status = row.original.signature_status;
+			if (!status) {
+				return (
+					<Badge
+						variant='outline'
+						className='text-muted-foreground cursor-default'>
+						Aucune signature
+					</Badge>
+				);
+			}
+			const config = {
+				pending: { dot: "bg-yellow-400", label: "En attente" },
+				verified: { dot: "bg-green-500", label: "Vérifiée" },
+				rejected: { dot: "bg-red-500", label: "Refusée" },
+			};
+			const { dot, label } = config[status] ?? {
+				dot: "bg-gray-400",
+				label: status,
+			};
+			return (
+				<button
+					type='button'
+					className='focus:outline-none'
+					onClick={() =>
+						window.dispatchEvent(
+							new CustomEvent("openCompanySignatureDialog", {
+								detail: row.original,
+							}),
+						)
+					}>
+					<Badge
+						variant='outline'
+						className='flex items-center gap-1.5 w-fit cursor-pointer'>
+						<span
+							className={`w-1.5 h-1.5 rounded-full ${dot} shrink-0`}
+						/>
+						{label}
+					</Badge>
+				</button>
+			);
+		},
+		enableSorting: false,
+	},
+	{
+		id: "stamp_status",
+		accessorKey: "stamp_status",
+		header: "Tampon",
+		cell: ({ row }) => {
+			const status = row.original.stamp_status;
+			if (!status) {
+				return (
+					<Badge
+						variant='outline'
+						className='text-muted-foreground cursor-default'>
+						Aucun tampon
+					</Badge>
+				);
+			}
+			const config = {
+				pending: { dot: "bg-yellow-400", label: "En attente" },
+				verified: { dot: "bg-green-500", label: "Vérifié" },
+				rejected: { dot: "bg-red-500", label: "Refusé" },
+			};
+			const { dot, label } = config[status] ?? {
+				dot: "bg-gray-400",
+				label: status,
+			};
+			return (
+				<button
+					type='button'
+					className='focus:outline-none'
+					onClick={() =>
+						window.dispatchEvent(
+							new CustomEvent("openCompanyStampDialog", {
+								detail: row.original,
+							}),
+						)
+					}>
+					<Badge
+						variant='outline'
+						className='flex items-center gap-1.5 w-fit cursor-pointer'>
+						<span
+							className={`w-1.5 h-1.5 rounded-full ${dot} shrink-0`}
+						/>
+						{label}
+					</Badge>
+				</button>
+			);
+		},
+		enableSorting: false,
+	},
+	{
 		id: "actions",
 		header: "Actions",
 		cell: ({ row }) => (
