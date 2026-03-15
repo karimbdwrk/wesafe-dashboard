@@ -481,6 +481,17 @@ export function DataTable({
 	const [newSignatureStatus, setNewSignatureStatus] = useState("");
 	const [signedSignatureUrl, setSignedSignatureUrl] = useState("");
 
+	const [companySignatureDialogOpen, setCompanySignatureDialogOpen] =
+		useState(false);
+	const [selectedCompanySignature, setSelectedCompanySignature] =
+		useState(null);
+	const [newCompanySignatureStatus, setNewCompanySignatureStatus] =
+		useState("");
+
+	const [companyStampDialogOpen, setCompanyStampDialogOpen] = useState(false);
+	const [selectedCompanyStamp, setSelectedCompanyStamp] = useState(null);
+	const [newCompanyStampStatus, setNewCompanyStampStatus] = useState("");
+
 	const [companySheetOpen, setCompanySheetOpen] = useState(false);
 	const [formDataCompany, setFormDataCompany] = useState({});
 
@@ -622,6 +633,80 @@ export function DataTable({
 			);
 		};
 	}, []);
+
+	useEffect(() => {
+		function handleOpenCompanySignatureDialog(e) {
+			setSelectedCompanySignature(e.detail);
+			setNewCompanySignatureStatus(e.detail.signature_status || "");
+			setCompanySignatureDialogOpen(true);
+		}
+		window.addEventListener(
+			"openCompanySignatureDialog",
+			handleOpenCompanySignatureDialog,
+		);
+		return () =>
+			window.removeEventListener(
+				"openCompanySignatureDialog",
+				handleOpenCompanySignatureDialog,
+			);
+	}, []);
+
+	async function handleUpdateCompanySignatureStatus() {
+		const { error } = await supabase
+			.from("companies")
+			.update({ signature_status: newCompanySignatureStatus })
+			.eq("id", selectedCompanySignature.id);
+		if (!error) {
+			toast.success("Statut de signature mis à jour !");
+			setCompanySignatureDialogOpen(false);
+			setCompaniesData((prev) =>
+				prev.map((c) =>
+					c.id === selectedCompanySignature.id
+						? { ...c, signature_status: newCompanySignatureStatus }
+						: c,
+				),
+			);
+		} else {
+			toast.error("Erreur : " + (error?.message || "Inconnue"));
+		}
+	}
+
+	useEffect(() => {
+		function handleOpenCompanyStampDialog(e) {
+			setSelectedCompanyStamp(e.detail);
+			setNewCompanyStampStatus(e.detail.stamp_status || "");
+			setCompanyStampDialogOpen(true);
+		}
+		window.addEventListener(
+			"openCompanyStampDialog",
+			handleOpenCompanyStampDialog,
+		);
+		return () =>
+			window.removeEventListener(
+				"openCompanyStampDialog",
+				handleOpenCompanyStampDialog,
+			);
+	}, []);
+
+	async function handleUpdateCompanyStampStatus() {
+		const { error } = await supabase
+			.from("companies")
+			.update({ stamp_status: newCompanyStampStatus })
+			.eq("id", selectedCompanyStamp.id);
+		if (!error) {
+			toast.success("Statut du tampon mis à jour !");
+			setCompanyStampDialogOpen(false);
+			setCompaniesData((prev) =>
+				prev.map((c) =>
+					c.id === selectedCompanyStamp.id
+						? { ...c, stamp_status: newCompanyStampStatus }
+						: c,
+				),
+			);
+		} else {
+			toast.error("Erreur : " + (error?.message || "Inconnue"));
+		}
+	}
 
 	useEffect(() => {
 		function handleOpenSignatureDialog(e) {
@@ -2155,6 +2240,128 @@ export function DataTable({
 								!newSignatureStatus ||
 								newSignatureStatus ===
 									selectedSignatureProfile?.signature_status
+							}
+							className='w-full'>
+							Mettre à jour
+						</Button>
+					</div>
+				</DialogContent>
+			</Dialog>
+			<Dialog
+				open={companySignatureDialogOpen}
+				onOpenChange={setCompanySignatureDialogOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>
+							Signature de l&apos;éntreprise
+						</DialogTitle>
+					</DialogHeader>
+					<div className='space-y-4'>
+						<div>
+							<span className='font-semibold text-sm'>
+								Document :
+							</span>
+							{selectedCompanySignature?.signature_url ? (
+								<img
+									src={selectedCompanySignature.signature_url}
+									alt='Signature'
+									className='mt-2 max-h-32 rounded border object-contain bg-white'
+								/>
+							) : (
+								<span className='block mt-2 text-gray-400 text-sm'>
+									Aucune signature envoyée
+								</span>
+							)}
+						</div>
+						<div className='flex gap-2 justify-center'>
+							{["pending", "verified", "rejected"].map((s) => {
+								const labels = {
+									pending: "En attente",
+									verified: "Vérifiée",
+									rejected: "Refusée",
+								};
+								return (
+									<Button
+										key={s}
+										variant={
+											newCompanySignatureStatus === s
+												? "default"
+												: "outline"
+										}
+										onClick={() =>
+											setNewCompanySignatureStatus(s)
+										}>
+										{labels[s]}
+									</Button>
+								);
+							})}
+						</div>
+						<Button
+							onClick={handleUpdateCompanySignatureStatus}
+							disabled={
+								!newCompanySignatureStatus ||
+								newCompanySignatureStatus ===
+									selectedCompanySignature?.signature_status
+							}
+							className='w-full'>
+							Mettre à jour
+						</Button>
+					</div>
+				</DialogContent>
+			</Dialog>
+			<Dialog
+				open={companyStampDialogOpen}
+				onOpenChange={setCompanyStampDialogOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Tampon de l&apos;éntreprise</DialogTitle>
+					</DialogHeader>
+					<div className='space-y-4'>
+						<div>
+							<span className='font-semibold text-sm'>
+								Document :
+							</span>
+							{selectedCompanyStamp?.stamp_url ? (
+								<img
+									src={selectedCompanyStamp.stamp_url}
+									alt='Tampon'
+									className='mt-2 max-h-32 rounded border object-contain bg-white'
+								/>
+							) : (
+								<span className='block mt-2 text-gray-400 text-sm'>
+									Aucun tampon envoyé
+								</span>
+							)}
+						</div>
+						<div className='flex gap-2 justify-center'>
+							{["pending", "verified", "rejected"].map((s) => {
+								const labels = {
+									pending: "En attente",
+									verified: "Vérifié",
+									rejected: "Refusé",
+								};
+								return (
+									<Button
+										key={s}
+										variant={
+											newCompanyStampStatus === s
+												? "default"
+												: "outline"
+										}
+										onClick={() =>
+											setNewCompanyStampStatus(s)
+										}>
+										{labels[s]}
+									</Button>
+								);
+							})}
+						</div>
+						<Button
+							onClick={handleUpdateCompanyStampStatus}
+							disabled={
+								!newCompanyStampStatus ||
+								newCompanyStampStatus ===
+									selectedCompanyStamp?.stamp_status
 							}
 							className='w-full'>
 							Mettre à jour
