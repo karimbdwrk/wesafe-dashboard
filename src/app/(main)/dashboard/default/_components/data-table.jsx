@@ -202,7 +202,12 @@ const jobsColumns = [
 			<DataTableColumnHeader column={column} title='Ville' />
 		),
 		cell: ({ row }) => (
-			<span className='text-sm'>{row.original.city || "—"}</span>
+			<span className='text-sm'>
+				{row.original.city +
+					" (" +
+					row.original.department_code +
+					")" || "—"}
+			</span>
 		),
 	},
 	{
@@ -470,6 +475,12 @@ export function DataTable({
 	const [signedKbisUrl, setSignedKbisUrl] = useState("");
 	const [newSiret, setNewSiret] = useState("");
 
+	const [signatureDialogOpen, setSignatureDialogOpen] = useState(false);
+	const [selectedSignatureProfile, setSelectedSignatureProfile] =
+		useState(null);
+	const [newSignatureStatus, setNewSignatureStatus] = useState("");
+	const [signedSignatureUrl, setSignedSignatureUrl] = useState("");
+
 	const [companySheetOpen, setCompanySheetOpen] = useState(false);
 	const [formDataCompany, setFormDataCompany] = useState({});
 
@@ -611,6 +622,52 @@ export function DataTable({
 			);
 		};
 	}, []);
+
+	useEffect(() => {
+		function handleOpenSignatureDialog(e) {
+			setSelectedSignatureProfile(e.detail);
+			setNewSignatureStatus(e.detail.signature_status || "");
+			// signature_url est une URL publique complète, pas besoin de signed URL
+			setSignedSignatureUrl(e.detail.signature_url || "");
+			setSignatureDialogOpen(true);
+		}
+		window.addEventListener(
+			"openSignatureDialog",
+			handleOpenSignatureDialog,
+		);
+		return () =>
+			window.removeEventListener(
+				"openSignatureDialog",
+				handleOpenSignatureDialog,
+			);
+	}, []);
+
+	async function handleUpdateSignatureStatus() {
+		const { error } = await supabase
+			.from("profiles")
+			.update({ signature_status: newSignatureStatus })
+			.eq("id", selectedSignatureProfile.id);
+		if (!error) {
+			toast.success("Statut de signature mis à jour !");
+			setSignatureDialogOpen(false);
+			setData((prev) =>
+				prev.map((p) =>
+					p.id === selectedSignatureProfile.id
+						? { ...p, signature_status: newSignatureStatus }
+						: p,
+				),
+			);
+		} else {
+			toast.error("Erreur : " + (error?.message || "Inconnue"));
+		}
+	}
+
+	useEffect(() => {
+		console.log(
+			"Profil sélectionné pour signature :",
+			selectedSignatureProfile,
+		);
+	}, [selectedSignatureProfile]);
 
 	async function handleUpdateKbisStatus() {
 		const siretToSend = newSiret.replace(/\D/g, "");
@@ -2032,6 +2089,72 @@ export function DataTable({
 									newKbisStatus ===
 										selectedCompany?.kbis_verification_status) &&
 								newSiret === selectedCompany?.siret
+							}
+							className='w-full'>
+							Mettre à jour
+						</Button>
+					</div>
+				</DialogContent>
+			</Dialog>
+			<Dialog
+				open={signatureDialogOpen}
+				onOpenChange={setSignatureDialogOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Signature du candidat</DialogTitle>
+					</DialogHeader>
+					<div className='space-y-4'>
+						<div>
+							<span className='font-semibold text-sm'>
+								Document :
+							</span>
+							{selectedSignatureProfile?.signature_url ? (
+								signedSignatureUrl ? (
+									<img
+										src={signedSignatureUrl}
+										alt='Signature'
+										className='mt-2 max-h-32 rounded border object-contain bg-white'
+									/>
+								) : (
+									<span className='block mt-2 text-gray-400 text-sm'>
+										Chargement…
+									</span>
+								)
+							) : (
+								<span className='block mt-2 text-gray-400 text-sm'>
+									Aucune signature envoyée
+								</span>
+							)}
+						</div>
+						<div className='flex gap-2 justify-center'>
+							{["pending", "verified", "rejected"].map((s) => {
+								const labels = {
+									pending: "En attente",
+									verified: "Vérifiée",
+									rejected: "Refusée",
+								};
+								return (
+									<Button
+										key={s}
+										variant={
+											newSignatureStatus === s
+												? "default"
+												: "outline"
+										}
+										onClick={() =>
+											setNewSignatureStatus(s)
+										}>
+										{labels[s]}
+									</Button>
+								);
+							})}
+						</div>
+						<Button
+							onClick={handleUpdateSignatureStatus}
+							disabled={
+								!newSignatureStatus ||
+								newSignatureStatus ===
+									selectedSignatureProfile?.signature_status
 							}
 							className='w-full'>
 							Mettre à jour
