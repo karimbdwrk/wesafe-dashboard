@@ -407,6 +407,30 @@ const applicationStatusConfig = {
 	rejected: { dot: "bg-red-500", label: "Refusé" },
 };
 
+function CandidateAvatar({ avatarUrl, firstname, lastname }) {
+	const [imgError, setImgError] = useState(false);
+	const initials =
+		`${firstname?.[0] || ""}${lastname?.[0] || ""}`.toUpperCase() || "?";
+
+	if (!avatarUrl || imgError) {
+		return (
+			<div className='h-8 w-8 rounded-full bg-black flex items-center justify-center shrink-0'>
+				<span className='text-xs text-white font-semibold leading-none'>
+					{initials}
+				</span>
+			</div>
+		);
+	}
+	return (
+		<img
+			src={avatarUrl}
+			alt={`${firstname} ${lastname}`}
+			className='h-8 w-8 rounded-full object-cover border shrink-0'
+			onError={() => setImgError(true)}
+		/>
+	);
+}
+
 const applicationsColumns = [
 	{
 		id: "company",
@@ -460,23 +484,11 @@ const applicationsColumns = [
 			const fullName = `${lastname} ${firstname}`.trim() || "—";
 			return (
 				<div className='flex items-center gap-2'>
-					{avatarUrl ? (
-						<img
-							src={avatarUrl}
-							alt={fullName}
-							className='h-8 w-8 rounded-full object-cover border shrink-0'
-						/>
-					) : (
-						<div className='h-8 w-8 rounded-full bg-muted border flex items-center justify-center shrink-0'>
-							<span className='text-xs text-muted-foreground'>
-								{(
-									lastname?.[0] ||
-									firstname?.[0] ||
-									"?"
-								).toUpperCase()}
-							</span>
-						</div>
-					)}
+					<CandidateAvatar
+						avatarUrl={avatarUrl}
+						firstname={firstname}
+						lastname={lastname}
+					/>
 					<span className='text-sm truncate max-w-[140px]'>
 						{fullName}
 					</span>
