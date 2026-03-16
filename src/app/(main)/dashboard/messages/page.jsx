@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Send, MessageSquare } from "lucide-react";
+import { Send, MessageSquare, CheckCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -318,7 +318,7 @@ export default function Page() {
 			);
 		}
 
-		// 1. Postgres Changes — nouveaux messages en temps réel
+		// 1. Postgres Changes — nouveaux messages + confirmations de lecture
 		const msgChannel = supabase
 			.channel(`db-messages-${selected.id}`)
 			.on(
@@ -351,6 +351,29 @@ export default function Page() {
 							return tb.localeCompare(ta);
 						});
 					});
+				},
+			)
+			.on(
+				"postgres_changes",
+				{
+					event: "UPDATE",
+					schema: "public",
+					table: "support_messages",
+					// Pas de filtre : les filtres sur UPDATE nécessitent REPLICA IDENTITY FULL
+					// On filtre côté client par conversation_id
+				},
+				(payload) => {
+					const updated = payload.new;
+					if (updated.conversation_id !== selectedRef.current?.id)
+						return;
+					// Mettre à jour is_read dans la liste locale (double check vert)
+					setMessages((prev) =>
+						prev.map((m) =>
+							m.id === updated.id
+								? { ...m, is_read: updated.is_read }
+								: m,
+						),
+					);
 				},
 			)
 			.subscribe();
@@ -512,7 +535,7 @@ export default function Page() {
 									return (
 										<div
 											key={msg.id}
-											className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+											className={`flex flex-col gap-0.5 ${isMe ? "items-end" : "items-start"}`}>
 											<div
 												className={`max-w-[70%] px-3 py-2 rounded-2xl text-sm leading-snug ${
 													isMe
@@ -520,10 +543,20 @@ export default function Page() {
 														: "bg-muted text-foreground rounded-bl-sm"
 												}`}>
 												<p>{msg.content}</p>
-												<p
-													className={`text-[10px] mt-1 text-right ${isMe ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+											</div>
+											<div className='flex items-center gap-0.5 px-1'>
+												<span className='text-[10px] text-muted-foreground'>
 													{fullTime(msg.created_at)}
-												</p>
+												</span>
+												{isMe && (
+													<CheckCheck
+														className={`h-3 w-3 ${
+															msg.is_read
+																? "text-green-500"
+																: "text-muted-foreground/50"
+														}`}
+													/>
+												)}
 											</div>
 										</div>
 									);
