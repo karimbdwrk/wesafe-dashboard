@@ -60,9 +60,10 @@ export const sidebarItems: NavGroup[] = [
         icon: Briefcase,
       },
       {
-        title: "Finance",
-        url: "/dashboard/finance",
-        icon: Banknote,
+        title: "Messagerie",
+        url: "/dashboard/coming-soon",
+        icon: MessageSquare,
+        // comingSoon: true,
       },
       // {
       //   title: "Analytics",
@@ -92,7 +93,7 @@ export const sidebarItems: NavGroup[] = [
   },
   {
     id: 2,
-    label: "Pages",
+    label: "Analytics",
     items: [
       // {
       //   title: "Email",
@@ -101,10 +102,9 @@ export const sidebarItems: NavGroup[] = [
       //   comingSoon: true,
       // },
       {
-        title: "Messagerie",
-        url: "/dashboard/coming-soon",
-        icon: MessageSquare,
-        // comingSoon: true,
+        title: "Finance",
+        url: "/dashboard/finance",
+        icon: Banknote,
       },
       // {
       //   title: "Calendar",
