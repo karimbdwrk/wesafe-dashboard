@@ -61,8 +61,22 @@ export default function Page() {
 	// Référence au canal conv:{id} — assignée SEULEMENT après SUBSCRIBED
 	const convChannelRef = useRef(null);
 	const selectedRef = useRef(null);
+	// Canal global pour notifier la sidebar de rafraîchir le badge
+	const badgeBroadcastRef = useRef(null);
 
-	// Charger les conversations + dernier message
+	useEffect(() => {
+		const ch = supabase.channel("global-unread-refresh", {
+			config: { broadcast: { self: false } },
+		});
+		ch.subscribe((status) => {
+			if (status === "SUBSCRIBED") badgeBroadcastRef.current = ch;
+		});
+		return () => {
+			supabase.removeChannel(ch);
+			badgeBroadcastRef.current = null;
+		};
+	}, []);
+
 	useEffect(() => {
 		supabase
 			.from("support_conversations")
@@ -249,6 +263,13 @@ export default function Page() {
 			.eq("is_read", false)
 			.neq("sender_id", SUPERADMIN_ID);
 
+		// Notifier la sidebar de rafraîchir le badge
+		badgeBroadcastRef.current?.send({
+			type: "broadcast",
+			event: "messages-read",
+			payload: {},
+		});
+
 		setConversations((prev) =>
 			prev.map((c) => (c.id === conv.id ? { ...c, unread: 0 } : c)),
 		);
@@ -348,7 +369,15 @@ export default function Page() {
 					supabase
 						.from("support_messages")
 						.update({ is_read: true })
-						.eq("id", msg.id);
+						.eq("id", msg.id)
+						.then(() => {
+							// Notifier la sidebar de rafraîchir le badge
+							badgeBroadcastRef.current?.send({
+								type: "broadcast",
+								event: "messages-read",
+								payload: {},
+							});
+						});
 					setConversations((prev) => {
 						const updated = prev.map((c) =>
 							c.id === selectedRef.current?.id
