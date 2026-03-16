@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
 	Sheet,
@@ -50,6 +49,7 @@ export function NotificationsDrawer() {
 			.from("notifications")
 			.select("*")
 			.eq("recipient_id", SUPERADMIN_ID)
+			.neq("type", "support_message")
 			.order("created_at", { ascending: false })
 			.then(async ({ data, error }) => {
 				if (error) {
@@ -152,7 +152,7 @@ export function NotificationsDrawer() {
 						</div>
 					</SheetHeader>
 
-					<ScrollArea className='flex-1'>
+					<div className='flex-1 overflow-y-auto min-h-0'>
 						{notifications.length === 0 ? (
 							<div className='flex flex-col items-center justify-center gap-2 text-center text-muted-foreground py-20'>
 								<Bell className='h-8 w-8 opacity-20' />
@@ -209,7 +209,7 @@ export function NotificationsDrawer() {
 								))}
 							</div>
 						)}
-					</ScrollArea>
+					</div>
 				</SheetContent>
 			</Sheet>
 		</>
