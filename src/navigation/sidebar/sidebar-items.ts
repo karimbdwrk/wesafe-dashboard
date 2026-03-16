@@ -61,7 +61,7 @@ export const sidebarItems: NavGroup[] = [
       },
       {
         title: "Messagerie",
-        url: "/dashboard/coming-soon",
+        url: "/dashboard/messages",
         icon: MessageSquare,
         // comingSoon: true,
       },
