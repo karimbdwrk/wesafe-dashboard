@@ -154,35 +154,28 @@ export function NavMain({ items }: NavMainProps) {
   const { state, isMobile } = useSidebar();
   const [unreadMessages, setUnreadMessages] = useState(0);
 
-  // Charger le nombre de messages non lus + écouter les nouveaux en realtime
+  // Charger le nombre de messages non lus + écouter les changements en realtime
   useEffect(() => {
-    supabase
-      .from("support_messages")
-      .select("id", { count: "exact", head: true })
-      .eq("is_read", false)
-      .neq("sender_id", SUPERADMIN_ID)
-      .then(({ count }) => setUnreadMessages(count ?? 0));
+    async function fetchCount() {
+      const { count } = await supabase
+        .from("support_messages")
+        .select("id", { count: "exact", head: true })
+        .eq("is_read", false)
+        .neq("sender_id", SUPERADMIN_ID);
+      setUnreadMessages(count ?? 0);
+    }
 
+    fetchCount();
+
+    // À chaque INSERT (nouveau message entrant) ou signal de lecture → recompte en base
     const channel = supabase
-      .channel("nav-unread-messages")
+      .channel("global-unread-refresh")
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "support_messages" },
-        (payload) => {
-          if (payload.new.sender_id !== SUPERADMIN_ID && !payload.new.is_read) {
-            setUnreadMessages((prev) => prev + 1);
-          }
-        },
+        () => fetchCount(),
       )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "support_messages" },
-        (payload) => {
-          if (payload.new.is_read && !payload.old.is_read) {
-            setUnreadMessages((prev) => Math.max(0, prev - 1));
-          }
-        },
-      )
+      .on("broadcast", { event: "messages-read" }, () => fetchCount())
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
