@@ -396,12 +396,29 @@ export default function Page() {
 		convChannel
 			.on("broadcast", { event: "typing" }, ({ payload }) => {
 				if (payload?.sender_id === SUPERADMIN_ID) return;
-				markOnline(); // typing reçu → participant en ligne (même signal)
+				markOnline();
 				setIsTyping(true);
 				clearTimeout(typingTimeoutRef.current);
 				typingTimeoutRef.current = setTimeout(
 					() => setIsTyping(false),
 					3000,
+				);
+			})
+			.on("broadcast", { event: "online" }, ({ payload }) => {
+				// L'app user signale qu'elle est sur la conversation
+				if (payload?.sender_id === SUPERADMIN_ID) return;
+				markOnline();
+			})
+			.on("broadcast", { event: "read_receipt" }, ({ payload }) => {
+				// L'app user a lu les messages → double check vert immédiat
+				if (payload?.sender_id === SUPERADMIN_ID) return;
+				markOnline();
+				setMessages((prev) =>
+					prev.map((m) =>
+						m.sender_id === SUPERADMIN_ID
+							? { ...m, is_read: true }
+							: m,
+					),
 				);
 			})
 			// ⚠️ Assigner la ref SEULEMENT après SUBSCRIBED pour que .send() marche
