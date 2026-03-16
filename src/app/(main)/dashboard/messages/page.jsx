@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Send, MessageSquare, CheckCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase/supabaseClient";
+import { sendSupportNotification } from "@/server/server-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -279,6 +280,15 @@ export default function Page() {
 				event: "new_message",
 				payload: data,
 			});
+			// Notification uniquement si le participant n'est pas en ligne sur la conversation
+			// Passe par une server action (service_role) pour bypasser les RLS Supabase
+			if (!convParticipantOnline && selected.participantId) {
+				sendSupportNotification({
+					recipientId: selected.participantId,
+					conversationId: selected.id,
+					messageContent: data.content,
+				});
+			}
 			setConversations((prev) => {
 				const updated = prev.map((c) =>
 					c.id === selected.id ? { ...c, lastMessage: data } : c,
