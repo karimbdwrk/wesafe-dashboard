@@ -24,6 +24,7 @@ type Notification = {
 	type: string;
 	is_read: boolean;
 	created_at: string;
+	actor_id: string | null;
 	entity_type: string | null;
 	metadata: Record<string, string> | null;
 };
@@ -42,6 +43,7 @@ function timeAgo(dateStr: string) {
 export function NotificationsDrawer() {
 	const [open, setOpen] = useState(false);
 	const [notifications, setNotifications] = useState<Notification[]>([]);
+	const [actorNames, setActorNames] = useState<Record<string, string>>({});
 
 	useEffect(() => {
 		supabase
@@ -49,12 +51,37 @@ export function NotificationsDrawer() {
 			.select("*")
 			.eq("recipient_id", SUPERADMIN_ID)
 			.order("created_at", { ascending: false })
-			.then(({ data, error }) => {
+			.then(async ({ data, error }) => {
 				if (error) {
 					console.error("[NotificationsDrawer] Erreur:", error.message);
-				} else {
-					setNotifications((data as Notification[]) ?? []);
+					return;
 				}
+				const notifs = (data as Notification[]) ?? [];
+				setNotifications(notifs);
+
+				// Récupérer les noms des acteurs
+				const ids = [...new Set(notifs.map((n) => n.actor_id).filter(Boolean))] as string[];
+				if (ids.length === 0) return;
+
+				const [{ data: profiles }, { data: companies }] = await Promise.all([
+					supabase
+						.from("profiles")
+						.select("id, firstname, lastname")
+						.in("id", ids),
+					supabase
+						.from("companies")
+						.select("id, name")
+						.in("id", ids),
+				]);
+
+				const map: Record<string, string> = {};
+				profiles?.forEach((p) => {
+					map[p.id] = `${p.firstname || ""} ${p.lastname || ""}`.trim() || "Candidat";
+				});
+				companies?.forEach((c) => {
+					map[c.id] = c.name || "Entreprise";
+				});
+				setActorNames(map);
 			});
 	}, []);
 
@@ -152,6 +179,11 @@ export function NotificationsDrawer() {
 													<span className='mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary' />
 												)}
 											</div>
+											{notif.actor_id && actorNames[notif.actor_id] && (
+												<p className='text-xs font-medium text-foreground mt-0.5'>
+													{actorNames[notif.actor_id]}
+												</p>
+											)}
 											{notif.body && (
 												<p className='text-xs text-muted-foreground mt-0.5 line-clamp-2'>
 													{notif.body}
