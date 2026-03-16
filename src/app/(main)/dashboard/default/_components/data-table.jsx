@@ -200,7 +200,13 @@ const jobsColumns = [
 		),
 		cell: ({ row }) => (
 			<div className='flex items-center gap-1.5'>
-				<span className='font-medium'>{row.original.title || "—"}</span>
+				<a
+					href={`http://localhost:3000/jobs/${row.original.id}`}
+					target='_blank'
+					rel='noopener noreferrer'
+					className='font-medium hover:underline'>
+					{row.original.title || "—"}
+				</a>
 				{row.original.isLastMinute && (
 					<TooltipProvider>
 						<Tooltip>
