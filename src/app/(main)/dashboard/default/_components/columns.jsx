@@ -74,11 +74,8 @@ async function sendDocumentStatusNotification({ doc, tableName, newStatus }) {
 async function getSignedUrl(url) {
 	if (!url) return "";
 
-	// URL déjà signée (token présent) → on la retourne directement
-	if (url.includes("token=")) return url;
-
 	// Gère tous les types Supabase : public, authenticated, sign, etc.
-	// On signe TOUJOURS pour contourner les politiques RLS, même sur bucket public
+	// On extrait bucket + path depuis l'URL (le [^?#]+ ignore le token existant)
 	const match = url.match(/storage\/v1\/object\/[^/]+\/([^/]+)\/([^?#]+)/);
 	if (!match) {
 		console.warn("[getSignedUrl] URL non reconnue :", url);
@@ -90,7 +87,7 @@ async function getSignedUrl(url) {
 
 	const { data, error } = await supabase.storage
 		.from(bucket)
-		.createSignedUrl(path, 60 * 60 * 24);
+		.createSignedUrl(path, 60 * 60 * 24 * 7); // 7 jours
 
 	if (error) {
 		console.error("[getSignedUrl] Erreur :", error.message, {
@@ -179,19 +176,6 @@ function SocialSecurityModal({ row }) {
 		other: "Autre document",
 	};
 
-	useEffect(() => {
-		async function signUrl() {
-			if (row.original.social_security_document_url) {
-				setSignedUrl(
-					await getSignedUrl(
-						row.original.social_security_document_url,
-					),
-				);
-			}
-		}
-		signUrl();
-	}, [row.original.social_security_document_url]);
-
 	const handleChange = async () => {
 		await supabase
 			.from("profiles")
@@ -207,7 +191,18 @@ function SocialSecurityModal({ row }) {
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={setOpen}>
+		<Dialog
+			open={open}
+			onOpenChange={async (isOpen) => {
+				setOpen(isOpen);
+				if (isOpen && row.original.social_security_document_url) {
+					setSignedUrl(
+						await getSignedUrl(
+							row.original.social_security_document_url,
+						),
+					);
+				}
+			}}>
 			<DialogTrigger asChild>
 				<span style={{ cursor: "pointer" }}>
 					{getStatusBadge(
@@ -429,23 +424,6 @@ function IdVerificationModal({ row }) {
 		return [];
 	})();
 
-	useEffect(() => {
-		async function signUrls() {
-			const results = await Promise.all(
-				urls.map((url) => getSignedUrl(url)),
-			);
-			setSignedUrls(results);
-		}
-		signUrls();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [
-		row.original.national_id_front_url,
-		row.original.national_id_back_url,
-		row.original.passport_url,
-		row.original.residence_permit_front_url,
-		row.original.residence_permit_back_url,
-	]);
-
 	const searchNationality = async (query) => {
 		if (query.length < 3) {
 			setNationalitySuggestions([]);
@@ -524,7 +502,17 @@ function IdVerificationModal({ row }) {
 
 	return (
 		<>
-			<Dialog open={open} onOpenChange={setOpen}>
+			<Dialog
+				open={open}
+				onOpenChange={async (isOpen) => {
+					setOpen(isOpen);
+					if (isOpen && urls.length > 0) {
+						const results = await Promise.all(
+							urls.map((url) => getSignedUrl(url)),
+						);
+						setSignedUrls(results);
+					}
+				}}>
 				<DialogTrigger asChild>
 					<span
 						onClick={() => setOpen(true)}
