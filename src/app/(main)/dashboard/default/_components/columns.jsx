@@ -1,3 +1,5 @@
+import React from "react";
+
 import { ColumnDef } from "@tanstack/react-table";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -98,6 +100,29 @@ async function getSignedUrl(url) {
 	}
 
 	return data?.signedUrl || url;
+}
+
+function AvatarWithFallback({ url, firstname, lastname }) {
+	const [error, setError] = React.useState(false);
+	const initials =
+		`${firstname?.[0] || ""}${lastname?.[0] || ""}`.toUpperCase() || "?";
+	if (!url || error) {
+		return (
+			<div className='h-8 w-8 rounded-full bg-black flex items-center justify-center shrink-0'>
+				<span className='text-xs text-white font-semibold leading-none'>
+					{initials}
+				</span>
+			</div>
+		);
+	}
+	return (
+		<img
+			src={url}
+			alt='avatar'
+			className='h-8 w-8 rounded-full object-cover shrink-0'
+			onError={() => setError(true)}
+		/>
+	);
 }
 
 function getStatusBadge(status) {
@@ -1232,13 +1257,11 @@ export const dashboardColumns = [
 		accessorKey: "avatar_url",
 		header: "Avatar",
 		cell: ({ row }) => (
-			<Avatar>
-				<img
-					src={row.original.avatar_url}
-					alt='avatar'
-					className='h-8 w-8 rounded-full'
-				/>
-			</Avatar>
+			<AvatarWithFallback
+				url={row.original.avatar_url}
+				firstname={row.original.firstname}
+				lastname={row.original.lastname}
+			/>
 		),
 	},
 	{
