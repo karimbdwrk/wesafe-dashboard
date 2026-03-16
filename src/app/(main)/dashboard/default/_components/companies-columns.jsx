@@ -338,6 +338,23 @@ export const companiesColumns = [
 		enableSorting: false,
 	},
 	{
+		id: "lastminute_credits",
+		accessorKey: "lastminute_credits",
+		header: "Crédits Last Minute",
+		cell: ({ row }) => {
+			const credits = row.original.last_minute_credits ?? 0;
+			return (
+				<Badge
+					variant='outline'
+					className={`flex items-center gap-1 w-fit ${credits > 0 ? "bg-orange-50 border-amber-400" : ""}`}>
+					<span>⚡</span>
+					{credits}
+				</Badge>
+			);
+		},
+		enableSorting: true,
+	},
+	{
 		id: "actions",
 		header: "Actions",
 		cell: ({ row }) => (
