@@ -68,7 +68,6 @@ function parseListField(value) {
 }
 
 function getSalaryDisplay(job) {
-	if (!job.salary_type) return null;
 	if (job.salary_type === "selon_profil") return "Selon profil";
 	if (job.salary_hourly) return `${job.salary_hourly} €/h`;
 	if (job.salary_monthly_min && job.salary_monthly_max)
@@ -80,7 +79,7 @@ function getSalaryDisplay(job) {
 	if (job.salary_min && job.salary_max)
 		return `${job.salary_min} – ${job.salary_max} €`;
 	if (job.salary_amount) return `${job.salary_amount} €`;
-	return null;
+	return "Selon profil";
 }
 
 export default function JobPage() {
