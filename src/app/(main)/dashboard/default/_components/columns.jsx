@@ -857,6 +857,48 @@ function DocumentStatusDialog({
 							</div>
 						)}
 
+						{/* Dates */}
+						{(doc.expires_at ||
+							doc.obtained_at ||
+							doc.issued_at) && (
+							<div className='flex flex-wrap gap-x-4 gap-y-1 text-sm'>
+								{doc.expires_at &&
+									(() => {
+										const expDate = new Date(
+											doc.expires_at,
+										);
+										const isExpired = expDate < new Date();
+										return (
+											<span
+												className={`flex items-center gap-1.5 font-medium ${isExpired ? "text-red-600" : "text-muted-foreground"}`}>
+												<Calendar className='w-4 h-4' />
+												{isExpired
+													? `Expiré depuis le ${expDate.toLocaleDateString("fr-FR")}`
+													: `Expire le ${expDate.toLocaleDateString("fr-FR")}`}
+											</span>
+										);
+									})()}
+								{doc.obtained_at && (
+									<span className='flex items-center gap-1.5 text-muted-foreground'>
+										<Calendar className='w-4 h-4' />
+										Obtenu le{" "}
+										{new Date(
+											doc.obtained_at,
+										).toLocaleDateString("fr-FR")}
+									</span>
+								)}
+								{doc.issued_at && (
+									<span className='flex items-center gap-1.5 text-muted-foreground'>
+										<Calendar className='w-4 h-4' />
+										Délivré le{" "}
+										{new Date(
+											doc.issued_at,
+										).toLocaleDateString("fr-FR")}
+									</span>
+								)}
+							</div>
+						)}
+
 						{/* Statut */}
 						<div className='space-y-2'>
 							<p className='text-sm font-medium text-muted-foreground'>
