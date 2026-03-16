@@ -87,7 +87,7 @@ export function NotificationsDrawer() {
 	return (
 		<>
 			<Button
-				variant='ghost'
+				variant='outline'
 				size='icon'
 				className='relative'
 				onClick={() => setOpen(true)}
@@ -113,7 +113,7 @@ export function NotificationsDrawer() {
 									</Badge>
 								)}
 							</SheetTitle>
-							{unreadCount > 0 && (
+							{/* {unreadCount > 0 && (
 								<Button
 									variant='ghost'
 									size='sm'
@@ -121,7 +121,7 @@ export function NotificationsDrawer() {
 									onClick={markAllAsRead}>
 									Tout marquer lu
 								</Button>
-							)}
+							)} */}
 						</div>
 					</SheetHeader>
 
