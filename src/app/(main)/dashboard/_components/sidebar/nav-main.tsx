@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { ChevronRight, MailIcon, PlusCircleIcon } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
@@ -26,6 +28,9 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import type { NavGroup, NavMainItem } from "@/navigation/sidebar/sidebar-items";
+import { supabase } from "@/lib/supabase/supabaseClient";
+
+const SUPERADMIN_ID = "c5f72d6f-7ab4-4e19-8b3b-12714740efad";
 
 interface NavMainProps {
   readonly items: readonly NavGroup[];
@@ -39,10 +44,12 @@ const NavItemExpanded = ({
   item,
   isActive,
   isSubmenuOpen,
+  badge,
 }: {
   item: NavMainItem;
   isActive: (url: string, subItems?: NavMainItem["subItems"]) => boolean;
   isSubmenuOpen: (subItems?: NavMainItem["subItems"]) => boolean;
+  badge?: React.ReactNode;
 }) => {
   return (
     <Collapsible key={item.title} asChild defaultOpen={isSubmenuOpen(item.subItems)} className="group/collapsible">
@@ -70,6 +77,7 @@ const NavItemExpanded = ({
                 {item.icon && <item.icon />}
                 <span>{item.title}</span>
                 {item.comingSoon && <IsComingSoon />}
+                {badge}
               </Link>
             </SidebarMenuButton>
           )}
@@ -144,6 +152,41 @@ const NavItemCollapsed = ({
 export function NavMain({ items }: NavMainProps) {
   const path = usePathname();
   const { state, isMobile } = useSidebar();
+  const [unreadMessages, setUnreadMessages] = useState(0);
+
+  // Charger le nombre de messages non lus + écouter les nouveaux en realtime
+  useEffect(() => {
+    supabase
+      .from("support_messages")
+      .select("id", { count: "exact", head: true })
+      .eq("is_read", false)
+      .neq("sender_id", SUPERADMIN_ID)
+      .then(({ count }) => setUnreadMessages(count ?? 0));
+
+    const channel = supabase
+      .channel("nav-unread-messages")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "support_messages" },
+        (payload) => {
+          if (payload.new.sender_id !== SUPERADMIN_ID && !payload.new.is_read) {
+            setUnreadMessages((prev) => prev + 1);
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "support_messages" },
+        (payload) => {
+          if (payload.new.is_read && !payload.old.is_read) {
+            setUnreadMessages((prev) => Math.max(0, prev - 1));
+          }
+        },
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   const isItemActive = (url: string, subItems?: NavMainItem["subItems"]) => {
     if (subItems?.length) {
@@ -190,6 +233,9 @@ export function NavMain({ items }: NavMainProps) {
                 if (state === "collapsed" && !isMobile) {
                   // If no subItems, just render the button as a link
                   if (!item.subItems) {
+                    const msgBadge = item.url === "/dashboard/messages" && unreadMessages > 0
+                      ? <Badge className="ml-auto h-4 min-w-4 px-1 text-[10px] rounded-full">{unreadMessages > 99 ? "99+" : unreadMessages}</Badge>
+                      : null;
                     return (
                       <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton
@@ -201,6 +247,7 @@ export function NavMain({ items }: NavMainProps) {
                           <Link prefetch={false} href={item.url} target={item.newTab ? "_blank" : undefined}>
                             {item.icon && <item.icon />}
                             <span>{item.title}</span>
+                            {msgBadge}
                           </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
@@ -210,8 +257,11 @@ export function NavMain({ items }: NavMainProps) {
                   return <NavItemCollapsed key={item.title} item={item} isActive={isItemActive} />;
                 }
                 // Expanded view
+                const expandedBadge = item.url === "/dashboard/messages" && unreadMessages > 0
+                  ? <Badge className="ml-auto h-4 min-w-4 px-1 text-[10px] rounded-full">{unreadMessages > 99 ? "99+" : unreadMessages}</Badge>
+                  : undefined;
                 return (
-                  <NavItemExpanded key={item.title} item={item} isActive={isItemActive} isSubmenuOpen={isSubmenuOpen} />
+                  <NavItemExpanded key={item.title} item={item} isActive={isItemActive} isSubmenuOpen={isSubmenuOpen} badge={expandedBadge} />
                 );
               })}
             </SidebarMenu>
