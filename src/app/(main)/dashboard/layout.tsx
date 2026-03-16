@@ -14,6 +14,7 @@ import { AccountSwitcher } from "./_components/sidebar/account-switcher";
 import { LayoutControls } from "./_components/sidebar/layout-controls";
 import { SearchDialog } from "./_components/sidebar/search-dialog";
 import { ThemeSwitcher } from "./_components/sidebar/theme-switcher";
+import { NotificationsDrawer } from "./_components/sidebar/notifications-drawer";
 // import LogoutButton from "@/app/(main)/dashboard/_components/LogoutButton";
 
 export default async function Layout({ children }: Readonly<{ children: ReactNode }>) {
@@ -49,9 +50,10 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
               <SearchDialog />
             </div>
             <div className="flex items-center gap-2">
-              <LayoutControls />
+              {/* <LayoutControls /> */}
               <ThemeSwitcher />
-              <AccountSwitcher users={users} />
+              <NotificationsDrawer />
+              {/* <AccountSwitcher users={users} /> */}
               {/* <LogoutButton /> */}
             </div>
           </div>
