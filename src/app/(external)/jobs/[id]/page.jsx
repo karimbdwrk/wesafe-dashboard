@@ -259,33 +259,33 @@ export default function JobPage() {
 					</p>
 				)}
 
-				{/* Avantages */}
-				{(job.accommodations ||
-					job.packed_lunch ||
-					job.reimbursements ||
-					job.vacations) && (
-					<div className='mt-8'>
-						<h2 className='text-sm font-semibold mb-3'>
-							Avantages
-						</h2>
-						<div className='flex flex-wrap gap-2'>
-							{job.accommodations && (
-								<Badge variant='secondary'>Logement</Badge>
-							)}
-							{job.packed_lunch && (
-								<Badge variant='secondary'>Panier repas</Badge>
-							)}
-							{job.reimbursements && (
-								<Badge variant='secondary'>
-									Remboursements
-								</Badge>
-							)}
-							{job.vacations && (
-								<Badge variant='secondary'>Congés payés</Badge>
+				{/* Missions */}
+				{(() => {
+					const items = parseListField(job.missions);
+					if (!items) return null;
+					return (
+						<div className='mt-2'>
+							<h2 className='text-sm font-semibold mb-2'>
+								Missions
+							</h2>
+							{Array.isArray(items) ? (
+								<ul className='list-disc list-inside space-y-1'>
+									{items.map((item, i) => (
+										<li
+											key={i}
+											className='text-sm text-foreground'>
+											{item}
+										</li>
+									))}
+								</ul>
+							) : (
+								<p className='text-sm text-foreground whitespace-pre-wrap leading-relaxed'>
+									{items}
+								</p>
 							)}
 						</div>
-					</div>
-				)}
+					);
+				})()}
 
 				{/* Profil recherché */}
 				{(() => {
@@ -315,33 +315,33 @@ export default function JobPage() {
 					);
 				})()}
 
-				{/* Missions */}
-				{(() => {
-					const items = parseListField(job.missions);
-					if (!items) return null;
-					return (
-						<div className='mt-8'>
-							<h2 className='text-sm font-semibold mb-2'>
-								Missions
-							</h2>
-							{Array.isArray(items) ? (
-								<ul className='list-disc list-inside space-y-1'>
-									{items.map((item, i) => (
-										<li
-											key={i}
-											className='text-sm text-foreground'>
-											{item}
-										</li>
-									))}
-								</ul>
-							) : (
-								<p className='text-sm text-foreground whitespace-pre-wrap leading-relaxed'>
-									{items}
-								</p>
+				{/* Avantages */}
+				{(job.accommodations ||
+					job.packed_lunch ||
+					job.reimbursements ||
+					job.vacations) && (
+					<div className='mt-8'>
+						<h2 className='text-sm font-semibold mb-3'>
+							Avantages
+						</h2>
+						<div className='flex flex-wrap gap-2'>
+							{job.accommodations && (
+								<Badge variant='secondary'>Logement</Badge>
+							)}
+							{job.packed_lunch && (
+								<Badge variant='secondary'>Panier repas</Badge>
+							)}
+							{job.reimbursements && (
+								<Badge variant='secondary'>
+									Remboursements
+								</Badge>
+							)}
+							{job.vacations && (
+								<Badge variant='secondary'>Congés payés</Badge>
 							)}
 						</div>
-					);
-				})()}
+					</div>
+				)}
 
 				{/* Footer */}
 				<div className='mt-10 pt-6 border-t text-xs text-muted-foreground'>
