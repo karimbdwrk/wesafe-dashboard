@@ -468,9 +468,30 @@ const applicationsColumns = [
 			<DataTableColumnHeader column={column} title="Offre d'emploi" />
 		),
 		cell: ({ row }) => (
-			<span className='font-medium text-sm truncate block'>
-				{row.original.jobs?.title || "—"}
-			</span>
+			<div className='flex items-center gap-1.5'>
+				<span className='font-medium text-sm truncate'>
+					{row.original.jobs?.title || "—"}
+				</span>
+				{row.original.jobs?.isLastMinute && (
+					<TooltipProvider>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Zap
+									className='w-3.5 h-3.5 text-yellow-500 shrink-0 cursor-default'
+									fill='currentColor'
+								/>
+							</TooltipTrigger>
+							<TooltipContent className='flex items-center gap-1.5'>
+								<Zap
+									className='w-3 h-3 text-yellow-500'
+									fill='currentColor'
+								/>
+								<span>Last Minute</span>
+							</TooltipContent>
+						</Tooltip>
+					</TooltipProvider>
+				)}
+			</div>
 		),
 		size: 200,
 	},
@@ -946,7 +967,7 @@ export function DataTable({
 		supabase
 			.from("applications")
 			.select(
-				"*, jobs(title), companies!company_id(name, logo_url), profiles!candidate_id(firstname, lastname, avatar_url)",
+				"*, jobs(title, isLastMinute), companies!company_id(name, logo_url), profiles!candidate_id(firstname, lastname, avatar_url)",
 			)
 			.order("created_at", { ascending: false })
 			.then(({ data, error }) => {
