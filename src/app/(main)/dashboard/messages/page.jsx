@@ -317,14 +317,14 @@ export default function Page() {
 		clearTimeout(onlineTimeoutRef.current);
 
 		// Marquer le participant comme en ligne + démarrer un timeout d'inactivité.
-		// Appelé à chaque signal reçu (typing OU nouveau message).
+		// Appelé à chaque signal reçu (typing, online, pong, nouveau message).
+		// Timeout réduit à 12s : si 2 pings consécutifs sans réponse → offline
 		function markOnline() {
 			setConvParticipantOnline(true);
 			clearTimeout(onlineTimeoutRef.current);
-			// 30 secondes sans aucune activité → offline
 			onlineTimeoutRef.current = setTimeout(
 				() => setConvParticipantOnline(false),
-				30_000,
+				12_000,
 			);
 		}
 
@@ -342,7 +342,7 @@ export default function Page() {
 				(payload) => {
 					const msg = payload.new;
 					if (msg.sender_id === SUPERADMIN_ID) return;
-					markOnline(); // message reçu → participant en ligne
+					markOnline();
 					setMessages((prev) => [...prev, msg]);
 					setIsTyping(false);
 					supabase
@@ -376,7 +376,6 @@ export default function Page() {
 					const updated = payload.new;
 					if (updated.conversation_id !== selectedRef.current?.id)
 						return;
-					// Mettre à jour is_read dans la liste locale (double check vert)
 					setMessages((prev) =>
 						prev.map((m) =>
 							m.id === updated.id
@@ -388,10 +387,13 @@ export default function Page() {
 			)
 			.subscribe();
 
-		// 2. Canal broadcast uniquement (plus de Presence côté admin)
+		// 2. Canal broadcast — typing, online, pong, read_receipt
 		const convChannel = supabase.channel(`conv-${selected.id}`, {
 			config: { broadcast: { self: false } },
 		});
+
+		// Intervalle ping toutes les 5s — démarré après SUBSCRIBED
+		let pingInterval = null;
 
 		convChannel
 			.on("broadcast", { event: "typing" }, ({ payload }) => {
@@ -405,12 +407,15 @@ export default function Page() {
 				);
 			})
 			.on("broadcast", { event: "online" }, ({ payload }) => {
-				// L'app user signale qu'elle est sur la conversation
+				if (payload?.sender_id === SUPERADMIN_ID) return;
+				markOnline();
+			})
+			.on("broadcast", { event: "pong" }, ({ payload }) => {
+				// Réponse au ping du dashboard → participant toujours en ligne
 				if (payload?.sender_id === SUPERADMIN_ID) return;
 				markOnline();
 			})
 			.on("broadcast", { event: "read_receipt" }, ({ payload }) => {
-				// L'app user a lu les messages → double check vert immédiat
 				if (payload?.sender_id === SUPERADMIN_ID) return;
 				markOnline();
 				setMessages((prev) =>
@@ -421,14 +426,24 @@ export default function Page() {
 					),
 				);
 			})
-			// ⚠️ Assigner la ref SEULEMENT après SUBSCRIBED pour que .send() marche
 			.subscribe((status) => {
 				if (status === "SUBSCRIBED") {
 					convChannelRef.current = convChannel;
+					// Ping immédiat puis toutes les 5s
+					const sendPing = () => {
+						convChannel.send({
+							type: "broadcast",
+							event: "ping",
+							payload: { sender_id: SUPERADMIN_ID },
+						});
+					};
+					sendPing();
+					pingInterval = setInterval(sendPing, 5000);
 				}
 			});
 
 		return () => {
+			clearInterval(pingInterval);
 			supabase.removeChannel(convChannel);
 			supabase.removeChannel(msgChannel);
 			convChannelRef.current = null;
