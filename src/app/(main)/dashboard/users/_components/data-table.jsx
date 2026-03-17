@@ -62,8 +62,8 @@ function getCompanyStatusBadge(status) {
 			return { color: "success", label: "Active" };
 		case "pending":
 			return { color: "warning", label: "En attente" };
-		case "inactive":
-			return { color: "outline", label: "Inactive" };
+		case "rejected":
+			return { color: "outline", label: "Refusé" };
 		case "suspended":
 			return { color: "destructive", label: "Suspendue" };
 		default:
@@ -563,6 +563,7 @@ export function DataTable({
 	const [companyDialogOpen, setCompanyDialogOpen] = useState(false);
 	const [selectedCompany, setSelectedCompany] = useState(null);
 	const [newStatus, setNewStatus] = useState("");
+	const [companyRejectReason, setCompanyRejectReason] = useState("");
 
 	const [kbisDialogOpen, setKbisDialogOpen] = useState(false);
 	const [newKbisStatus, setNewKbisStatus] = useState("");
@@ -905,6 +906,7 @@ export function DataTable({
 		function handleOpenCompanyStatusDialog(e) {
 			setSelectedCompany(e.detail);
 			setNewStatus(e.detail.company_status);
+			setCompanyRejectReason(e.detail.reject_message ?? "");
 			setCompanyDialogOpen(true);
 		}
 		window.addEventListener(
@@ -920,9 +922,15 @@ export function DataTable({
 	}, []);
 
 	async function handleUpdateStatus() {
+		const updatePayload = { company_status: newStatus };
+		if (newStatus === "suspended" || newStatus === "rejected") {
+			updatePayload.reject_message = companyRejectReason.trim() || null;
+		} else {
+			updatePayload.reject_message = null;
+		}
 		const { data, error } = await supabase
 			.from("companies")
-			.update({ company_status: newStatus })
+			.update(updatePayload)
 			.eq("id", selectedCompany.id)
 			.select();
 		if (!error) {
@@ -2151,7 +2159,7 @@ export function DataTable({
 					</DialogHeader>
 					<div className='flex flex-col gap-4'>
 						<div className='flex gap-2 justify-center'>
-							{["active", "pending", "inactive", "suspended"].map(
+							{["active", "pending", "rejected", "suspended"].map(
 								(status) => {
 									const { color, label } =
 										getCompanyStatusBadge(status);
@@ -2173,6 +2181,29 @@ export function DataTable({
 								},
 							)}
 						</div>
+						{(newStatus === "suspended" ||
+							newStatus === "rejected") && (
+							<div className='flex flex-col gap-1.5'>
+								<label className='text-sm font-medium'>
+									{newStatus === "rejected"
+										? "Raison du refus"
+										: "Raison de la suspension"}
+								</label>
+								<textarea
+									className='w-full rounded-md border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring'
+									rows={3}
+									value={companyRejectReason}
+									onChange={(e) =>
+										setCompanyRejectReason(e.target.value)
+									}
+									placeholder={
+										newStatus === "rejected"
+											? "Expliquer la raison du refus…"
+											: "Expliquer la raison de la suspension…"
+									}
+								/>
+							</div>
+						)}
 						<Button
 							onClick={handleUpdateStatus}
 							disabled={
