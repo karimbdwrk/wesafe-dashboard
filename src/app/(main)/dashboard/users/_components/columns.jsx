@@ -320,7 +320,9 @@ function SocialSecurityModal({ row }) {
 function StatusModal({ row, updateRowStatus }) {
 	const [open, setOpen] = useState(false);
 	const [selected, setSelected] = useState(row.original.profile_status);
-	const [rejectReason, setRejectReason] = useState(row.original.reject_message ?? "");
+	const [rejectReason, setRejectReason] = useState(
+		row.original.reject_message ?? "",
+	);
 
 	const statuses = [
 		{ value: "pending", label: "En attente" },
@@ -374,11 +376,13 @@ function StatusModal({ row, updateRowStatus }) {
 				</div>
 				{selected === "rejected" && (
 					<div className='mt-3 flex flex-col gap-1.5'>
-						<label className='text-sm font-medium'>Raison du refus</label>
+						<label className='text-sm font-medium'>
+							Raison du refus
+						</label>
 						<Textarea
 							value={rejectReason}
 							onChange={(e) => setRejectReason(e.target.value)}
-							placeholder="Expliquer la raison du refus…"
+							placeholder='Expliquer la raison du refus…'
 							rows={3}
 						/>
 					</div>
