@@ -8,8 +8,8 @@ function getCompanyStatusBadge(status) {
 			return { color: "success", label: "Active" };
 		case "pending":
 			return { color: "warning", label: "En attente" };
-		case "inactive":
-			return { color: "outline", label: "Inactive" };
+		case "rejected":
+			return { color: "outline", label: "Refusée" };
 		case "suspended":
 			return { color: "destructive", label: "Suspendue" };
 		default:
@@ -141,10 +141,10 @@ export const companiesColumns = [
 				color = "outline";
 				dotColor = "bg-yellow-400";
 				label = "En attente";
-			} else if (status === "inactive") {
+			} else if (status === "rejected") {
 				color = "outline";
-				dotColor = "bg-gray-400";
-				label = "Inactive";
+				dotColor = "bg-red-400";
+				label = "Refusée";
 			} else if (status === "suspended") {
 				color = "outline";
 				dotColor = "bg-red-500";
