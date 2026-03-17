@@ -388,7 +388,8 @@ function StatusModal({ row, updateRowStatus }) {
 					</div>
 				)}
 				<button
-					className='mt-4 bg-blue-600 text-white px-4 py-2 rounded'
+					className='mt-4 bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed'
+					disabled={selected === "rejected" && !rejectReason.trim()}
 					onClick={handleChange}>
 					Enregistrer
 				</button>
