@@ -15,6 +15,7 @@ import { LayoutControls } from "./_components/sidebar/layout-controls";
 import { SearchDialog } from "./_components/sidebar/search-dialog";
 import { ThemeSwitcher } from "./_components/sidebar/theme-switcher";
 import { NotificationsDrawer } from "./_components/sidebar/notifications-drawer";
+import { NotificationProvider } from "./_components/notification-context";
 // import LogoutButton from "@/app/(main)/dashboard/_components/LogoutButton";
 
 export default async function Layout({ children }: Readonly<{ children: ReactNode }>) {
@@ -26,6 +27,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
   ]);
 
   return (
+    <NotificationProvider>
     <SidebarProvider defaultOpen={defaultOpen}>
       <AppSidebar variant={variant} collapsible={collapsible} />
       <SidebarInset
@@ -61,5 +63,6 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
         <div className="h-full p-4 md:p-6">{children}</div>
       </SidebarInset>
     </SidebarProvider>
+    </NotificationProvider>
   );
 }
