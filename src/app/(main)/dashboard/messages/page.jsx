@@ -484,7 +484,17 @@ export default function Page() {
 	}, [selected?.id]);
 
 	const handleInputChange = useCallback((e) => {
-		setInput(e.target.value);
+		let val = e.target.value;
+		// Auto-capitalise : première lettre et lettre après ". " ou "."
+		if (val.length === 1) {
+			val = val.charAt(0).toUpperCase() + val.slice(1);
+		} else if (val.length > 1) {
+			val = val.replace(
+				/(^|[.!?]\s+)([a-z])/g,
+				(_, prefix, letter) => prefix + letter.toUpperCase(),
+			);
+		}
+		setInput(val);
 		// Pas de broadcast typing côté admin pour ne pas polluer l'app user
 	}, []);
 
