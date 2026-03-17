@@ -53,8 +53,8 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
             </div>
             <div className="flex items-center gap-2">
               {/* <LayoutControls /> */}
-              <ThemeSwitcher />
               <NotificationsDrawer />
+              <ThemeSwitcher />
               {/* <AccountSwitcher users={users} /> */}
               {/* <LogoutButton /> */}
             </div>
