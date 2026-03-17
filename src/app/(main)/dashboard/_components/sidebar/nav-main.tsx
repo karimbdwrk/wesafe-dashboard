@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
 
 import { ChevronRight, MailIcon, PlusCircleIcon } from "lucide-react";
 
@@ -28,9 +27,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import type { NavGroup, NavMainItem } from "@/navigation/sidebar/sidebar-items";
-import { supabase } from "@/lib/supabase/supabaseClient";
-
-const SUPERADMIN_ID = "c5f72d6f-7ab4-4e19-8b3b-12714740efad";
+import { useNotifications } from "../notification-context";
 
 interface NavMainProps {
   readonly items: readonly NavGroup[];
@@ -152,34 +149,7 @@ const NavItemCollapsed = ({
 export function NavMain({ items }: NavMainProps) {
   const path = usePathname();
   const { state, isMobile } = useSidebar();
-  const [unreadMessages, setUnreadMessages] = useState(0);
-
-  // Charger le nombre de messages non lus + écouter les changements en realtime
-  useEffect(() => {
-    async function fetchCount() {
-      const { count } = await supabase
-        .from("support_messages")
-        .select("id", { count: "exact", head: true })
-        .eq("is_read", false)
-        .neq("sender_id", SUPERADMIN_ID);
-      setUnreadMessages(count ?? 0);
-    }
-
-    fetchCount();
-
-    // À chaque INSERT (nouveau message entrant) ou signal de lecture → recompte en base
-    const channel = supabase
-      .channel("global-unread-refresh")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "support_messages" },
-        () => fetchCount(),
-      )
-      .on("broadcast", { event: "messages-read" }, () => fetchCount())
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, []);
+  const { unreadMessages } = useNotifications();
 
   const isItemActive = (url: string, subItems?: NavMainItem["subItems"]) => {
     if (subItems?.length) {
