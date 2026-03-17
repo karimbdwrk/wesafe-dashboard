@@ -30,6 +30,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase/supabaseClient";
 import { DatePicker } from "@/components/ui/date-picker";
+import { Textarea } from "@/components/ui/textarea";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import axios from "axios";
 
@@ -319,6 +320,7 @@ function SocialSecurityModal({ row }) {
 function StatusModal({ row, updateRowStatus }) {
 	const [open, setOpen] = useState(false);
 	const [selected, setSelected] = useState(row.original.profile_status);
+	const [rejectReason, setRejectReason] = useState(row.original.reject_message ?? "");
 
 	const statuses = [
 		{ value: "pending", label: "En attente" },
@@ -328,9 +330,15 @@ function StatusModal({ row, updateRowStatus }) {
 	];
 
 	const handleChange = async () => {
+		const updatePayload = { profile_status: selected };
+		if (selected === "rejected") {
+			updatePayload.reject_message = rejectReason.trim() || null;
+		} else {
+			updatePayload.reject_message = null;
+		}
 		const { error } = await supabase
 			.from("profiles")
-			.update({ profile_status: selected })
+			.update(updatePayload)
 			.eq("id", row.original.id);
 		if (error) {
 			toast.error("Erreur lors de la mise à jour");
@@ -358,12 +366,23 @@ function StatusModal({ row, updateRowStatus }) {
 					{statuses.map((s) => (
 						<button
 							key={s.value}
-							className={`border rounded px-3 py-2 ${selected === s.value ? "bg-blue-100 border-blue-500" : ""}`}
+							className={`border rounded px-3 py-2 text-left ${selected === s.value ? "bg-blue-100 border-blue-500" : ""}`}
 							onClick={() => setSelected(s.value)}>
 							{s.label}
 						</button>
 					))}
 				</div>
+				{selected === "rejected" && (
+					<div className='mt-3 flex flex-col gap-1.5'>
+						<label className='text-sm font-medium'>Raison du refus</label>
+						<Textarea
+							value={rejectReason}
+							onChange={(e) => setRejectReason(e.target.value)}
+							placeholder="Expliquer la raison du refus…"
+							rows={3}
+						/>
+					</div>
+				)}
 				<button
 					className='mt-4 bg-blue-600 text-white px-4 py-2 rounded'
 					onClick={handleChange}>
