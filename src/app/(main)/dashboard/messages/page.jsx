@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Send, MessageSquare, CheckCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase/supabaseClient";
 import { sendSupportNotification } from "@/server/server-actions";
+import { useNotifications } from "@/app/(main)/dashboard/_components/notification-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +46,8 @@ function fullTime(dateStr) {
 }
 
 export default function Page() {
+	const { fetchCount, setActiveConversationId } = useNotifications();
+
 	const [conversations, setConversations] = useState([]);
 	const [actorNames, setActorNames] = useState({});
 	const [selected, setSelected] = useState(null);
@@ -61,21 +64,6 @@ export default function Page() {
 	// Référence au canal conv:{id} — assignée SEULEMENT après SUBSCRIBED
 	const convChannelRef = useRef(null);
 	const selectedRef = useRef(null);
-	// Canal global pour notifier la sidebar de rafraîchir le badge
-	const badgeBroadcastRef = useRef(null);
-
-	useEffect(() => {
-		const ch = supabase.channel("global-unread-refresh", {
-			config: { broadcast: { self: false } },
-		});
-		ch.subscribe((status) => {
-			if (status === "SUBSCRIBED") badgeBroadcastRef.current = ch;
-		});
-		return () => {
-			supabase.removeChannel(ch);
-			badgeBroadcastRef.current = null;
-		};
-	}, []);
 
 	useEffect(() => {
 		supabase
@@ -247,6 +235,7 @@ export default function Page() {
 
 	// Charger les messages d'une conversation
 	async function selectConversation(conv) {
+		setActiveConversationId(conv.id);
 		setSelected(conv);
 		const { data } = await supabase
 			.from("support_messages")
@@ -263,12 +252,8 @@ export default function Page() {
 			.eq("is_read", false)
 			.neq("sender_id", SUPERADMIN_ID);
 
-		// Notifier la sidebar de rafraîchir le badge
-		badgeBroadcastRef.current?.send({
-			type: "broadcast",
-			event: "messages-read",
-			payload: {},
-		});
+		// Mettre à jour le badge directement via le contexte
+		fetchCount();
 
 		setConversations((prev) =>
 			prev.map((c) => (c.id === conv.id ? { ...c, unread: 0 } : c)),
@@ -372,11 +357,7 @@ export default function Page() {
 						.eq("id", msg.id)
 						.then(() => {
 							// Notifier la sidebar de rafraîchir le badge
-							badgeBroadcastRef.current?.send({
-								type: "broadcast",
-								event: "messages-read",
-								payload: {},
-							});
+							fetchCount();
 						});
 					setConversations((prev) => {
 						const updated = prev.map((c) =>
@@ -480,6 +461,7 @@ export default function Page() {
 			setConvParticipantOnline(false);
 			clearTimeout(typingTimeoutRef.current);
 			clearTimeout(onlineTimeoutRef.current);
+			setActiveConversationId(null);
 		};
 	}, [selected?.id]);
 
