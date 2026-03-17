@@ -27,7 +27,8 @@ export default function Page() {
 				.select(
 					"id, created_at, amount, credits_added, currency, transaction_type, company_id",
 				)
-				.order("created_at", { ascending: false });
+				.order("created_at", { ascending: false })
+				.limit(10000);
 			if (error) {
 				console.error("[transactions] erreur:", error);
 				return;
