@@ -1330,7 +1330,10 @@ export const dashboardColumns = [
 		header: "ID vérif. status",
 		cell: ({ row }) => {
 			return !row.original.id_type ? (
-				<Badge className='bg-gray-200 text-gray-600 border border-gray-300'>
+				<Badge
+					variant='outline'
+					className='inline-flex items-center gap-2 text-gray-400 cursor-default'>
+					<span className='w-2 h-2 rounded-full bg-gray-400' />
 					Aucun document envoyé
 				</Badge>
 			) : (
@@ -1343,7 +1346,10 @@ export const dashboardColumns = [
 		header: "Sécu vérif. status",
 		cell: ({ row }) => {
 			return !row.original.social_security_verification_status ? (
-				<Badge className='bg-gray-200 text-gray-600 border border-gray-300 cursor-default'>
+				<Badge
+					variant='outline'
+					className='inline-flex items-center gap-2 text-gray-400 cursor-default'>
+					<span className='w-2 h-2 rounded-full bg-gray-400' />
 					Aucun document envoyé
 				</Badge>
 			) : (
