@@ -38,6 +38,7 @@ export function ChartAreaInteractive() {
           console.error("[transactions] erreur:", error);
           return;
         }
+        console.log('[transactions] data:', data);
         const byDay: Record<string, { revenue: number; credits: number }> = {};
         for (const row of data ?? []) {
           const day = row.created_at.slice(0, 10);
