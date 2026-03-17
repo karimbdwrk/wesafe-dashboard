@@ -1,9 +1,11 @@
 "use client";
+
+import { useEffect, useState } from "react";
+
 import { ChartAreaInteractive } from "./_components/chart-area-interactive";
 import data from "./_components/data.json";
 import { DataTable } from "./_components/data-table";
 import { SectionCards } from "./_components/section-cards";
-import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/supabaseClient";
 
 export default function Page() {
