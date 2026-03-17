@@ -22,18 +22,27 @@ export default function Page() {
 
 	useEffect(() => {
 		async function fetchTransactions() {
-			const { data: txData, error } = await supabase
-				.from("transactions")
-				.select(
-					"id, created_at, amount, credits_added, currency, transaction_type, company_id",
-				)
-				.order("created_at", { ascending: false })
-				.limit(10000);
-			if (error) {
-				console.error("[transactions] erreur:", error);
-				return;
+			// Supabase limite à 1000 lignes par requête — on pagine jusqu'à tout récupérer
+			const PAGE_SIZE = 1000;
+			let allRows = [];
+			let from = 0;
+			while (true) {
+				const { data, error } = await supabase
+					.from("transactions")
+					.select(
+						"id, created_at, amount, credits_added, currency, transaction_type, company_id",
+					)
+					.order("created_at", { ascending: false })
+					.range(from, from + PAGE_SIZE - 1);
+				if (error) {
+					console.error("[transactions] erreur:", error);
+					break;
+				}
+				allRows = allRows.concat(data ?? []);
+				if (!data || data.length < PAGE_SIZE) break;
+				from += PAGE_SIZE;
 			}
-			const rows = txData ?? [];
+			const rows = allRows;
 			const companyIds = [
 				...new Set(rows.map((r) => r.company_id).filter(Boolean)),
 			];
