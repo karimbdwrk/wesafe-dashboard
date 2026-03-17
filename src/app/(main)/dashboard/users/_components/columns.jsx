@@ -1410,7 +1410,8 @@ export const dashboardColumns = [
 				return (
 					<Badge
 						variant='outline'
-						className='text-muted-foreground cursor-default'>
+						className='inline-flex items-center gap-2 text-gray-400 cursor-default'>
+						<span className='w-2 h-2 rounded-full bg-gray-400' />
 						Aucune signature
 					</Badge>
 				);
