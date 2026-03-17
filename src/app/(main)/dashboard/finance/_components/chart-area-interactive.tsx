@@ -30,15 +30,24 @@ export function ChartAreaInteractive() {
   const [rawData, setRawData] = React.useState<Record<string, { revenue: number; credits: number }>>({});
 
   React.useEffect(() => {
+    if (isMobile) setTimeRange("7d");
+  }, [isMobile]);
+
+  React.useEffect(() => {
+    const daysToSubtract = timeRange === "7d" ? 7 : timeRange === "30d" ? 30 : timeRange === "90d" ? 90 : timeRange === "180d" ? 180 : 365;
+    const from = new Date();
+    from.setDate(from.getDate() - daysToSubtract);
+    from.setHours(0, 0, 0, 0);
+
     supabase
       .from("transactions")
       .select("created_at, amount, credits_added, currency")
+      .gte("created_at", from.toISOString())
       .then(({ data, error }) => {
         if (error) {
           console.error("[transactions] erreur:", error);
           return;
         }
-        console.log('[transactions] data:', data);
         const byDay: Record<string, { revenue: number; credits: number }> = {};
         for (const row of data ?? []) {
           const day = row.created_at.slice(0, 10);
@@ -48,11 +57,7 @@ export function ChartAreaInteractive() {
         }
         setRawData(byDay);
       });
-  }, []);
-
-  React.useEffect(() => {
-    if (isMobile) setTimeRange("7d");
-  }, [isMobile]);
+  }, [timeRange]);
 
   const filteredData = React.useMemo(() => {
     const daysToSubtract = timeRange === "7d" ? 7 : timeRange === "30d" ? 30 : timeRange === "90d" ? 90 : timeRange === "180d" ? 180 : 365;
