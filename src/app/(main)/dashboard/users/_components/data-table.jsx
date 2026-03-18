@@ -1227,12 +1227,12 @@ export function DataTable({
 							<SelectItem value='companies'>
 								Entreprises
 							</SelectItem>
-							<SelectItem value='jobs'>
+							{/* <SelectItem value='jobs'>
 								Offres d'emploi
 							</SelectItem>
 							<SelectItem value='applications'>
 								Candidatures
-							</SelectItem>
+							</SelectItem> */}
 						</SelectContent>
 					</Select>
 					<TabsList className='@4xl/main:flex hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:bg-muted-foreground/30 **:data-[slot=badge]:px-1'>
@@ -1241,12 +1241,12 @@ export function DataTable({
 							Entreprises
 							<Badge variant='secondary'>3</Badge>
 						</TabsTrigger>
-						<TabsTrigger value='jobs'>
+						{/* <TabsTrigger value='jobs'>
 							Offres d'emploi <Badge variant='secondary'>2</Badge>
 						</TabsTrigger>
 						<TabsTrigger value='applications'>
 							Candidatures
-						</TabsTrigger>
+						</TabsTrigger> */}
 					</TabsList>
 					<div className='flex items-center gap-2'>
 						<DataTableViewOptions table={table} />
