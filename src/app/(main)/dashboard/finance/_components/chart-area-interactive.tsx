@@ -14,20 +14,24 @@ import { supabase } from "@/lib/supabase/supabaseClient";
 export const description = "Revenus journaliers des transactions";
 
 const chartConfig = {
-  revenue: {
-    label: "Revenus (€)",
+  credits: {
+    label: "Crédits & Tokens",
     color: "var(--chart-1)",
   },
-  credits: {
-    label: "Crédits vendus",
+  subscriptions: {
+    label: "Abonnements",
     color: "var(--chart-2)",
+  },
+  sponsorships: {
+    label: "Annonces sponsorisées",
+    color: "var(--chart-3)",
   },
 } satisfies ChartConfig;
 
 export function ChartAreaInteractive() {
   const isMobile = useIsMobile();
   const [timeRange, setTimeRange] = React.useState("90d");
-  const [rawData, setRawData] = React.useState<Record<string, { revenue: number; credits: number }>>({});
+  const [rawData, setRawData] = React.useState<Record<string, { credits: number; subscriptions: number; sponsorships: number }>>({}); 
 
   React.useEffect(() => {
     if (isMobile) setTimeRange("7d");
@@ -41,19 +45,34 @@ export function ChartAreaInteractive() {
 
     supabase
       .from("transactions")
-      .select("created_at, amount, credits_added, currency")
+      .select("created_at, amount, transaction_type")
       .gte("created_at", from.toISOString())
       .then(({ data, error }) => {
         if (error) {
           console.error("[transactions] erreur:", error);
           return;
         }
-        const byDay: Record<string, { revenue: number; credits: number }> = {};
+        const byDay: Record<string, { credits: number; subscriptions: number; sponsorships: number }> = {};
         for (const row of data ?? []) {
           const day = row.created_at.slice(0, 10);
-          if (!byDay[day]) byDay[day] = { revenue: 0, credits: 0 };
-          if (row.currency === "EUR") byDay[day].revenue += row.amount ?? 0;
-          byDay[day].credits += row.credits_added ?? 0;
+          if (!byDay[day]) byDay[day] = { credits: 0, subscriptions: 0, sponsorships: 0 };
+          const type = row.transaction_type;
+          if (type === "credit_purchase" || type === "job_post_oneshot") {
+            byDay[day].credits += row.amount ?? 0;
+          } else if (
+            type === "subscription_standard_plus_monthly" ||
+            type === "subscription_premium_monthly" ||
+            type === "subscription_standard_plus_annual" ||
+            type === "subscription_premium_annual"
+          ) {
+            byDay[day].subscriptions += row.amount ?? 0;
+          } else if (
+            type === "sponsorhip_purchase_one_week" ||
+            type === "sponsorhip_purchase_two_week" ||
+            type === "sponsorhip_purchase_one_month"
+          ) {
+            byDay[day].sponsorships += row.amount ?? 0;
+          }
         }
         setRawData(byDay);
       });
@@ -63,12 +82,12 @@ export function ChartAreaInteractive() {
     const daysToSubtract = timeRange === "7d" ? 7 : timeRange === "30d" ? 30 : timeRange === "90d" ? 90 : timeRange === "180d" ? 180 : 365;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const days: { date: string; revenue: number; credits: number }[] = [];
+    const days: { date: string; credits: number; subscriptions: number; sponsorships: number }[] = [];
     for (let i = daysToSubtract - 1; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
       const key = d.toISOString().slice(0, 10);
-      days.push({ date: key, revenue: rawData[key]?.revenue ?? 0, credits: rawData[key]?.credits ?? 0 });
+      days.push({ date: key, credits: rawData[key]?.credits ?? 0, subscriptions: rawData[key]?.subscriptions ?? 0, sponsorships: rawData[key]?.sponsorships ?? 0 });
     }
     return days;
   }, [timeRange, rawData]);
@@ -78,8 +97,8 @@ export function ChartAreaInteractive() {
       <CardHeader>
         <CardTitle>Revenus des transactions</CardTitle>
         <CardDescription>
-          <span className="@[540px]/card:block hidden">Revenus (€) et crédits vendus par jour</span>
-          <span className="@[540px]/card:hidden">Revenus journaliers</span>
+          <span className="@[540px]/card:block hidden">Crédits & Tokens vs Abonnements (en €)</span>
+          <span className="@[540px]/card:hidden">Crédits vs Abonnements</span>
         </CardDescription>
         <CardAction>
           <ToggleGroup
@@ -117,13 +136,17 @@ export function ChartAreaInteractive() {
         <ChartContainer config={chartConfig} className="aspect-auto h-62 w-full">
           <AreaChart data={filteredData}>
             <defs>
-              <linearGradient id="fillRevenue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="var(--color-revenue)" stopOpacity={1.0} />
-                <stop offset="95%" stopColor="var(--color-revenue)" stopOpacity={0.1} />
-              </linearGradient>
               <linearGradient id="fillCredits" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="var(--color-credits)" stopOpacity={0.8} />
+                <stop offset="5%" stopColor="var(--color-credits)" stopOpacity={1.0} />
                 <stop offset="95%" stopColor="var(--color-credits)" stopOpacity={0.1} />
+              </linearGradient>
+              <linearGradient id="fillSubscriptions" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="var(--color-subscriptions)" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="var(--color-subscriptions)" stopOpacity={0.1} />
+              </linearGradient>
+              <linearGradient id="fillSponsorships" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="var(--color-sponsorships)" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="var(--color-sponsorships)" stopOpacity={0.1} />
               </linearGradient>
             </defs>
             <CartesianGrid vertical={false} />
@@ -146,15 +169,16 @@ export function ChartAreaInteractive() {
                     new Date(value).toLocaleDateString("fr-FR", { month: "short", day: "numeric" })
                   }
                   formatter={(value, name) => [
-                    name === "revenue" ? `${value} €` : `${value} crédits`,
-                    name === "revenue" ? "Revenus" : "Crédits vendus",
+                    `${Number(value).toFixed(2)} €`,
+                    name === "credits" ? "Crédits & Tokens" : name === "subscriptions" ? "Abonnements" : "Annonces sponsorisées",
                   ]}
                   indicator="dot"
                 />
               }
             />
-            <Area dataKey="credits" type="natural" fill="url(#fillCredits)" stroke="var(--color-credits)" stackId="a" />
-            <Area dataKey="revenue" type="natural" fill="url(#fillRevenue)" stroke="var(--color-revenue)" stackId="a" />
+            <Area dataKey="sponsorships" type="monotone" fill="url(#fillSponsorships)" stroke="var(--color-sponsorships)" stackId="a" />
+            <Area dataKey="subscriptions" type="monotone" fill="url(#fillSubscriptions)" stroke="var(--color-subscriptions)" stackId="a" />
+            <Area dataKey="credits" type="monotone" fill="url(#fillCredits)" stroke="var(--color-credits)" stackId="a" />
           </AreaChart>
         </ChartContainer>
       </CardContent>
