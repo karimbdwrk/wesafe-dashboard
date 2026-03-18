@@ -14,6 +14,7 @@ import { NetWorth } from "./_components/kpis/net-worth";
 import { PrimaryAccount } from "./_components/kpis/primary-account";
 import { SavingsRate } from "./_components/kpis/savings-rate";
 import { SpendingBreakdown } from "./_components/spending-breakdown";
+import { SectionCards } from "./_components/section-cards";
 
 import { supabase } from "@/lib/supabase/supabaseClient";
 
@@ -92,7 +93,7 @@ export default function Page() {
 
 				<TabsContent value='overview'>
 					<div className='flex flex-col gap-4 **:data-[slot=card]:shadow-xs'>
-						{/* <div className="grid grid-cols-1 gap-4 *:data-[slot=card]:gap-2 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4"> */}
+						<SectionCards transactions={transactions} />
 						<div className='@container/main flex flex-col gap-4 md:gap-6'>
 							<ChartAreaInteractive />
 							{/* <PrimaryAccount />
