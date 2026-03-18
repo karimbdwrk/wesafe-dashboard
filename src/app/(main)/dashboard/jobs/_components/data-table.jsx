@@ -1209,7 +1209,7 @@ export function DataTable({
 	return (
 		<>
 			<Tabs
-				defaultValue='profiles'
+				defaultValue='jobs'
 				className='w-full flex-col justify-start gap-6'>
 				<div className='flex items-center justify-between'>
 					<Label htmlFor='view-selector' className='sr-only'>
@@ -1223,10 +1223,10 @@ export function DataTable({
 							<SelectValue placeholder='Select a view' />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value='profiles'>Candidats</SelectItem>
+							{/* <SelectItem value='profiles'>Candidats</SelectItem>
 							<SelectItem value='companies'>
 								Entreprises
-							</SelectItem>
+							</SelectItem> */}
 							<SelectItem value='jobs'>
 								Offres d'emploi
 							</SelectItem>
@@ -1236,11 +1236,11 @@ export function DataTable({
 						</SelectContent>
 					</Select>
 					<TabsList className='@4xl/main:flex hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:bg-muted-foreground/30 **:data-[slot=badge]:px-1'>
-						<TabsTrigger value='profiles'>Candidats</TabsTrigger>
+						{/* <TabsTrigger value='profiles'>Candidats</TabsTrigger>
 						<TabsTrigger value='companies'>
 							Entreprises
 							<Badge variant='secondary'>3</Badge>
-						</TabsTrigger>
+						</TabsTrigger> */}
 						<TabsTrigger value='jobs'>
 							Offres d'emploi <Badge variant='secondary'>2</Badge>
 						</TabsTrigger>
