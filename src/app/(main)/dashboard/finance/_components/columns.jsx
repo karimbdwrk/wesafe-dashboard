@@ -1478,13 +1478,25 @@ import { DataTableColumnHeader } from "../../../../../components/data-table/data
 const transactionTypeLabel = {
 	credit_purchase: "Achat crédits",
 	job_post_oneshot: "Publication offre",
-	credit_usage: "Utilisation crédits",
+	subscription_standard_plus_monthly: "Standard+ Mensuel",
+	subscription_premium_monthly: "Premium Mensuel",
+	subscription_standard_plus_annual: "Standard+ Annuel",
+	subscription_premium_annual: "Premium Annuel",
+	sponsorhip_purchase_one_week: "Sponsoring 1 semaine",
+	sponsorhip_purchase_two_week: "Sponsoring 2 semaines",
+	sponsorhip_purchase_one_month: "Sponsoring 1 mois",
 };
 
 const transactionTypeBadgeVariant = {
 	credit_purchase: "success",
-	job_post_oneshot: "default",
-	credit_usage: "warning",
+	job_post_oneshot: "success",
+	subscription_standard_plus_monthly: "default",
+	subscription_premium_monthly: "default",
+	subscription_standard_plus_annual: "default",
+	subscription_premium_annual: "default",
+	sponsorhip_purchase_one_week: "secondary",
+	sponsorhip_purchase_two_week: "secondary",
+	sponsorhip_purchase_one_month: "secondary",
 };
 
 function formatTransactionDate(iso) {
