@@ -44,6 +44,29 @@ export function LoginForm() {
       .eq("id", userId)
       .single();
     if (adminError || !adminData || !(adminData.role === "admin" || adminData.role === "super_admin")) {
+      // Vérifie si c'est un candidat (table profiles)
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", userId)
+        .maybeSingle();
+      if (profileData) {
+        await supabase.auth.signOut();
+        router.push("/unauthorized?role=candidate");
+        return;
+      }
+      // Vérifie si c'est un pro (table companies, id = auth.users.id)
+      const { data: companyData } = await supabase
+        .from("companies")
+        .select("id")
+        .eq("id", userId)
+        .maybeSingle();
+      if (companyData) {
+        await supabase.auth.signOut();
+        router.push("/unauthorized?role=company");
+        return;
+      }
+      await supabase.auth.signOut();
       toast.error("Accès refusé", { description: "Votre compte n'est pas autorisé à accéder à cet espace administrateur." });
       return;
     }
