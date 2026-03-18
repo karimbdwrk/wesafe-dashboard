@@ -59,6 +59,15 @@ const _data = {
   ],
 };
 
+const users = [{
+    id: "1",
+    name: "Super Admin",
+    username: "superadmin",
+    email: "superadmin@example.com",
+    avatar: "https://avatars.githubusercontent.com/u/43849669",
+    role: "administrator",
+  }]
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { sidebarVariant, sidebarCollapsible, isSynced } = usePreferencesStore(
     useShallow((s) => ({
@@ -91,7 +100,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {/* <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={rootUser} />
+        <NavUser user={users[0]} />
       </SidebarFooter>
     </Sidebar>
   );
