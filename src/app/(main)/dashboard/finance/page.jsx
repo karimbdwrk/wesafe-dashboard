@@ -76,36 +76,20 @@ export default function Page() {
 	}, []);
 
 	return (
-		<div>
-			<Tabs className='gap-4' defaultValue='overview'>
-				<TabsList>
-					<TabsTrigger value='overview'>Overview</TabsTrigger>
-					<TabsTrigger disabled value='activity'>
-						Activity
-					</TabsTrigger>
-					<TabsTrigger disabled value='insights'>
-						Insights
-					</TabsTrigger>
-					<TabsTrigger disabled value='utilities'>
-						Utilities
-					</TabsTrigger>
-				</TabsList>
-
-				<TabsContent value='overview'>
-					<div className='flex flex-col gap-4 **:data-[slot=card]:shadow-xs'>
-						<SectionCards transactions={transactions} />
-						<div className='@container/main flex flex-col gap-4 md:gap-6'>
-							<ChartAreaInteractive />
-							{/* <PrimaryAccount />
+		<div className='flex flex-col gap-4 **:data-[slot=card]:shadow-xs'>
+			<SectionCards transactions={transactions} />
+			<div className='@container/main flex flex-col gap-4 md:gap-6'>
+				<ChartAreaInteractive />
+				{/* <PrimaryAccount />
               <NetWorth />
               <MonthlyCashFlow />
               <SavingsRate /> */}
-						</div>
+			</div>
 
-						{/* <div className='grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]'> */}
-						<div className='@container/main flex flex-col gap-4 md:gap-6'>
-							<TransactionsTable transactions={transactions} />
-							{/* <div className="flex flex-col gap-4">
+			{/* <div className='grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]'> */}
+			<div className='@container/main flex flex-col gap-4 md:gap-6'>
+				<TransactionsTable transactions={transactions} />
+				{/* <div className="flex flex-col gap-4">
                 <CashFlowOverview />
 
                 <div className="grid h-full grid-cols-1 gap-4 lg:grid-cols-2">
@@ -114,11 +98,8 @@ export default function Page() {
                 </div>
               </div> */}
 
-							{/* <CardOverview /> */}
-						</div>
-					</div>
-				</TabsContent>
-			</Tabs>
+				{/* <CardOverview /> */}
+			</div>
 		</div>
 	);
 }
