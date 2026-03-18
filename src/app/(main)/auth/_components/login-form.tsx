@@ -71,7 +71,7 @@ export function LoginForm() {
       return;
     }
     toast.success("Connexion réussie", { description: `Bienvenue, ${adminData.role}!` });
-    router.push("/dashboard/default");
+    router.push("/dashboard/users");
   };
 
   return (
