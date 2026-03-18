@@ -32,17 +32,25 @@ export function ChartAreaInteractive() {
   React.useEffect(() => {
     supabase
       .from("user_activity")
-      .select("created_at, user_id")
+      .select("created_at, user_id, event_type")
       .then(({ data, error }) => {
         if (error) {
           console.error("[user_activity] erreur:", error);
           return;
         }
-        const byDay: Record<string, { events: number; userSet: Set<string> }> = {};
+        const byDay: Record<string, { events: number; userSet: Set<string>; openAppUsers: Set<string> }> = {};
         for (const row of data ?? []) {
           const day = row.created_at.slice(0, 10);
-          if (!byDay[day]) byDay[day] = { events: 0, userSet: new Set() };
-          byDay[day].events += 1;
+          if (!byDay[day]) byDay[day] = { events: 0, userSet: new Set(), openAppUsers: new Set() };
+          if (row.event_type === "open_app") {
+            // Un seul open_app compté par user par jour
+            if (!byDay[day].openAppUsers.has(row.user_id)) {
+              byDay[day].openAppUsers.add(row.user_id);
+              byDay[day].events += 1;
+            }
+          } else {
+            byDay[day].events += 1;
+          }
           byDay[day].userSet.add(row.user_id);
         }
         const normalized: Record<string, { events: number; users: number }> = {};
