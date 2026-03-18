@@ -106,6 +106,11 @@ export const sidebarItems: NavGroup[] = [
         url: "/dashboard/finance",
         icon: Banknote,
       },
+      {
+        title: "Contrats",
+        url: "/dashboard/contracts",
+        icon: ReceiptText,
+      },
       // {
       //   title: "Calendar",
       //   url: "/dashboard/coming-soon",
