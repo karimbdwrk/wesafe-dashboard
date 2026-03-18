@@ -11,7 +11,17 @@ import {
 	Calendar,
 	Hash,
 	ChevronRight,
+	UserCheck,
+	Circle,
 } from "lucide-react";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { useState, useEffect, useRef } from "react";
 import {
 	Dialog,
@@ -182,200 +192,284 @@ function getProfileStatusBadge(status) {
 	);
 }
 
+const docVerifStatusConfig = {
+	pending: { label: "En attente", dot: "bg-yellow-400" },
+	verified: { label: "Validé", dot: "bg-green-500" },
+	rejected: { label: "Refusé", dot: "bg-red-500" },
+};
+
 function SocialSecurityModal({ row }) {
 	const [open, setOpen] = useState(false);
 	const [status, setStatus] = useState(
-		row.original.social_security_verification_status,
+		row.original.social_security_verification_status ?? "pending",
 	);
 	const [socialSecurityNumber, setSocialSecurityNumber] = useState(
 		row.original.social_security_number || "",
 	);
-	const [docType, setDocType] = useState(
-		row.original.social_security_doc_type || "",
-	);
 	const [signedUrl, setSignedUrl] = useState("");
 	const [previewUrl, setPreviewUrl] = useState(null);
+	const [saving, setSaving] = useState(false);
 
 	const docTypeLabel = {
 		carte_vitale: "Carte Vitale",
-		social_security_certificate: "Attestation de Securité Sociale",
+		social_security_certificate: "Attestation de Sécurité Sociale",
 		other: "Autre document",
 	};
 
 	const handleChange = async () => {
-		await supabase
+		setSaving(true);
+		const { error } = await supabase
 			.from("profiles")
 			.update({
 				social_security_verification_status: status,
 				social_security_number: socialSecurityNumber,
-				social_security_doc_type: docType,
 			})
 			.eq("id", row.original.id);
-		row.original.social_security_verification_status = status; // Met à jour le badge dans le tableau
-		setOpen(false);
-		// ...toast, etc.
+		setSaving(false);
+		if (error) {
+			toast.error("Erreur lors de la mise à jour");
+		} else {
+			row.original.social_security_verification_status = status;
+			toast.success("Statut mis à jour !");
+			setOpen(false);
+		}
 	};
 
 	return (
-		<Dialog
-			open={open}
-			onOpenChange={async (isOpen) => {
-				setOpen(isOpen);
-				if (isOpen && row.original.social_security_document_url) {
-					setSignedUrl(
-						await getSignedUrl(
-							row.original.social_security_document_url,
-						),
-					);
-				}
-			}}>
-			<DialogTrigger asChild>
-				<span style={{ cursor: "pointer" }}>
-					{getStatusBadge(
-						row.original.social_security_verification_status,
-					)}
-				</span>
-			</DialogTrigger>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>Vérification Sécurité Sociale</DialogTitle>
-				</DialogHeader>
-				<div className='mb-2 text-sm text-gray-700 font-semibold'>
-					Type de document :{" "}
-					{docTypeLabel[row.original.social_security_doc_type] ||
-						"Non renseigné"}
-				</div>
-				<div className='flex flex-col gap-4 mt-2'>
-					{/* Image du document */}
-					{signedUrl && (
-						<img
-							src={signedUrl}
-							alt='Document Sécurité Sociale'
-							className='w-full max-w-xs rounded border cursor-pointer'
-							onClick={() => setPreviewUrl(signedUrl)}
-						/>
-					)}
-					{/* Modal d’aperçu grand format */}
-					{previewUrl && (
-						<Dialog
-							open={true}
-							onOpenChange={() => setPreviewUrl(null)}>
-							<DialogContent>
-								<DialogTitle>
-									<VisuallyHidden>
-										Aperçu du document Sécurité Sociale
-									</VisuallyHidden>
-								</DialogTitle>
-								<img
-									src={previewUrl}
-									alt='Aperçu document'
-									className='w-full max-w-2xl mx-auto rounded border'
-								/>
-							</DialogContent>
-						</Dialog>
-					)}
-					{/* Numéro de sécurité sociale */}
-					<div>
-						<label className='block text-sm mb-1'>
-							Numéro de sécurité sociale
-						</label>
-						<input
-							type='text'
-							className='border rounded px-2 py-1 w-full'
-							value={socialSecurityNumber}
-							onChange={(e) =>
-								setSocialSecurityNumber(e.target.value)
-							}
-						/>
-					</div>
-					{/* Statut */}
-					<div>
-						<label className='block text-sm mb-1'>Statut</label>
-						<div className='flex gap-2'>
-							{["pending", "verified", "rejected"].map((s) => (
-								<button
-									key={s}
-									className={`border rounded px-3 py-2 ${status === s ? "bg-blue-100 border-blue-500" : ""}`}
-									onClick={() => setStatus(s)}>
-									{s === "pending"
-										? "En attente"
-										: s === "verified"
-											? "Validé"
-											: "Refusé"}
-								</button>
-							))}
+		<>
+			<Dialog
+				open={open}
+				onOpenChange={async (isOpen) => {
+					setOpen(isOpen);
+					if (isOpen && row.original.social_security_document_url) {
+						setSignedUrl(
+							await getSignedUrl(
+								row.original.social_security_document_url,
+							),
+						);
+					}
+				}}>
+				<DialogTrigger asChild>
+					<span className='cursor-pointer'>
+						{getStatusBadge(
+							row.original.social_security_verification_status,
+						)}
+					</span>
+				</DialogTrigger>
+				<DialogContent className='sm:max-w-sm'>
+					{/* Header */}
+					<div className='flex flex-col items-center text-center gap-3 pt-2'>
+						<div className='flex h-12 w-12 items-center justify-center rounded-full bg-primary/10'>
+							<FileText className='h-6 w-6 text-primary' />
+						</div>
+						<div className='space-y-1'>
+							<DialogTitle className='text-base font-semibold'>
+								Vérification Sécurité Sociale
+							</DialogTitle>
+							<p className='text-sm text-muted-foreground'>
+								{docTypeLabel[
+									row.original.social_security_doc_type
+								] || "Document non renseigné"}
+							</p>
 						</div>
 					</div>
-					<button
-						className='mt-4 bg-blue-600 text-white px-4 py-2 rounded'
-						onClick={handleChange}>
-						Enregistrer
-					</button>
-				</div>
-			</DialogContent>
-		</Dialog>
+
+					<Separator className='my-2' />
+
+					<div className='space-y-4'>
+						{/* Aperçu document */}
+						{signedUrl && (
+							<img
+								src={signedUrl}
+								alt='Document Sécurité Sociale'
+								className='w-full rounded-lg border cursor-pointer object-cover max-h-40'
+								onClick={() => setPreviewUrl(signedUrl)}
+							/>
+						)}
+
+						{/* Numéro SS */}
+						<div className='space-y-1.5'>
+							<label className='text-sm font-medium'>
+								Numéro de sécurité sociale
+							</label>
+							<input
+								type='text'
+								className='flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
+								value={socialSecurityNumber}
+								onChange={(e) =>
+									setSocialSecurityNumber(e.target.value)
+								}
+							/>
+						</div>
+
+						{/* Statut */}
+						<div className='space-y-1.5'>
+							<label className='text-sm font-medium'>
+								Statut
+							</label>
+							<Select value={status} onValueChange={setStatus}>
+								<SelectTrigger className='w-full'>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{Object.entries(docVerifStatusConfig).map(
+										([value, cfg]) => (
+											<SelectItem
+												key={value}
+												value={value}>
+												<span className='flex items-center gap-2'>
+													<span
+														className={`inline-block h-2 w-2 rounded-full ${cfg.dot}`}
+													/>
+													{cfg.label}
+												</span>
+											</SelectItem>
+										),
+									)}
+								</SelectContent>
+							</Select>
+						</div>
+
+						<Button
+							className='w-full'
+							disabled={saving}
+							onClick={handleChange}>
+							{saving ? "Enregistrement…" : "Enregistrer"}
+						</Button>
+					</div>
+				</DialogContent>
+			</Dialog>
+
+			{/* Aperçu plein écran */}
+			{previewUrl && (
+				<Dialog open={true} onOpenChange={() => setPreviewUrl(null)}>
+					<DialogContent>
+						<DialogTitle>
+							<VisuallyHidden>
+								Aperçu du document Sécurité Sociale
+							</VisuallyHidden>
+						</DialogTitle>
+						<img
+							src={previewUrl}
+							alt='Aperçu document'
+							className='w-full max-w-2xl mx-auto rounded border'
+						/>
+					</DialogContent>
+				</Dialog>
+			)}
+		</>
 	);
 }
 
+const statusConfig = {
+	pending: {
+		label: "En attente",
+		dot: "bg-yellow-400",
+		description: "Le profil est en cours de vérification.",
+	},
+	verified: {
+		label: "Vérifié",
+		dot: "bg-green-500",
+		description: "Le profil a été vérifié et validé.",
+	},
+	rejected: {
+		label: "Refusé",
+		dot: "bg-red-500",
+		description: "Le profil a été refusé. Une raison peut être fournie.",
+	},
+	suspended: {
+		label: "Suspendu",
+		dot: "bg-orange-500",
+		description: "Le profil est temporairement suspendu.",
+	},
+};
+
 function StatusModal({ row, updateRowStatus }) {
 	const [open, setOpen] = useState(false);
-	const [selected, setSelected] = useState(row.original.profile_status);
+	const [selected, setSelected] = useState(
+		row.original.profile_status ?? "pending",
+	);
 	const [rejectReason, setRejectReason] = useState(
 		row.original.reject_message ?? "",
 	);
+	const [saving, setSaving] = useState(false);
 
-	const statuses = [
-		{ value: "pending", label: "En attente" },
-		{ value: "verified", label: "Vérifié" },
-		{ value: "rejected", label: "Refusé" },
-		{ value: "suspended", label: "Suspendu" },
-	];
+	const current = statusConfig[selected] ?? statusConfig.pending;
 
 	const handleChange = async () => {
+		if (selected === "rejected" && !rejectReason.trim()) return;
+		setSaving(true);
 		const updatePayload = { profile_status: selected };
-		if (selected === "rejected") {
-			updatePayload.reject_message = rejectReason.trim() || null;
-		} else {
-			updatePayload.reject_message = null;
-		}
+		updatePayload.reject_message =
+			selected === "rejected" ? rejectReason.trim() : null;
 		const { error } = await supabase
 			.from("profiles")
 			.update(updatePayload)
 			.eq("id", row.original.id);
+		setSaving(false);
 		if (error) {
 			toast.error("Erreur lors de la mise à jour");
 		} else {
 			toast.success("Statut mis à jour !");
 			setOpen(false);
-			updateRowStatus(selected); // Met à jour le badge dans le tableau
+			updateRowStatus(selected);
 		}
 	};
 
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
-				<span
-					onClick={() => setOpen(true)}
-					style={{ cursor: "pointer" }}>
+				<span className='cursor-pointer'>
 					{getProfileStatusBadge(row.original.profile_status)}
 				</span>
 			</DialogTrigger>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>Changer le statut du profil</DialogTitle>
-				</DialogHeader>
-				<div className='flex flex-col gap-2 mt-2'>
-					{statuses.map((s) => (
-						<button
-							key={s.value}
-							className={`border rounded px-3 py-2 text-left ${selected === s.value ? "bg-blue-100 border-blue-500" : ""}`}
-							onClick={() => setSelected(s.value)}>
-							{s.label}
-						</button>
-					))}
+			<DialogContent className='sm:max-w-sm'>
+				{/* Icône */}
+				<div className='flex flex-col items-center text-center gap-3 pt-2'>
+					<div className='flex h-12 w-12 items-center justify-center rounded-full bg-primary/10'>
+						<UserCheck className='h-6 w-6 text-primary' />
+					</div>
+					<div className='space-y-1'>
+						<DialogTitle className='text-base font-semibold'>
+							Statut du profil
+						</DialogTitle>
+						<p className='text-sm text-muted-foreground'>
+							{current.description}
+						</p>
+					</div>
 				</div>
+
+				<Separator className='my-2' />
+
+				{/* Select */}
+				<div className='space-y-1.5'>
+					<label className='text-sm font-medium'>
+						Nouveau statut
+					</label>
+					<Select value={selected} onValueChange={setSelected}>
+						<SelectTrigger className='w-full'>
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{Object.entries(statusConfig).map(
+								([value, cfg]) => (
+									<SelectItem key={value} value={value}>
+										<span className='flex items-center gap-2'>
+											<span
+												className={`inline-block h-2 w-2 rounded-full ${cfg.dot}`}
+											/>
+											{cfg.label}
+										</span>
+									</SelectItem>
+								),
+							)}
+						</SelectContent>
+					</Select>
+				</div>
+
+				{/* Raison du refus */}
 				{selected === "rejected" && (
-					<div className='mt-3 flex flex-col gap-1.5'>
+					<div className='space-y-1.5'>
 						<label className='text-sm font-medium'>
 							Raison du refus
 						</label>
@@ -387,12 +481,16 @@ function StatusModal({ row, updateRowStatus }) {
 						/>
 					</div>
 				)}
-				<button
-					className='mt-4 bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed'
-					disabled={selected === "rejected" && !rejectReason.trim()}
+
+				<Button
+					className='w-full mt-1'
+					disabled={
+						saving ||
+						(selected === "rejected" && !rejectReason.trim())
+					}
 					onClick={handleChange}>
-					Enregistrer
-				</button>
+					{saving ? "Enregistrement…" : "Enregistrer"}
+				</Button>
 			</DialogContent>
 		</Dialog>
 	);
@@ -569,10 +667,25 @@ function IdVerificationModal({ row }) {
 						{getStatusBadge(row.original.id_verification_status)}
 					</span>
 				</DialogTrigger>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Vérification d'identité</DialogTitle>
-					</DialogHeader>
+				<DialogContent className='sm:max-w-md'>
+					{/* Header */}
+					<div className='flex flex-col items-center text-center gap-3 pt-2'>
+						<div className='flex h-12 w-12 items-center justify-center rounded-full bg-primary/10'>
+							<UserCheck className='h-6 w-6 text-primary' />
+						</div>
+						<div className='space-y-1'>
+							<DialogTitle className='text-base font-semibold'>
+								Vérification d'identité
+							</DialogTitle>
+							<p className='text-sm text-muted-foreground'>
+								{idTypeLabel[idType] ||
+									"Document non renseigné"}
+							</p>
+						</div>
+					</div>
+
+					<Separator className='my-2' />
+
 					<div>
 						<label className='block text-sm mb-1'>
 							Date de naissance
@@ -593,10 +706,6 @@ function IdVerificationModal({ row }) {
 							format='yyyy-MM-dd'
 							className='w-full'
 						/>
-					</div>
-					<div className='mb-2 text-sm text-gray-700 font-semibold'>
-						Type de document :{" "}
-						{idTypeLabel[idType] || "Non renseigné"}
 					</div>
 					<div className='flex flex-col gap-4 mt-2'>
 						{/* Affichage direct des images signées */}
@@ -753,31 +862,36 @@ function IdVerificationModal({ row }) {
 							/>
 						</div>
 						{/* Statut */}
-						<div>
-							<label className='block text-sm mb-1'>Statut</label>
-							<div className='flex gap-2'>
-								{["pending", "verified", "rejected"].map(
-									(s) => (
-										<button
-											key={s}
-											className={`border rounded px-3 py-2 ${status === s ? "bg-blue-100 border-blue-500" : ""}`}
-											onClick={() => setStatus(s)}>
-											{s === "pending"
-												? "En attente"
-												: s === "verified"
-													? "Validé"
-													: "Refusé"}
-										</button>
-									),
-								)}
-							</div>
+						<div className='space-y-1.5'>
+							<label className='text-sm font-medium'>
+								Statut
+							</label>
+							<Select value={status} onValueChange={setStatus}>
+								<SelectTrigger className='w-full'>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{Object.entries(docVerifStatusConfig).map(
+										([value, cfg]) => (
+											<SelectItem
+												key={value}
+												value={value}>
+												<span className='flex items-center gap-2'>
+													<span
+														className={`inline-block h-2 w-2 rounded-full ${cfg.dot}`}
+													/>
+													{cfg.label}
+												</span>
+											</SelectItem>
+										),
+									)}
+								</SelectContent>
+							</Select>
 						</div>
 						{/* Bouton enregistrer */}
-						<button
-							className='mt-4 bg-blue-600 text-white px-4 py-2 rounded'
-							onClick={handleChange}>
+						<Button className='w-full' onClick={handleChange}>
 							Enregistrer
-						</button>
+						</Button>
 					</div>
 				</DialogContent>
 			</Dialog>
@@ -877,7 +991,7 @@ function DocumentStatusDialog({
 					<div className='space-y-5'>
 						{/* Aperçu du document */}
 						{doc.document_url && (
-							<div className='rounded-lg border bg-muted/40 p-3 flex items-center justify-center min-h-[120px]'>
+							<div className='rounded-lg border bg-muted/40 p-3 flex items-center justify-center min-h-30'>
 								{loadingUrl ? (
 									<span className='text-sm text-muted-foreground animate-pulse'>
 										Chargement…
@@ -1029,7 +1143,7 @@ function DocCard({ doc, onClick }) {
 					<div className='flex items-start justify-between gap-3'>
 						{/* Icône + titre */}
 						<div className='flex items-center gap-3 min-w-0'>
-							<div className='flex-shrink-0 w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center'>
+							<div className='shrink-0 w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center'>
 								<FileText className='w-5 h-5 text-blue-500' />
 							</div>
 							<div className='min-w-0'>
@@ -1045,7 +1159,7 @@ function DocCard({ doc, onClick }) {
 							</div>
 						</div>
 						{/* Statut + chevron */}
-						<div className='flex items-center gap-2 flex-shrink-0'>
+						<div className='flex items-center gap-2 shrink-0'>
 							<Badge
 								variant='outline'
 								className='flex items-center gap-1.5 text-xs'>
@@ -1218,7 +1332,7 @@ function UserDocumentsSheet({ userId, tableName, typeLabel, badgeLabel }) {
 			<Sheet open={open} onOpenChange={setOpen}>
 				<SheetContent
 					side='right'
-					className='w-[480px] overflow-y-auto max-h-screen p-5'>
+					className='w-120 overflow-y-auto max-h-screen p-5'>
 					<SheetHeader className='mb-5'>
 						<SheetTitle className='flex items-center gap-2'>
 							<FileText className='w-5 h-5 text-blue-500' />
