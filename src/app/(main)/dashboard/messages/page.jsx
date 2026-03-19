@@ -56,12 +56,15 @@ export default function Page() {
 	const [sending, setSending] = useState(false);
 	const [isTyping, setIsTyping] = useState(false);
 	// true quand une activité récente (typing ou message) a été reçue du participant
-	const [convParticipantOnline, setConvParticipantOnline] = useState(false);
+	// Présence globale : userId → boolean, persisté entre les changements de conv
+	const [onlineUsers, setOnlineUsers] = useState({});
 	const messagesContainerRef = useRef(null);
 	const typingTimeoutRef = useRef(null);
-	// Timeout qui éteint le rond vert après 30s sans aucune activité du participant
-	const onlineTimeoutRef = useRef(null);
-	// Référence au canal conv:{id} — assignée SEULEMENT après SUBSCRIBED
+	// Timeouts de présence par userId
+	const onlineTimeoutsRef = useRef({});
+	// Canaux broadcast persistants par convId (ne sont JAMAIS détruits pendant la session)
+	const channelsByConvIdRef = useRef({});
+	// Canal de la conv active (alias vers channelsByConvIdRef[selected.id])
 	const convChannelRef = useRef(null);
 	const selectedRef = useRef(null);
 
@@ -212,6 +215,20 @@ export default function Page() {
 		};
 	}, []);
 
+	// Marque un user comme en ligne et programme son expiration (30s sans signal)
+	function markUserOnline(userId) {
+		if (!userId) return;
+		setOnlineUsers((prev) => ({ ...prev, [userId]: true }));
+		clearTimeout(onlineTimeoutsRef.current[userId]);
+		onlineTimeoutsRef.current[userId] = setTimeout(() => {
+			setOnlineUsers((prev) => {
+				const next = { ...prev };
+				delete next[userId];
+				return next;
+			});
+		}, 30_000);
+	}
+
 	async function loadActorNames(ids) {
 		if (!ids.length) return;
 		const unique = [...new Set(ids)];
@@ -288,7 +305,10 @@ export default function Page() {
 			});
 			// Notification uniquement si le participant n'est pas en ligne sur la conversation
 			// Passe par une server action (service_role) pour bypasser les RLS Supabase
-			if (!convParticipantOnline && selected.participantId) {
+			if (
+				!onlineUsers[selected.participantId] &&
+				selected.participantId
+			) {
 				sendSupportNotification({
 					recipientId: selected.participantId,
 					conversationId: selected.id,
@@ -314,27 +334,106 @@ export default function Page() {
 		if (el) el.scrollTop = el.scrollHeight;
 	}, [messages, isTyping]);
 
-	// ── Realtime par conversation : messages + présence + frappe ──────────
+	// ── Canaux broadcast persistants pour TOUTES les convs ────────────────
+	// Chaque canal reste abonné toute la session → présence reçue même quand
+	// l'admin est sur une autre conversation.
+	useEffect(() => {
+		conversations.forEach((conv) => {
+			if (!conv.participantId) return;
+			if (channelsByConvIdRef.current[conv.id]) return; // déjà abonné
+
+			const ch = supabase.channel(`conv-${conv.id}`, {
+				config: { broadcast: { self: false } },
+			});
+
+			ch.on("broadcast", { event: "typing" }, ({ payload }) => {
+				if (payload?.sender_id === SUPERADMIN_ID) return;
+				markUserOnline(conv.participantId);
+				if (selectedRef.current?.id === conv.id) {
+					setIsTyping(true);
+					clearTimeout(typingTimeoutRef.current);
+					typingTimeoutRef.current = setTimeout(
+						() => setIsTyping(false),
+						3000,
+					);
+				}
+			})
+				.on("broadcast", { event: "online" }, ({ payload }) => {
+					if (payload?.sender_id === SUPERADMIN_ID) return;
+					markUserOnline(conv.participantId);
+				})
+				.on("broadcast", { event: "pong" }, ({ payload }) => {
+					if (payload?.sender_id === SUPERADMIN_ID) return;
+					markUserOnline(conv.participantId);
+				})
+				.on("broadcast", { event: "read_receipt" }, ({ payload }) => {
+					if (payload?.sender_id === SUPERADMIN_ID) return;
+					markUserOnline(conv.participantId);
+					if (selectedRef.current?.id === conv.id) {
+						setMessages((prev) =>
+							prev.map((m) =>
+								m.sender_id === SUPERADMIN_ID
+									? { ...m, is_read: true }
+									: m,
+							),
+						);
+					}
+				})
+				.subscribe((status) => {
+					if (status === "SUBSCRIBED") {
+						// Ping pour détecter si le participant est déjà en ligne
+						ch.send({
+							type: "broadcast",
+							event: "ping",
+							payload: { sender_id: SUPERADMIN_ID },
+						});
+					}
+				});
+
+			channelsByConvIdRef.current[conv.id] = ch;
+		});
+	}, [conversations.length]); // re-run seulement quand une nouvelle conv apparaît
+
+	// Nettoyage global à la fermeture du composant
+	useEffect(() => {
+		return () => {
+			Object.values(channelsByConvIdRef.current).forEach((ch) =>
+				supabase.removeChannel(ch),
+			);
+			channelsByConvIdRef.current = {};
+			Object.values(onlineTimeoutsRef.current).forEach(clearTimeout);
+		};
+	}, []);
+
+	// ── Realtime par conversation active : messages DB + ping continu ──────
 	useEffect(() => {
 		if (!selected) return;
 		selectedRef.current = selected;
-		setConvParticipantOnline(false);
 		setIsTyping(false);
-		clearTimeout(onlineTimeoutRef.current);
+		clearTimeout(typingTimeoutRef.current);
 
-		// Marquer le participant comme en ligne + démarrer un timeout d'inactivité.
-		// Appelé à chaque signal reçu (typing, online, pong, nouveau message).
-		// Timeout réduit à 12s : si 2 pings consécutifs sans réponse → offline
-		function markOnline() {
-			setConvParticipantOnline(true);
-			clearTimeout(onlineTimeoutRef.current);
-			onlineTimeoutRef.current = setTimeout(
-				() => setConvParticipantOnline(false),
-				12_000,
-			);
-		}
+		// Pointer convChannelRef vers le canal de cette conv (peut être déjà créé)
+		const refSync = setTimeout(() => {
+			const ch = channelsByConvIdRef.current[selected.id];
+			convChannelRef.current = ch ?? null;
+			// Ping immédiat en entrant dans la conv
+			ch?.send({
+				type: "broadcast",
+				event: "ping",
+				payload: { sender_id: SUPERADMIN_ID },
+			});
+		}, 150);
 
-		// 1. Postgres Changes — nouveaux messages + confirmations de lecture
+		// Ping continu toutes les 5s pour maintenir la détection
+		const pingInterval = setInterval(() => {
+			channelsByConvIdRef.current[selected.id]?.send({
+				type: "broadcast",
+				event: "ping",
+				payload: { sender_id: SUPERADMIN_ID },
+			});
+		}, 5000);
+
+		// Postgres Changes — nouveaux messages + confirmations de lecture
 		const msgChannel = supabase
 			.channel(`db-messages-${selected.id}`)
 			.on(
@@ -348,17 +447,14 @@ export default function Page() {
 				(payload) => {
 					const msg = payload.new;
 					if (msg.sender_id === SUPERADMIN_ID) return;
-					markOnline();
+					markUserOnline(selected.participantId);
 					setMessages((prev) => [...prev, msg]);
 					setIsTyping(false);
 					supabase
 						.from("support_messages")
 						.update({ is_read: true })
 						.eq("id", msg.id)
-						.then(() => {
-							// Notifier la sidebar de rafraîchir le badge
-							fetchCount();
-						});
+						.then(() => fetchCount());
 					setConversations((prev) => {
 						const updated = prev.map((c) =>
 							c.id === selectedRef.current?.id
@@ -379,8 +475,6 @@ export default function Page() {
 					event: "UPDATE",
 					schema: "public",
 					table: "support_messages",
-					// Pas de filtre : les filtres sur UPDATE nécessitent REPLICA IDENTITY FULL
-					// On filtre côté client par conversation_id
 				},
 				(payload) => {
 					const updated = payload.new;
@@ -397,70 +491,13 @@ export default function Page() {
 			)
 			.subscribe();
 
-		// 2. Canal broadcast — typing, online, pong, read_receipt
-		const convChannel = supabase.channel(`conv-${selected.id}`, {
-			config: { broadcast: { self: false } },
-		});
-
-		// Intervalle ping toutes les 5s — démarré après SUBSCRIBED
-		let pingInterval = null;
-
-		convChannel
-			.on("broadcast", { event: "typing" }, ({ payload }) => {
-				if (payload?.sender_id === SUPERADMIN_ID) return;
-				markOnline();
-				setIsTyping(true);
-				clearTimeout(typingTimeoutRef.current);
-				typingTimeoutRef.current = setTimeout(
-					() => setIsTyping(false),
-					3000,
-				);
-			})
-			.on("broadcast", { event: "online" }, ({ payload }) => {
-				if (payload?.sender_id === SUPERADMIN_ID) return;
-				markOnline();
-			})
-			.on("broadcast", { event: "pong" }, ({ payload }) => {
-				// Réponse au ping du dashboard → participant toujours en ligne
-				if (payload?.sender_id === SUPERADMIN_ID) return;
-				markOnline();
-			})
-			.on("broadcast", { event: "read_receipt" }, ({ payload }) => {
-				if (payload?.sender_id === SUPERADMIN_ID) return;
-				markOnline();
-				setMessages((prev) =>
-					prev.map((m) =>
-						m.sender_id === SUPERADMIN_ID
-							? { ...m, is_read: true }
-							: m,
-					),
-				);
-			})
-			.subscribe((status) => {
-				if (status === "SUBSCRIBED") {
-					convChannelRef.current = convChannel;
-					// Ping immédiat puis toutes les 5s
-					const sendPing = () => {
-						convChannel.send({
-							type: "broadcast",
-							event: "ping",
-							payload: { sender_id: SUPERADMIN_ID },
-						});
-					};
-					sendPing();
-					pingInterval = setInterval(sendPing, 5000);
-				}
-			});
-
 		return () => {
+			clearTimeout(refSync);
 			clearInterval(pingInterval);
-			supabase.removeChannel(convChannel);
 			supabase.removeChannel(msgChannel);
 			convChannelRef.current = null;
 			setIsTyping(false);
-			setConvParticipantOnline(false);
 			clearTimeout(typingTimeoutRef.current);
-			clearTimeout(onlineTimeoutRef.current);
 			setActiveConversationId(null);
 		};
 	}, [selected?.id]);
@@ -499,8 +536,11 @@ export default function Page() {
 								? (actorNames[conv.participantId] ?? "…")
 								: "Conversation";
 							const isActive = selected?.id === conv.id;
-							// Vert uniquement pour la conv active, quand une activité récente a été reçue
-							const isOnline = isActive && convParticipantOnline;
+							// Vert si une activité récente a été reçue du participant (toutes convs)
+							const isOnline = !!(
+								conv.participantId &&
+								onlineUsers[conv.participantId]
+							);
 							return (
 								<button
 									key={conv.id}
@@ -568,7 +608,10 @@ export default function Page() {
 										.slice(0, 2)
 										.toUpperCase()}
 								</div>
-								{convParticipantOnline && (
+								{!!(
+									selected?.participantId &&
+									onlineUsers[selected.participantId]
+								) && (
 									<span className='absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-background' />
 								)}
 							</div>
@@ -579,7 +622,10 @@ export default function Page() {
 											"…")
 										: "Conversation"}
 								</p>
-								{convParticipantOnline && (
+								{!!(
+									selected?.participantId &&
+									onlineUsers[selected.participantId]
+								) && (
 									<p className='text-[11px] text-green-500 mt-0.5'>
 										En ligne
 									</p>
