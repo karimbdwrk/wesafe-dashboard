@@ -4,7 +4,7 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
 
-import { Plus, Pencil, Copy, Venus, Mars, Zap } from "lucide-react";
+import { Plus, Pencil, Copy, Venus, Mars, Zap, Building2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 import { useDataTableInstance } from "@/hooks/use-data-table-instance";
 
 import { CompaniesTable } from "../../../../../components/data-table/companies-table";
@@ -185,7 +186,7 @@ const jobsColumns = [
 							</span>
 						</div>
 					)}
-					<span className='text-sm truncate max-w-[120px]'>
+					<span className='text-sm truncate max-w-30'>
 						{name || "—"}
 					</span>
 				</div>
@@ -453,7 +454,7 @@ const applicationsColumns = [
 							</span>
 						</div>
 					)}
-					<span className='text-sm truncate max-w-[120px]'>
+					<span className='text-sm truncate max-w-30'>
 						{name || "—"}
 					</span>
 				</div>
@@ -510,7 +511,7 @@ const applicationsColumns = [
 						firstname={firstname}
 						lastname={lastname}
 					/>
-					<span className='text-sm truncate max-w-[140px]'>
+					<span className='text-sm truncate max-w-35'>
 						{fullName}
 					</span>
 				</div>
@@ -1304,7 +1305,7 @@ export function DataTable({
 			<Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
 				<SheetContent
 					side='right'
-					className='w-[400px] overflow-y-auto max-h-screen p-4'>
+					className='w-100 overflow-y-auto max-h-screen p-4'>
 					{!!selectedProfile && (
 						<>
 							<SheetHeader>
@@ -1963,7 +1964,7 @@ export function DataTable({
 			<Sheet open={companySheetOpen} onOpenChange={setCompanySheetOpen}>
 				<SheetContent
 					side='right'
-					className='w-[400px] overflow-y-auto max-h-screen p-4'>
+					className='w-100 overflow-y-auto max-h-screen p-4'>
 					<SheetHeader>
 						<SheetTitle>Modifier l'entreprise</SheetTitle>
 					</SheetHeader>
@@ -2014,7 +2015,7 @@ export function DataTable({
 								name='description'
 								value={formDataCompany.description}
 								onChange={handleChangeCompany}
-								className='border rounded px-2 py-1 w-full min-h-[80px]'
+								className='border rounded px-2 py-1 w-full min-h-20'
 							/>
 						</div>
 						<Button type='submit' className='w-full mt-4'>
@@ -2026,7 +2027,7 @@ export function DataTable({
 			<Sheet open={jobSheetOpen} onOpenChange={setJobSheetOpen}>
 				<SheetContent
 					side='right'
-					className='w-[400px] overflow-y-auto max-h-screen p-4'>
+					className='w-100 overflow-y-auto max-h-screen p-4'>
 					<SheetHeader>
 						<SheetTitle>Modifier l'offre d'emploi</SheetTitle>
 					</SheetHeader>
@@ -2151,46 +2152,76 @@ export function DataTable({
 			<Dialog
 				open={companyDialogOpen}
 				onOpenChange={setCompanyDialogOpen}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>
-							Modifier le statut de l'entreprise
-						</DialogTitle>
-					</DialogHeader>
-					<div className='flex flex-col gap-4'>
-						<div className='flex gap-2 justify-center'>
-							{["active", "pending", "rejected", "suspended"].map(
-								(status) => {
-									const { color, label } =
-										getCompanyStatusBadge(status);
-									return (
-										<button
-											key={status}
-											type='button'
-											className={`focus:outline-none ${newStatus === status ? "ring-2 ring-primary" : ""}`}
-											onClick={() =>
-												setNewStatus(status)
-											}>
-											<Badge
-												variant={color}
-												className='px-4 py-2 cursor-pointer'>
-												{label}
-											</Badge>
-										</button>
-									);
-								},
-							)}
+				<DialogContent className='sm:max-w-sm'>
+					{/* Header */}
+					<div className='flex flex-col items-center text-center gap-3 pt-2'>
+						<div className='flex h-12 w-12 items-center justify-center rounded-full bg-primary/10'>
+							<Building2 className='h-6 w-6 text-primary' />
 						</div>
+						<div className='space-y-1'>
+							<DialogTitle className='text-base font-semibold'>
+								Statut de l'entreprise
+							</DialogTitle>
+							<p className='text-sm text-muted-foreground'>
+								{selectedCompany?.name || "Entreprise"}
+							</p>
+						</div>
+					</div>
+
+					<Separator className='my-2' />
+
+					<div className='space-y-3'>
+						{/* Select statut */}
+						<Select value={newStatus} onValueChange={setNewStatus}>
+							<SelectTrigger className='w-full'>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{[
+									{
+										value: "active",
+										dot: "bg-green-500",
+										label: "Active",
+									},
+									{
+										value: "pending",
+										dot: "bg-yellow-400",
+										label: "En attente",
+									},
+									{
+										value: "rejected",
+										dot: "bg-red-500",
+										label: "Refusée",
+									},
+									{
+										value: "suspended",
+										dot: "bg-orange-400",
+										label: "Suspendue",
+									},
+								].map(({ value, dot, label }) => (
+									<SelectItem key={value} value={value}>
+										<span className='flex items-center gap-2'>
+											<span
+												className={`inline-block h-2 w-2 rounded-full ${dot}`}
+											/>
+											{label}
+										</span>
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+
+						{/* Raison (refus / suspension) */}
 						{(newStatus === "suspended" ||
 							newStatus === "rejected") && (
-							<div className='flex flex-col gap-1.5'>
+							<div className='space-y-1.5'>
 								<label className='text-sm font-medium'>
 									{newStatus === "rejected"
 										? "Raison du refus"
 										: "Raison de la suspension"}
 								</label>
 								<textarea
-									className='w-full rounded-md border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring'
+									className='w-full rounded-md border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring'
 									rows={3}
 									value={companyRejectReason}
 									onChange={(e) =>
@@ -2204,6 +2235,7 @@ export function DataTable({
 								/>
 							</div>
 						)}
+
 						<Button
 							onClick={handleUpdateStatus}
 							disabled={
@@ -2211,7 +2243,7 @@ export function DataTable({
 								newStatus === selectedCompany?.company_status
 							}
 							className='w-full'>
-							Mettre à jour
+							Enregistrer
 						</Button>
 					</div>
 				</DialogContent>
