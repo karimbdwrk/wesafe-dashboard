@@ -1063,30 +1063,29 @@ function DocumentStatusDialog({
 						)}
 
 						{/* Statut */}
-						<div className='space-y-2'>
-							<p className='text-sm font-medium text-muted-foreground'>
-								Statut du document
-							</p>
-							<div className='grid grid-cols-3 gap-2'>
-								{Object.entries(statusConfig).map(
-									([s, cfg]) => (
-										<button
-											key={s}
-											type='button'
-											className={`flex items-center justify-center gap-2 border rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-												status === s
-													? "bg-blue-50 border-blue-500 text-blue-700"
-													: "hover:bg-muted"
-											}`}
-											onClick={() => setStatus(s)}>
-											<span
-												className={`w-2 h-2 rounded-full ${cfg.dot}`}
-											/>
-											{cfg.label}
-										</button>
-									),
-								)}
-							</div>
+						<div className='space-y-1.5'>
+							<label className='text-sm font-medium'>
+								Statut
+							</label>
+							<Select value={status} onValueChange={setStatus}>
+								<SelectTrigger className='w-full'>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{Object.entries(statusConfig).map(
+										([s, cfg]) => (
+											<SelectItem key={s} value={s}>
+												<span className='flex items-center gap-2'>
+													<span
+														className={`inline-block h-2 w-2 rounded-full ${cfg.dot}`}
+													/>
+													{cfg.label}
+												</span>
+											</SelectItem>
+										),
+									)}
+								</SelectContent>
+							</Select>
 						</div>
 
 						<Button className='w-full' onClick={handleUpdate}>
