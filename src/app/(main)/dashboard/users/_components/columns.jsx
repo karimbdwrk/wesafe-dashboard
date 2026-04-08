@@ -44,6 +44,49 @@ import { Textarea } from "@/components/ui/textarea";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import axios from "axios";
 
+async function sendProfileStatusNotification({ profile, newStatus }) {
+	const {
+		data: { user },
+	} = await supabase.auth.getUser();
+	if (!user || !profile.id) return;
+
+	const statusMessages = {
+		verified: {
+			title: "🎉 Félicitations, votre profil est vérifié !",
+			body: "Votre profil a été vérifié avec succès. Vous pouvez désormais postuler aux offres d'emploi disponibles sur WeSafe et être contacté par des entreprises.",
+		},
+		rejected: {
+			title: "Votre profil a été refusé",
+			body: "Votre profil n'a pas pu être validé en l'état. Veuillez mettre à jour vos documents refusés depuis votre espace personnel, puis soumettre à nouveau votre dossier.",
+		},
+		suspended: {
+			title: "Votre profil a été suspendu",
+			body: "Votre profil est temporairement suspendu. Pour obtenir plus d'informations et régulariser votre situation, veuillez contacter le support WeSafe.",
+		},
+		pending: {
+			title: "Votre profil est en cours de vérification",
+			body: "Votre dossier est en cours d'examen par notre équipe. Vous serez notifié dès que la vérification sera terminée.",
+		},
+	};
+
+	const message = statusMessages[newStatus] ?? {
+		title: "Votre profil a été mis à jour",
+		body: `Le statut de votre profil est désormais : ${newStatus}.`,
+	};
+
+	await supabase.from("notifications").insert({
+		actor_id: user.id,
+		recipient_id: profile.id,
+		type: "profile_status_update",
+		title: message.title,
+		body: message.body,
+		entity_type: "profile_review",
+		entity_id: profile.id,
+		is_read: false,
+		metadata: { screen: "notifications" },
+	});
+}
+
 async function sendDocumentStatusNotification({ doc, tableName, newStatus }) {
 	const {
 		data: { user },
@@ -413,6 +456,10 @@ function StatusModal({ row, updateRowStatus }) {
 			toast.success("Statut mis à jour !");
 			setOpen(false);
 			updateRowStatus(selected);
+			await sendProfileStatusNotification({
+				profile: row.original,
+				newStatus: selected,
+			});
 		}
 	};
 
