@@ -44,7 +44,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import axios from "axios";
 
-async function sendProfileStatusNotification({ profile, newStatus }) {
+async function sendProfileStatusNotification({
+	profile,
+	newStatus,
+	rejectReason,
+}) {
 	const {
 		data: { user },
 	} = await supabase.auth.getUser();
@@ -74,6 +78,7 @@ async function sendProfileStatusNotification({ profile, newStatus }) {
 		body: `Le statut de votre profil est désormais : ${newStatus}.`,
 	};
 
+	// Notification in-app
 	await supabase.from("notifications").insert({
 		actor_id: user.id,
 		recipient_id: profile.id,
@@ -85,6 +90,26 @@ async function sendProfileStatusNotification({ profile, newStatus }) {
 		is_read: false,
 		metadata: { screen: "notifications" },
 	});
+
+	// E-mail via Edge Function (uniquement pour les statuts actionnables)
+	if (newStatus !== "pending" && profile.email) {
+		try {
+			await supabase.functions.invoke("send-profile-status-email", {
+				body: {
+					email: profile.email,
+					firstName: profile.firstname || "Candidat",
+					status: newStatus,
+					statusDate: new Date().toISOString(),
+					reason: rejectReason || undefined,
+				},
+			});
+		} catch (err) {
+			console.error(
+				"[sendProfileStatusNotification] Erreur envoi email:",
+				err,
+			);
+		}
+	}
 }
 
 async function sendDocumentStatusNotification({ doc, tableName, newStatus }) {
@@ -459,6 +484,8 @@ function StatusModal({ row, updateRowStatus }) {
 			await sendProfileStatusNotification({
 				profile: row.original,
 				newStatus: selected,
+				rejectReason:
+					selected === "rejected" ? rejectReason.trim() : undefined,
 			});
 		}
 	};
