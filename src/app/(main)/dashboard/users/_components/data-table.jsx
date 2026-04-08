@@ -545,6 +545,137 @@ const applicationsColumns = [
 	},
 ];
 
+async function sendCompanyStatusNotification({
+	company,
+	newStatus,
+	rejectReason,
+}) {
+	const {
+		data: { user },
+	} = await supabase.auth.getUser();
+	if (!user || !company.id) return;
+
+	const statusMessages = {
+		active: {
+			title: "🎉 Votre compte entreprise est maintenant actif !",
+			body: "Votre dossier a été vérifié et validé. Vous avez désormais accès à toutes les fonctionnalités WeSafe pour recruter vos agents.",
+		},
+		pending: {
+			title: "Votre dossier est en cours de vérification",
+			body: "Notre équipe examine votre dossier. Vous serez notifié dès que la vérification sera terminée.",
+		},
+		rejected: {
+			title: "Votre dossier n'a pas pu être validé",
+			body: "Certains documents n'ont pas pu être acceptés. Veuillez les mettre à jour depuis l'application et soumettre à nouveau.",
+		},
+		suspended: {
+			title: "Votre compte a été suspendu",
+			body: "Votre compte est temporairement suspendu. Veuillez contacter le support WeSafe pour plus d'informations.",
+		},
+	};
+
+	const message = statusMessages[newStatus] ?? {
+		title: "Votre compte a été mis à jour",
+		body: `Le statut de votre compte est désormais : ${newStatus}.`,
+	};
+
+	// Notification in-app
+	await supabase.from("notifications").insert({
+		actor_id: user.id,
+		recipient_id: company.id,
+		type: "company_status_update",
+		title: message.title,
+		body: message.body,
+		entity_type: "company_review",
+		entity_id: company.id,
+		is_read: false,
+		metadata: { screen: "notifications" },
+	});
+
+	// E-mail via Edge Function
+	if (company.email) {
+		try {
+			await supabase.functions.invoke("send-company-status-email", {
+				body: {
+					email: company.email,
+					companyName: company.name || "votre entreprise",
+					status: newStatus,
+					statusDate: new Date().toISOString(),
+					reason: rejectReason || undefined,
+				},
+			});
+		} catch (err) {
+			console.error(
+				"[sendCompanyStatusNotification] Erreur envoi email:",
+				err,
+			);
+		}
+	}
+}
+
+async function sendKbisStatusNotification({
+	company,
+	newStatus,
+	rejectReason,
+}) {
+	const {
+		data: { user },
+	} = await supabase.auth.getUser();
+	if (!user || !company.id) return;
+
+	const statusMessages = {
+		verified: {
+			title: "✅ Votre KBIS a été vérifié et validé",
+			body: "Votre KBIS a été examiné et validé par notre équipe. Votre dossier entreprise est à jour.",
+		},
+		pending: {
+			title: "Votre KBIS est en cours de vérification",
+			body: "Notre équipe examine votre KBIS. Vous serez notifié dès que la vérification sera terminée.",
+		},
+		rejected: {
+			title: "Votre KBIS n'a pas pu être validé",
+			body: "Votre KBIS n'a pas pu être accepté. Veuillez le corriger et le soumettre à nouveau depuis l'application.",
+		},
+	};
+
+	const message = statusMessages[newStatus] ?? {
+		title: "Votre KBIS a été mis à jour",
+		body: `Le statut de votre KBIS est désormais : ${newStatus}.`,
+	};
+
+	// Notification in-app
+	await supabase.from("notifications").insert({
+		actor_id: user.id,
+		recipient_id: company.id,
+		type: "kbis_status_update",
+		title: message.title,
+		body: message.body,
+		entity_type: "kbis_review",
+		entity_id: company.id,
+		is_read: false,
+		metadata: { screen: "kbisdocumentverification" },
+	});
+
+	// E-mail via Edge Function
+	if (company.email) {
+		try {
+			await supabase.functions.invoke("send-kbis-status-email", {
+				body: {
+					email: company.email,
+					companyName: company.name || "votre entreprise",
+					status: newStatus,
+					reason: rejectReason || undefined,
+				},
+			});
+		} catch (err) {
+			console.error(
+				"[sendKbisStatusNotification] Erreur envoi email:",
+				err,
+			);
+		}
+	}
+}
+
 export function DataTable({
 	data: initialData,
 	companies: initialCompaniesData,
@@ -875,6 +1006,12 @@ export function DataTable({
 						: company,
 				),
 			);
+			await sendKbisStatusNotification({
+				company: selectedCompany,
+				newStatus: newKbisStatus,
+				rejectReason:
+					newKbisStatus === "rejected" ? undefined : undefined,
+			});
 		} else {
 			toast.error(
 				"Erreur lors de la mise à jour : " +
@@ -944,6 +1081,14 @@ export function DataTable({
 						: company,
 				),
 			);
+			await sendCompanyStatusNotification({
+				company: selectedCompany,
+				newStatus,
+				rejectReason:
+					newStatus === "rejected" || newStatus === "suspended"
+						? companyRejectReason.trim()
+						: undefined,
+			});
 		} else {
 			toast.error(
 				"Erreur lors de la mise à jour : " +
