@@ -210,6 +210,7 @@ async function getSignedUrl(url) {
 
 function AvatarWithFallback({ url, firstname, lastname }) {
 	const [error, setError] = React.useState(false);
+	const [open, setOpen] = React.useState(false);
 	const initials =
 		`${firstname?.[0] || ""}${lastname?.[0] || ""}`.toUpperCase() || "?";
 	if (!url || error) {
@@ -222,12 +223,33 @@ function AvatarWithFallback({ url, firstname, lastname }) {
 		);
 	}
 	return (
-		<img
-			src={url}
-			alt='avatar'
-			className='h-8 w-8 rounded-full object-cover shrink-0'
-			onError={() => setError(true)}
-		/>
+		<>
+			<button
+				type='button'
+				className='focus:outline-none'
+				onClick={() => setOpen(true)}>
+				<img
+					src={url}
+					alt='avatar'
+					className='h-8 w-8 rounded-full object-cover shrink-0 hover:opacity-80 transition-opacity cursor-pointer'
+					onError={() => setError(true)}
+				/>
+			</button>
+			<Dialog open={open} onOpenChange={setOpen}>
+				<DialogContent className='flex items-center justify-center p-4 max-w-sm'>
+					<DialogTitle>
+						<VisuallyHidden>
+							{firstname} {lastname} – avatar
+						</VisuallyHidden>
+					</DialogTitle>
+					<img
+						src={url}
+						alt='avatar'
+						className='max-h-[70vh] max-w-full rounded-full object-contain'
+					/>
+				</DialogContent>
+			</Dialog>
+		</>
 	);
 }
 
@@ -249,9 +271,8 @@ function getStatusBadge(status) {
 			break;
 	}
 	return (
-		<Badge className='bg-white text-black flex items-center gap-2 border border-gray-300 shadow-sm'>
-			<span
-				className={`inline-block w-2 h-2 rounded-full ${color}`}></span>
+		<Badge variant='outline' className='flex items-center gap-2'>
+			<span className={`inline-block w-2 h-2 rounded-full ${color}`} />
 			{text}
 		</Badge>
 	);
@@ -279,9 +300,8 @@ function getProfileStatusBadge(status) {
 			break;
 	}
 	return (
-		<Badge className='bg-white text-black flex items-center gap-2 border border-gray-300 shadow-sm'>
-			<span
-				className={`inline-block w-2 h-2 rounded-full ${color}`}></span>
+		<Badge variant='outline' className='flex items-center gap-2'>
+			<span className={`inline-block w-2 h-2 rounded-full ${color}`} />
 			{text}
 		</Badge>
 	);
@@ -999,16 +1019,16 @@ function IdVerificationModal({ row }) {
 									}
 								/>
 								{loadingNationalities && (
-									<div className='text-xs text-gray-400'>
+									<div className='text-xs text-muted-foreground'>
 										Recherche...
 									</div>
 								)}
 								{nationalitySuggestions.length > 0 && (
-									<ul className='border rounded bg-white mt-1 max-h-40 overflow-auto'>
+									<ul className='border rounded bg-white dark:bg-zinc-900 mt-1 max-h-40 overflow-auto'>
 										{nationalitySuggestions.map((c) => (
 											<li
 												key={c.code}
-												className='px-2 py-1 cursor-pointer hover:bg-blue-100 flex items-center gap-2'
+												className='px-2 py-1 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/40 flex items-center gap-2'
 												onClick={() =>
 													handleSelectNationality(c)
 												}>
@@ -1019,7 +1039,7 @@ function IdVerificationModal({ row }) {
 									</ul>
 								)}
 								{selectedNationality && (
-									<div className='mt-2 text-sm text-green-700'>
+									<div className='mt-2 text-sm text-green-700 dark:text-green-400'>
 										Sélectionné : {selectedNationality.flag}{" "}
 										{selectedNationality.name}
 									</div>
@@ -1332,12 +1352,12 @@ function DocCard({ doc, onClick }) {
 			type='button'
 			className='w-full text-left focus:outline-none group'
 			onClick={onClick}>
-			<Card className='transition-all duration-150 border hover:border-blue-400 hover:shadow-md group-focus-visible:ring-2 group-focus-visible:ring-blue-400 cursor-pointer'>
+			<Card className='transition-all duration-150 border hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md group-focus-visible:ring-2 group-focus-visible:ring-blue-400 cursor-pointer'>
 				<CardContent className='p-4'>
 					<div className='flex items-start justify-between gap-3'>
 						{/* Icône + titre */}
 						<div className='flex items-center gap-3 min-w-0'>
-							<div className='shrink-0 w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center'>
+							<div className='shrink-0 w-9 h-9 rounded-lg bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center'>
 								<FileText className='w-5 h-5 text-blue-500' />
 							</div>
 							<div className='min-w-0'>
@@ -1374,7 +1394,7 @@ function DocCard({ doc, onClick }) {
 									const expDate = new Date(doc.expires_at);
 									const isExpired = expDate < new Date();
 									return isExpired ? (
-										<span className='flex items-center gap-1 text-xs text-red-600 font-medium'>
+										<span className='flex items-center gap-1 text-xs text-red-600 dark:text-red-400 font-medium'>
 											<Calendar className='w-3 h-3' />
 											Expiré depuis le{" "}
 											{expDate.toLocaleDateString(
@@ -1440,7 +1460,7 @@ function DocStatusSummary({ summary, loading }) {
 			{summary.verified > 0 && (
 				<span className='flex items-center gap-0.5'>
 					<span className='w-1.5 h-1.5 rounded-full bg-green-500' />
-					<span className='text-xs text-green-700 font-medium'>
+					<span className='text-xs text-green-700 dark:text-green-400 font-medium'>
 						{summary.verified}
 					</span>
 				</span>
@@ -1448,7 +1468,7 @@ function DocStatusSummary({ summary, loading }) {
 			{summary.pending > 0 && (
 				<span className='flex items-center gap-0.5'>
 					<span className='w-1.5 h-1.5 rounded-full bg-yellow-400' />
-					<span className='text-xs text-yellow-600 font-medium'>
+					<span className='text-xs text-yellow-600 dark:text-yellow-400 font-medium'>
 						{summary.pending}
 					</span>
 				</span>
@@ -1456,7 +1476,7 @@ function DocStatusSummary({ summary, loading }) {
 			{summary.rejected > 0 && (
 				<span className='flex items-center gap-0.5'>
 					<span className='w-1.5 h-1.5 rounded-full bg-red-500' />
-					<span className='text-xs text-red-600 font-medium'>
+					<span className='text-xs text-red-600 dark:text-red-400 font-medium'>
 						{summary.rejected}
 					</span>
 				</span>
@@ -1640,8 +1660,8 @@ export const dashboardColumns = [
 			return !row.original.id_type ? (
 				<Badge
 					variant='outline'
-					className='inline-flex items-center gap-2 text-gray-400 cursor-default'>
-					<span className='w-2 h-2 rounded-full bg-gray-400' />
+					className='inline-flex items-center gap-2 text-muted-foreground cursor-default'>
+					<span className='w-2 h-2 rounded-full bg-muted-foreground/40' />
 					Aucun document envoyé
 				</Badge>
 			) : (
@@ -1656,8 +1676,8 @@ export const dashboardColumns = [
 			return !row.original.social_security_verification_status ? (
 				<Badge
 					variant='outline'
-					className='inline-flex items-center gap-2 text-gray-400 cursor-default'>
-					<span className='w-2 h-2 rounded-full bg-gray-400' />
+					className='inline-flex items-center gap-2 text-muted-foreground cursor-default'>
+					<span className='w-2 h-2 rounded-full bg-muted-foreground/40' />
 					Aucun document envoyé
 				</Badge>
 			) : (
@@ -1718,8 +1738,8 @@ export const dashboardColumns = [
 				return (
 					<Badge
 						variant='outline'
-						className='inline-flex items-center gap-2 text-gray-400 cursor-default'>
-						<span className='w-2 h-2 rounded-full bg-gray-400' />
+						className='inline-flex items-center gap-2 text-muted-foreground cursor-default'>
+						<span className='w-2 h-2 rounded-full bg-muted-foreground/40' />
 						Aucune signature
 					</Badge>
 				);
