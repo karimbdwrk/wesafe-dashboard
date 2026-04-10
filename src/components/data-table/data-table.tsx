@@ -52,7 +52,7 @@ function renderTableBody<TData, TValue>({
   if (dndEnabled) {
     // Drag & drop désactivé, on affiche simplement les lignes
     return table.getRowModel().rows.map((row) => (
-      <TableRow key={row.id} data-state={row.getIsSelected() && "selected"} className="cursor-pointer hover:bg-gray-100">
+      <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
         {row.getVisibleCells().map((cell) => (
           <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
         ))}
