@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 
 export function CtaSection() {
 	return (
-		<section className='py-20 md:py-32'>
+		<section id='telecharger' className='py-20 md:py-32'>
 			<div className='mx-auto max-w-7xl px-6'>
 				<div className='relative overflow-hidden rounded-3xl border border-border bg-card p-10 md:p-16'>
 					{/* Background glow */}
