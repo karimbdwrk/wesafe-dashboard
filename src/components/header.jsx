@@ -78,7 +78,12 @@ export function Header() {
 					)}
 					<Button
 						size='sm'
-						className='bg-primary text-primary-foreground hover:bg-primary/90'>
+						className='bg-primary text-primary-foreground hover:bg-primary/90'
+						onClick={() =>
+							document
+								.getElementById("telecharger")
+								?.scrollIntoView({ behavior: "smooth" })
+						}>
 						Telecharger
 					</Button>
 				</div>
@@ -131,7 +136,15 @@ export function Header() {
 							)}
 							<Button
 								size='sm'
-								className='bg-primary text-primary-foreground'>
+								className='bg-primary text-primary-foreground'
+								onClick={() => {
+									setMobileOpen(false);
+									document
+										.getElementById("telecharger")
+										?.scrollIntoView({
+											behavior: "smooth",
+										});
+								}}>
 								Telecharger
 							</Button>
 						</div>
