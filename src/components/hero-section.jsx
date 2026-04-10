@@ -1,4 +1,5 @@
 import Image from "next/image";
+import iphonemockup from "@/assets/iphonemockup.png";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 
@@ -21,10 +22,8 @@ export function HeroSection() {
 
 						<h1 className='font-[family-name:var(--font-heading)] text-4xl font-bold leading-tight tracking-tight text-foreground md:text-5xl lg:text-6xl text-balance'>
 							Le recrutement en
-							<span className='text-primary'>
-								{" "}
-								securite
-							</span>, reinvente.
+							<span className='text-primary'> securite</span>,
+							reinvente.
 						</h1>
 
 						<p className='mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground lg:max-w-lg'>
@@ -82,14 +81,14 @@ export function HeroSection() {
 
 					{/* Right - iPhone mockup */}
 					<div className='relative flex-shrink-0'>
-						<div className='relative mx-auto w-[280px] md:w-[320px]'>
+						<div className='relative mx-auto w-xl'>
 							{/* Phone frame */}
-							<div className='relative overflow-hidden rounded-[3rem] border-[8px] border-foreground/20 bg-card shadow-2xl shadow-primary/10'>
+							<div className='relative overflow-hidden'>
 								<Image
-									src='/images/iphone-mockup.jpg'
+									src={iphonemockup}
 									alt='SecuRecruit application mobile'
-									width={320}
-									height={640}
+									width={800}
+									height={720}
 									className='w-full'
 									priority
 								/>
