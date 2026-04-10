@@ -676,6 +676,76 @@ async function sendKbisStatusNotification({
 	}
 }
 
+async function sendDocumentNotification({
+	recipientId,
+	recipientEmail,
+	recipientName,
+	documentLabel,
+	notifType,
+	entityType,
+	entityId,
+	newStatus,
+	rejectReason,
+}) {
+	const {
+		data: { user },
+	} = await supabase.auth.getUser();
+	if (!user || !recipientId) return;
+
+	const statusMessages = {
+		verified: {
+			title: `Votre ${documentLabel} a été validé`,
+			body: `Votre ${documentLabel} a été vérifié et validé par notre équipe.`,
+		},
+		rejected: {
+			title: `Votre ${documentLabel} n'a pas pu être validé`,
+			body: `Votre ${documentLabel} n'a pas pu être accepté. Veuillez le corriger et le soumettre à nouveau.`,
+		},
+		pending: {
+			title: `Votre ${documentLabel} est en cours de vérification`,
+			body: `Notre équipe examine votre ${documentLabel}. Vous serez notifié dès que la vérification sera terminée.`,
+		},
+	};
+
+	const message = statusMessages[newStatus] ?? {
+		title: `Votre ${documentLabel} a été mis à jour`,
+		body: `Le statut de votre ${documentLabel} est désormais : ${newStatus}.`,
+	};
+
+	// Notification in-app
+	await supabase.from("notifications").insert({
+		actor_id: user.id,
+		recipient_id: recipientId,
+		type: notifType,
+		title: message.title,
+		body: message.body,
+		entity_type: entityType,
+		entity_id: entityId,
+		is_read: false,
+		metadata: { screen: "notifications" },
+	});
+
+	// E-mail via Edge Function
+	if (recipientEmail) {
+		try {
+			await supabase.functions.invoke("send-document-status-email", {
+				body: {
+					email: recipientEmail,
+					recipientName,
+					documentLabel,
+					status: newStatus,
+					reason: rejectReason || undefined,
+				},
+			});
+		} catch (err) {
+			console.error(
+				"[sendDocumentNotification] Erreur envoi email:",
+				err,
+			);
+		}
+	}
+}
+
 export function DataTable({
 	data: initialData,
 	companies: initialCompaniesData,
@@ -893,6 +963,17 @@ export function DataTable({
 						: c,
 				),
 			);
+			await sendDocumentNotification({
+				recipientId: selectedCompanySignature.id,
+				recipientEmail: selectedCompanySignature.email,
+				recipientName:
+					selectedCompanySignature.name || "votre entreprise",
+				documentLabel: "Signature électronique",
+				notifType: "document_status_update",
+				entityType: "signature_review",
+				entityId: selectedCompanySignature.id,
+				newStatus: newCompanySignatureStatus,
+			});
 		} else {
 			toast.error("Erreur : " + (error?.message || "Inconnue"));
 		}
@@ -930,6 +1011,16 @@ export function DataTable({
 						: c,
 				),
 			);
+			await sendDocumentNotification({
+				recipientId: selectedCompanyStamp.id,
+				recipientEmail: selectedCompanyStamp.email,
+				recipientName: selectedCompanyStamp.name || "votre entreprise",
+				documentLabel: "Tampon de l'entreprise",
+				notifType: "document_status_update",
+				entityType: "stamp_review",
+				entityId: selectedCompanyStamp.id,
+				newStatus: newCompanyStampStatus,
+			});
 		} else {
 			toast.error("Erreur : " + (error?.message || "Inconnue"));
 		}
@@ -969,6 +1060,19 @@ export function DataTable({
 						: p,
 				),
 			);
+			await sendDocumentNotification({
+				recipientId: selectedSignatureProfile.id,
+				recipientEmail: selectedSignatureProfile.email,
+				recipientName:
+					selectedSignatureProfile.first_name ||
+					selectedSignatureProfile.email ||
+					"Candidat",
+				documentLabel: "Signature électronique",
+				notifType: "document_status_update",
+				entityType: "signature_review",
+				entityId: selectedSignatureProfile.id,
+				newStatus: newSignatureStatus,
+			});
 		} else {
 			toast.error("Erreur : " + (error?.message || "Inconnue"));
 		}
