@@ -1,6 +1,43 @@
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Copy, Pencil } from "lucide-react";
+
+function LogoCell({ logoUrl, name }) {
+	const [open, setOpen] = useState(false);
+	if (!logoUrl) {
+		return <span className='text-xs text-gray-400'>Aucun logo</span>;
+	}
+	return (
+		<>
+			<button
+				type='button'
+				className='focus:outline-none'
+				onClick={() => setOpen(true)}
+				title='Voir le logo en grand'>
+				<img
+					src={logoUrl}
+					alt={name + " logo"}
+					className='h-10 w-10 rounded border object-cover hover:opacity-80 transition-opacity cursor-pointer'
+				/>
+			</button>
+			<Dialog open={open} onOpenChange={setOpen}>
+				<DialogContent className='flex items-center justify-center p-4 max-w-lg'>
+					<DialogTitle>
+						<VisuallyHidden>{name} – logo</VisuallyHidden>
+					</DialogTitle>
+					<img
+						src={logoUrl}
+						alt={name + " logo"}
+						className='max-h-[70vh] max-w-full rounded-lg object-contain'
+					/>
+				</DialogContent>
+			</Dialog>
+		</>
+	);
+}
 
 function getCompanyStatusBadge(status) {
 	switch (status) {
@@ -21,16 +58,12 @@ export const companiesColumns = [
 	{
 		accessorKey: "logo_url",
 		header: "Logo",
-		cell: ({ row }) =>
-			row.original.logo_url ? (
-				<img
-					src={row.original.logo_url}
-					alt={row.original.name + " logo"}
-					className='h-10 w-10 rounded border object-cover'
-				/>
-			) : (
-				<span className='text-xs text-gray-400'>Aucun logo</span>
-			),
+		cell: ({ row }) => (
+			<LogoCell
+				logoUrl={row.original.logo_url}
+				name={row.original.name}
+			/>
+		),
 		size: 60,
 		enableSorting: false,
 	},
@@ -346,7 +379,7 @@ export const companiesColumns = [
 			return (
 				<Badge
 					variant='outline'
-					className={`flex items-center gap-1 w-fit ${credits > 0 ? "bg-orange-50 border-amber-400" : ""}`}>
+					className={`flex items-center gap-1 w-fit ${credits > 0 ? "bg-orange-50 dark:bg-orange-950/30 border-amber-400" : ""}`}>
 					<span>⚡</span>
 					{credits}
 				</Badge>
