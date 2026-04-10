@@ -139,17 +139,44 @@ async function sendDocumentStatusNotification({ doc, tableName, newStatus }) {
 	const entityType = entityTypeMap[tableName] ?? "document_review";
 	const docLabel = docLabelMap[tableName] ?? "document";
 	const statusText = statusLabelMap[newStatus] ?? newStatus;
+	const documentLabel = doc.type || docLabel;
 
 	await supabase.from("notifications").insert({
 		actor_id: user.id,
 		recipient_id: doc.user_id,
 		type: "document_status_update",
-		title: `Votre ${docLabel} a été mis à jour`,
-		body: `Le statut de votre ${doc.type || docLabel} est désormais : ${statusText}.`,
+		title: `Votre ${documentLabel} a été mis à jour`,
+		body: `Le statut de votre ${documentLabel} est désormais : ${statusText}.`,
 		entity_type: entityType,
 		entity_id: doc.id,
 		is_read: false,
+		metadata: { screen: "notifications" },
 	});
+
+	// Récupérer l'email du profil pour l'envoi de l'e-mail
+	try {
+		const { data: profile } = await supabase
+			.from("profiles")
+			.select("email, first_name")
+			.eq("id", doc.user_id)
+			.single();
+
+		if (profile?.email) {
+			await supabase.functions.invoke("send-document-status-email", {
+				body: {
+					email: profile.email,
+					recipientName: profile.first_name || profile.email,
+					documentLabel,
+					status: newStatus,
+				},
+			});
+		}
+	} catch (err) {
+		console.error(
+			"[sendDocumentStatusNotification] Erreur envoi email:",
+			err,
+		);
+	}
 }
 
 async function getSignedUrl(url) {
@@ -300,6 +327,54 @@ function SocialSecurityModal({ row }) {
 			row.original.social_security_verification_status = status;
 			toast.success("Statut mis à jour !");
 			setOpen(false);
+			// Notification in-app + email
+			const {
+				data: { user },
+			} = await supabase.auth.getUser();
+			if (user && row.original.id) {
+				const ssDocLabel =
+					docTypeLabel[row.original.social_security_document_type] ||
+					"document Sécurité Sociale";
+				const statusMsg =
+					{
+						verified: "validé",
+						rejected: "refusé",
+						pending: "en attente",
+					}[status] ?? status;
+				await supabase.from("notifications").insert({
+					actor_id: user.id,
+					recipient_id: row.original.id,
+					type: "document_status_update",
+					title: `Votre ${ssDocLabel} a été mis à jour`,
+					body: `Le statut de votre ${ssDocLabel} est désormais : ${statusMsg}.`,
+					entity_type: "social_security_review",
+					entity_id: row.original.id,
+					is_read: false,
+					metadata: { screen: "notifications" },
+				});
+				if (row.original.email) {
+					try {
+						await supabase.functions.invoke(
+							"send-document-status-email",
+							{
+								body: {
+									email: row.original.email,
+									recipientName:
+										row.original.first_name ||
+										row.original.email,
+									documentLabel: ssDocLabel,
+									status,
+								},
+							},
+						);
+					} catch (err) {
+						console.error(
+							"[SocialSecurityModal] Erreur envoi email:",
+							err,
+						);
+					}
+				}
+			}
 		}
 	};
 
@@ -712,6 +787,52 @@ function IdVerificationModal({ row }) {
 			row.original.id_verification_status = status;
 			row.original.id_validity_date = validityDate;
 			row.original.nationality = selectedNationalityCode;
+			// Notification in-app
+			const {
+				data: { user },
+			} = await supabase.auth.getUser();
+			if (user && row.original.id) {
+				const idDocLabel = idTypeLabel[idType] || "pièce d'identité";
+				const statusMsg =
+					{
+						verified: "validé",
+						rejected: "refusé",
+						pending: "en attente",
+					}[status] ?? status;
+				await supabase.from("notifications").insert({
+					actor_id: user.id,
+					recipient_id: row.original.id,
+					type: "document_status_update",
+					title: `Votre ${idDocLabel} a été mis à jour`,
+					body: `Le statut de votre ${idDocLabel} est désormais : ${statusMsg}.`,
+					entity_type: "identity_review",
+					entity_id: row.original.id,
+					is_read: false,
+					metadata: { screen: "notifications" },
+				});
+				if (row.original.email) {
+					try {
+						await supabase.functions.invoke(
+							"send-document-status-email",
+							{
+								body: {
+									email: row.original.email,
+									recipientName:
+										row.original.first_name ||
+										row.original.email,
+									documentLabel: idDocLabel,
+									status,
+								},
+							},
+						);
+					} catch (err) {
+						console.error(
+							"[IdVerificationModal] Erreur envoi email:",
+							err,
+						);
+					}
+				}
+			}
 		}
 	};
 
