@@ -14,8 +14,6 @@ import {
 } from "@/components/ui/sheet";
 import { supabase } from "@/lib/supabase/supabaseClient";
 
-const SUPERADMIN_ID = "c5f72d6f-7ab4-4e19-8b3b-12714740efad";
-
 type Notification = {
 	id: string;
 	title: string;
@@ -43,46 +41,70 @@ export function NotificationsDrawer() {
 	const [open, setOpen] = useState(false);
 	const [notifications, setNotifications] = useState<Notification[]>([]);
 	const [actorNames, setActorNames] = useState<Record<string, string>>({});
+	const [userId, setUserId] = useState<string | null>(null);
 
 	useEffect(() => {
-		supabase
-			.from("notifications")
-			.select("*")
-			.eq("recipient_id", SUPERADMIN_ID)
-			.neq("type", "support_message")
-			.order("created_at", { ascending: false })
-			.then(async ({ data, error }) => {
-				if (error) {
-					console.error("[NotificationsDrawer] Erreur:", error.message);
-					return;
-				}
-				const notifs = (data as Notification[]) ?? [];
-				setNotifications(notifs);
+		async function init() {
+			const { data: auth } = await supabase.auth.getUser();
+			const user = auth?.user;
+			if (!user) return;
+			setUserId(user.id);
 
-				// Récupérer les noms des acteurs
-				const ids = [...new Set(notifs.map((n) => n.actor_id).filter(Boolean))] as string[];
-				if (ids.length === 0) return;
+			// Détecter le rôle : company ou admin
+			const { data: company } = await supabase
+				.from("companies")
+				.select("id")
+				.eq("id", user.id)
+				.maybeSingle();
 
-				const [{ data: profiles }, { data: companies }] = await Promise.all([
-					supabase
-						.from("profiles")
-						.select("id, firstname, lastname")
-						.in("id", ids),
-					supabase
-						.from("companies")
-						.select("id, name")
-						.in("id", ids),
-				]);
+			const isCompany = !!company;
 
-				const map: Record<string, string> = {};
-				profiles?.forEach((p) => {
-					map[p.id] = `${p.firstname || ""} ${p.lastname || ""}`.trim() || "Candidat";
-				});
-				companies?.forEach((c) => {
-					map[c.id] = c.name || "Entreprise";
-				});
-				setActorNames(map);
+			// Construction de la requête selon le rôle
+			let query = supabase
+				.from("notifications")
+				.select("*")
+				.eq("recipient_id", user.id)
+				.order("created_at", { ascending: false });
+
+			// Les admins n'ont pas besoin des notifs de type support_message (gérées dans la page messagerie)
+			if (!isCompany) {
+				query = query.neq("type", "support_message");
+			}
+
+			const { data, error } = await query;
+
+			if (error) {
+				console.error("[NotificationsDrawer] Erreur:", error.message);
+				return;
+			}
+			const notifs = (data as Notification[]) ?? [];
+			setNotifications(notifs);
+
+			// Récupérer les noms des acteurs
+			const ids = [...new Set(notifs.map((n) => n.actor_id).filter(Boolean))] as string[];
+			if (ids.length === 0) return;
+
+			const [{ data: profiles }, { data: companies }] = await Promise.all([
+				supabase
+					.from("profiles")
+					.select("id, firstname, lastname")
+					.in("id", ids),
+				supabase
+					.from("companies")
+					.select("id, name")
+					.in("id", ids),
+			]);
+
+			const map: Record<string, string> = {};
+			profiles?.forEach((p) => {
+				map[p.id] = `${p.firstname || ""} ${p.lastname || ""}`.trim() || "Candidat";
 			});
+			companies?.forEach((c) => {
+				map[c.id] = c.name || "Entreprise";
+			});
+			setActorNames(map);
+		}
+		init();
 	}, []);
 
 	const unreadCount = notifications.filter((n) => !n.is_read).length;
