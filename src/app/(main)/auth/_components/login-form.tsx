@@ -36,42 +36,55 @@ export function LoginForm() {
       toast.error("Échec de la connexion", { description: authError?.message || "Identifiants invalides." });
       return;
     }
-    // Vérification dans la table admins
+
     const userId = authData.user.id;
-    const { data: adminData, error: adminError } = await supabase
+
+    // 1. Candidat → table profiles
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", userId)
+      .maybeSingle();
+    if (profileData) {
+      toast.success("Connexion réussie", { description: "Bienvenue !" });
+      router.push("/jobs");
+      return;
+    }
+
+    // 2. Super admin → table admins (role super_admin)
+    const { data: adminData } = await supabase
       .from("admins")
       .select("role")
       .eq("id", userId)
-      .single();
-    if (adminError || !adminData || !(adminData.role === "admin" || adminData.role === "super_admin")) {
-      // Vérifie si c'est un candidat (table profiles)
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("id", userId)
-        .maybeSingle();
-      if (profileData) {
-        await supabase.auth.signOut();
-        router.push("/unauthorized?role=candidate");
-        return;
-      }
-      // Vérifie si c'est un pro (table companies, id = auth.users.id)
-      const { data: companyData } = await supabase
-        .from("companies")
-        .select("id")
-        .eq("id", userId)
-        .maybeSingle();
-      if (companyData) {
-        await supabase.auth.signOut();
-        router.push("/unauthorized?role=company");
-        return;
-      }
-      await supabase.auth.signOut();
-      toast.error("Accès refusé", { description: "Votre compte n'est pas autorisé à accéder à cet espace administrateur." });
+      .maybeSingle();
+    if (adminData?.role === "super_admin") {
+      toast.success("Connexion réussie", { description: "Bienvenue, super admin !" });
+      router.push("/dashboard/users");
       return;
     }
-    toast.success("Connexion réussie", { description: `Bienvenue, ${adminData.role}!` });
-    router.push("/dashboard/users");
+
+    // 3. Entreprise → table companies
+    const { data: companyData } = await supabase
+      .from("companies")
+      .select("id")
+      .eq("id", userId)
+      .maybeSingle();
+    if (companyData) {
+      toast.success("Connexion réussie", { description: "Bienvenue !" });
+      router.push("/dashboard/my-jobs");
+      return;
+    }
+
+    // 4. Admin simple
+    if (adminData?.role === "admin") {
+      toast.success("Connexion réussie", { description: "Bienvenue, admin !" });
+      router.push("/dashboard/users");
+      return;
+    }
+
+    // Aucun rôle reconnu
+    await supabase.auth.signOut();
+    toast.error("Accès refusé", { description: "Aucun compte associé à cet identifiant." });
   };
 
   return (
