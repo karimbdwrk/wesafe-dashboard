@@ -44,6 +44,19 @@ export interface NavGroup {
   items: NavMainItem[];
 }
 
+export const companySidebarItems: NavGroup[] = [
+  {
+    id: 1,
+    items: [
+      {
+        title: "Offres d'emploi",
+        url: "/dashboard/my-jobs",
+        icon: Briefcase,
+      },
+    ],
+  },
+];
+
 export const sidebarItems: NavGroup[] = [
   {
     id: 1,
