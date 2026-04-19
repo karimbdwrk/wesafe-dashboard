@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/supabaseClient";
+import { CATEGORY } from "@/constants/categories";
+import { regions } from "@/constants/regions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,27 +29,7 @@ import {
 
 const JOBS_PER_PAGE = 10;
 
-const contractTypeLabel = {
-	cdi: "CDI",
-	cdd: "CDD",
-	freelance: "Freelance",
-	stage: "Stage",
-	alternance: "Alternance",
-	full_time: "CDI",
-	part_time: "CDD",
-	internship: "Stage",
-	apprentice: "Alternance",
-};
-
-const categoryLabel = {
-	asc: "Agent cynophile",
-	aps: "Agent de sécurité",
-	ssiap1: "SSIAP 1",
-	ssiap2: "SSIAP 2",
-	ssiap3: "SSIAP 3",
-	apr: "Protection rapprochée",
-	ti: "Télésurveillance",
-};
+const contractTypeLabel = { cdi: "CDI", cdd: "CDD" };
 
 const workScheduleLabel = {
 	daily: "Journée",
@@ -62,21 +44,31 @@ const CONTRACT_OPTIONS = [
 	{ value: "", label: "Tous contrats" },
 	{ value: "cdi", label: "CDI" },
 	{ value: "cdd", label: "CDD" },
-	{ value: "freelance", label: "Freelance" },
-	{ value: "stage", label: "Stage" },
-	{ value: "alternance", label: "Alternance" },
 ];
 
 const CATEGORY_OPTIONS = [
 	{ value: "", label: "Toutes catégories" },
-	{ value: "aps", label: "Agent de sécurité" },
-	{ value: "ssiap1", label: "SSIAP 1" },
-	{ value: "ssiap2", label: "SSIAP 2" },
-	{ value: "ssiap3", label: "SSIAP 3" },
-	{ value: "asc", label: "Agent cynophile" },
-	{ value: "apr", label: "Protection rapprochée" },
-	{ value: "ti", label: "Télésurveillance" },
+	...CATEGORY.map((c) => ({
+		value: c.id,
+		label: `${c.acronym} — ${c.name}`,
+	})),
 ];
+
+const REGION_OPTIONS = [
+	{ value: "", label: "Toutes régions" },
+	...regions.map((r) => ({ value: r.nom, label: r.nom })),
+];
+
+function getCatLabel(id) {
+	const found = CATEGORY.find((c) => c.id === id);
+	return found ? `${found.acronym} — ${found.name}` : (id ?? "");
+}
+
+function getCatAcronym(id) {
+	return (
+		CATEGORY.find((c) => c.id === id)?.acronym ?? id?.toUpperCase() ?? ""
+	);
+}
 
 // ─── Utilitaires ───────────────────────────────────────────────────────────────
 
@@ -208,6 +200,11 @@ function JobCard({ job, selected, onClick }) {
 									job.contract_type.toUpperCase()}
 							</span>
 						)}
+						{job.category && (
+							<span className='rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground'>
+								{getCatAcronym(job.category)}
+							</span>
+						)}
 					</div>
 
 					<div className='mt-2 flex items-center justify-between gap-2'>
@@ -299,7 +296,7 @@ function JobDetail({ job, onClose }) {
 				)}
 				{job.category && (
 					<Badge variant='secondary'>
-						{categoryLabel[job.category] ?? job.category}
+						{getCatLabel(job.category)}
 					</Badge>
 				)}
 				{job.work_schedule && workScheduleLabel[job.work_schedule] && (
@@ -493,6 +490,7 @@ export default function JobsPage() {
 	const [search, setSearch] = useState("");
 	const [contractFilter, setContractFilter] = useState("");
 	const [categoryFilter, setCategoryFilter] = useState("");
+	const [regionFilter, setRegionFilter] = useState("");
 	const [showFilters, setShowFilters] = useState(false);
 	const [selectedJob, setSelectedJob] = useState(null);
 	const [page, setPage] = useState(1);
@@ -514,7 +512,7 @@ export default function JobsPage() {
 	// Réinitialise la page quand les filtres changent
 	useEffect(() => {
 		setPage(1);
-	}, [search, contractFilter, categoryFilter]);
+	}, [search, contractFilter, categoryFilter, regionFilter]);
 
 	const filtered = jobs.filter((job) => {
 		const q = search.toLowerCase();
@@ -528,7 +526,8 @@ export default function JobsPage() {
 			!contractFilter || job.contract_type === contractFilter;
 		const matchCategory =
 			!categoryFilter || job.category === categoryFilter;
-		return matchSearch && matchContract && matchCategory;
+		const matchRegion = !regionFilter || job.region === regionFilter;
+		return matchSearch && matchContract && matchCategory && matchRegion;
 	});
 
 	const totalPages = Math.max(1, Math.ceil(filtered.length / JOBS_PER_PAGE));
@@ -550,9 +549,11 @@ export default function JobsPage() {
 		[router],
 	);
 
-	const activeFiltersCount = [contractFilter, categoryFilter].filter(
-		Boolean,
-	).length;
+	const activeFiltersCount = [
+		contractFilter,
+		categoryFilter,
+		regionFilter,
+	].filter(Boolean).length;
 
 	return (
 		<div className='min-h-dvh bg-background flex flex-col mt-12'>
@@ -610,6 +611,18 @@ export default function JobsPage() {
 									</option>
 								))}
 							</select>
+							<select
+								value={regionFilter}
+								onChange={(e) =>
+									setRegionFilter(e.target.value)
+								}
+								className='flex-1 rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40'>
+								{REGION_OPTIONS.map((o) => (
+									<option key={o.value} value={o.value}>
+										{o.label}
+									</option>
+								))}
+							</select>
 							{activeFiltersCount > 0 && (
 								<Button
 									variant='ghost'
@@ -617,6 +630,7 @@ export default function JobsPage() {
 									onClick={() => {
 										setContractFilter("");
 										setCategoryFilter("");
+										setRegionFilter("");
 									}}
 									className='text-muted-foreground flex items-center gap-1'>
 									<X className='h-3.5 w-3.5' />
