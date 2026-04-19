@@ -235,13 +235,175 @@ function MessagingSheet({ open, onClose, application, companyId }) {
 	const [messages, setMessages] = useState([]);
 	const [newMsg, setNewMsg] = useState("");
 	const [sending, setSending] = useState(false);
+	const [isTyping, setIsTyping] = useState(false);
 	const scrollContainerRef = useRef(null);
+	const pendingOptimisticRef = useRef(null);
+	const presenceChannelRef = useRef(null);
+	const broadcastChannelRef = useRef(null);
+	const presenceIntervalRef = useRef(null);
+	const typingTimeoutRef = useRef(null);
+	const typingStopTimeoutRef = useRef(null);
+
 	const applyId = application?.id;
+	const candidateId =
+		application?.profiles?.id ?? application?.candidate_id ?? null;
 	const candidateName =
 		`${application?.profiles?.firstname ?? ""} ${application?.profiles?.lastname ?? ""}`.trim();
 
+	// ── Scroll to bottom helper ───────────────────────────────────────────────
+	function scrollToBottom(animated = true) {
+		setTimeout(
+			() => {
+				const el = scrollContainerRef.current;
+				if (el) el.scrollTop = el.scrollHeight;
+			},
+			animated ? 50 : 0,
+		);
+	}
+
+	// ── Présence : upsert toutes les 3s + cleanup à la fermeture ─────────────
 	useEffect(() => {
-		if (!open || !applyId) return;
+		if (!open || !applyId || !companyId) return;
+
+		const upsertPresence = () =>
+			supabase.from("user_presence").upsert({
+				user_id: companyId,
+				apply_id: applyId,
+				last_seen: new Date().toISOString(),
+			});
+
+		upsertPresence();
+		presenceIntervalRef.current = setInterval(upsertPresence, 3000);
+
+		return () => {
+			clearInterval(presenceIntervalRef.current);
+			supabase
+				.from("user_presence")
+				.delete()
+				.eq("user_id", companyId)
+				.eq("apply_id", applyId)
+				.then(() => {});
+		};
+	}, [open, applyId, companyId]);
+
+	// ── Broadcast channel : typing / online / offline ─────────────────────────
+	useEffect(() => {
+		if (!open || !applyId || !companyId) return;
+
+		const broadcastChannel = supabase
+			.channel(`conv-${applyId}`)
+			.on("broadcast", { event: "typing" }, (payload) => {
+				if (payload.payload?.sender_id === companyId) return;
+				setIsTyping(true);
+				if (typingStopTimeoutRef.current)
+					clearTimeout(typingStopTimeoutRef.current);
+				typingStopTimeoutRef.current = setTimeout(async () => {
+					setIsTyping(false);
+					// Timeout dépassé → fetch immédiat au cas où le stop n'est pas arrivé
+					const { data } = await supabase
+						.from("messages")
+						.select("*")
+						.eq("apply_id", applyId)
+						.order("created_at", { ascending: true });
+					if (!data) return;
+					setMessages((prev) => {
+						if (
+							data.length <=
+							prev.filter(
+								(m) => !String(m.id).startsWith("temp_"),
+							).length
+						)
+							return prev;
+						scrollToBottom();
+						return data;
+					});
+				}, 3500);
+			})
+			.on("broadcast", { event: "typing_stop" }, (payload) => {
+				if (payload.payload?.sender_id === companyId) return;
+				if (typingStopTimeoutRef.current)
+					clearTimeout(typingStopTimeoutRef.current);
+				setIsTyping(false);
+				// Fetch immédiat : le message vient probablement d'être envoyé
+				setTimeout(async () => {
+					const { data } = await supabase
+						.from("messages")
+						.select("*")
+						.eq("apply_id", applyId)
+						.order("created_at", { ascending: true });
+					if (!data) return;
+					const unread = data.filter(
+						(m) => m.sender_id !== companyId && !m.is_read,
+					);
+					if (unread.length > 0) {
+						supabase
+							.from("messages")
+							.update({ is_read: true })
+							.in(
+								"id",
+								unread.map((m) => m.id),
+							)
+							.then(() => {});
+					}
+					setMessages((prev) => {
+						if (
+							data.length <=
+							prev.filter(
+								(m) => !String(m.id).startsWith("temp_"),
+							).length
+						)
+							return prev;
+						scrollToBottom();
+						return data;
+					});
+				}, 400);
+			})
+			.on("broadcast", { event: "new_message" }, (payload) => {
+				if (payload.payload?.message?.sender_id === companyId) return;
+				const incomingMsg = payload.payload?.message;
+				if (!incomingMsg) return;
+				setIsTyping(false);
+				if (typingStopTimeoutRef.current)
+					clearTimeout(typingStopTimeoutRef.current);
+				setMessages((prev) => {
+					if (prev.some((m) => m.id === incomingMsg.id)) return prev;
+					return [...prev, { ...incomingMsg, is_read: true }];
+				});
+				scrollToBottom();
+				// Marquer comme lu
+				supabase
+					.from("messages")
+					.update({ is_read: true })
+					.eq("id", incomingMsg.id)
+					.then(() => {});
+			})
+			.subscribe((status) => {
+				if (status === "SUBSCRIBED") {
+					broadcastChannelRef.current = broadcastChannel;
+					broadcastChannel.send({
+						type: "broadcast",
+						event: "online",
+						payload: { sender_id: companyId },
+					});
+				}
+			});
+
+		return () => {
+			broadcastChannelRef.current?.send({
+				type: "broadcast",
+				event: "offline",
+				payload: { sender_id: companyId },
+			});
+			broadcastChannelRef.current = null;
+			if (typingStopTimeoutRef.current)
+				clearTimeout(typingStopTimeoutRef.current);
+			supabase.removeChannel(broadcastChannel);
+		};
+	}, [open, applyId, companyId]);
+
+	// ── Chargement initial + realtime (INSERT + UPDATE) ───────────────────────
+	useEffect(() => {
+		if (!open || !applyId || !companyId) return;
 
 		async function loadMessages() {
 			const { data } = await supabase
@@ -249,16 +411,41 @@ function MessagingSheet({ open, onClose, application, companyId }) {
 				.select("*")
 				.eq("apply_id", applyId)
 				.order("created_at", { ascending: true });
-			setMessages(data ?? []);
-			setTimeout(() => {
-				const el = scrollContainerRef.current;
-				if (el) el.scrollTop = el.scrollHeight;
-			}, 50);
+
+			const msgs = data ?? [];
+			setMessages(msgs);
+			scrollToBottom(false);
+
+			// Marquer les messages du candidat comme lus
+			const unread = msgs.filter(
+				(m) => m.sender_id !== companyId && !m.is_read,
+			);
+			if (unread.length > 0) {
+				supabase
+					.from("messages")
+					.update({ is_read: true })
+					.in(
+						"id",
+						unread.map((m) => m.id),
+					)
+					.then(() => {});
+			}
+
+			// Marquer les notifications de cette conversation comme lues
+			supabase
+				.from("notifications")
+				.update({ is_read: true, read_at: new Date().toISOString() })
+				.eq("recipient_id", companyId)
+				.eq("entity_type", "message")
+				.eq("entity_id", applyId)
+				.or("is_read.is.false,is_read.is.null")
+				.then(() => {});
 		}
+
 		loadMessages();
 
 		const channel = supabase
-			.channel(`messages-${applyId}`)
+			.channel(`messages:${applyId}`)
 			.on(
 				"postgres_changes",
 				{
@@ -267,12 +454,62 @@ function MessagingSheet({ open, onClose, application, companyId }) {
 					table: "messages",
 					filter: `apply_id=eq.${applyId}`,
 				},
+				async (payload) => {
+					const newMsg = payload.new;
+
+					// Si message du candidat → désactiver indicateur + marquer lu
+					if (newMsg.sender_id !== companyId) {
+						setIsTyping(false);
+						if (typingStopTimeoutRef.current)
+							clearTimeout(typingStopTimeoutRef.current);
+
+						supabase
+							.from("messages")
+							.update({ is_read: true })
+							.eq("id", newMsg.id)
+							.then(() => {});
+
+						setMessages((prev) => {
+							if (prev.some((m) => m.id === newMsg.id))
+								return prev;
+							return [...prev, { ...newMsg, is_read: true }];
+						});
+					} else {
+						// Mon propre message : remplacer l'optimiste temporaire
+						setMessages((prev) => {
+							if (prev.some((m) => m.id === newMsg.id))
+								return prev;
+							const tempIdx = prev.findIndex(
+								(m) =>
+									typeof m.id === "string" &&
+									m.id.startsWith("temp_"),
+							);
+							if (tempIdx !== -1) {
+								const next = [...prev];
+								next[tempIdx] = newMsg;
+								pendingOptimisticRef.current = null;
+								return next;
+							}
+							return [...prev, newMsg];
+						});
+					}
+					scrollToBottom();
+				},
+			)
+			.on(
+				"postgres_changes",
+				{
+					event: "UPDATE",
+					schema: "public",
+					table: "messages",
+					filter: `apply_id=eq.${applyId}`,
+				},
 				(payload) => {
-					setMessages((prev) => [...prev, payload.new]);
-					setTimeout(() => {
-						const el = scrollContainerRef.current;
-						if (el) el.scrollTop = el.scrollHeight;
-					}, 50);
+					setMessages((prev) =>
+						prev.map((m) =>
+							m.id === payload.new.id ? payload.new : m,
+						),
+					);
 				},
 			)
 			.subscribe();
@@ -280,19 +517,208 @@ function MessagingSheet({ open, onClose, application, companyId }) {
 		return () => {
 			supabase.removeChannel(channel);
 		};
-	}, [open, applyId]);
+	}, [open, applyId, companyId]);
 
+	// ── Polling de secours (si postgres_changes ne reçoit pas) ───────────────
+	useEffect(() => {
+		if (!open || !applyId || !companyId) return;
+
+		const interval = setInterval(async () => {
+			const { data } = await supabase
+				.from("messages")
+				.select("*")
+				.eq("apply_id", applyId)
+				.order("created_at", { ascending: true });
+
+			if (!data) return;
+
+			setMessages((prev) => {
+				// Pas de nouveaux messages
+				if (
+					data.length <=
+					prev.filter((m) => !String(m.id).startsWith("temp_")).length
+				)
+					return prev;
+
+				// Marquer les messages reçus comme lus
+				const unread = data.filter(
+					(m) => m.sender_id !== companyId && !m.is_read,
+				);
+				if (unread.length > 0) {
+					supabase
+						.from("messages")
+						.update({ is_read: true })
+						.in(
+							"id",
+							unread.map((m) => m.id),
+						)
+						.then(() => {});
+				}
+
+				setTimeout(() => scrollToBottom(), 50);
+				// Fusionner en conservant les messages optimistes en attente
+				const confirmed = data;
+				const pending = prev.filter(
+					(m) =>
+						String(m.id).startsWith("temp_") &&
+						pendingOptimisticRef.current === m.id,
+				);
+				return [...confirmed, ...pending];
+			});
+		}, 4000);
+
+		return () => clearInterval(interval);
+	}, [open, applyId, companyId]);
+
+	// ── Envoi de message ──────────────────────────────────────────────────────
 	async function sendMessage() {
 		if (!newMsg.trim() || !companyId || !applyId) return;
-		setSending(true);
-		await supabase.from("messages").insert({
-			apply_id: applyId,
-			sender_id: companyId,
-			content: newMsg.trim(),
-			is_read: false,
-		});
+
+		const content = newMsg.trim();
+		const tempId = `temp_${Date.now()}`;
+
+		// Optimistic update
+		pendingOptimisticRef.current = tempId;
 		setNewMsg("");
-		setSending(false);
+		setMessages((prev) => [
+			...prev,
+			{
+				id: tempId,
+				apply_id: applyId,
+				sender_id: companyId,
+				content,
+				created_at: new Date().toISOString(),
+				is_read: false,
+			},
+		]);
+		scrollToBottom();
+
+		// Arrêter l'indicateur de saisie
+		if (typingTimeoutRef.current) {
+			clearTimeout(typingTimeoutRef.current);
+			typingTimeoutRef.current = null;
+		}
+		broadcastChannelRef.current?.send({
+			type: "broadcast",
+			event: "typing_stop",
+			payload: { sender_id: companyId },
+		});
+
+		setSending(true);
+		try {
+			const { data: insertedMsg, error } = await supabase
+				.from("messages")
+				.insert({
+					apply_id: applyId,
+					sender_id: companyId,
+					content,
+					is_read: false,
+				})
+				.select()
+				.single();
+
+			if (error || !insertedMsg) {
+				// Rollback
+				setMessages((prev) => prev.filter((m) => m.id !== tempId));
+				pendingOptimisticRef.current = null;
+				setNewMsg(content);
+				return;
+			}
+
+			// Remplacer l'optimiste si le realtime ne l'a pas déjà fait
+			setMessages((prev) =>
+				prev.map((m) => (m.id === tempId ? insertedMsg : m)),
+			);
+			pendingOptimisticRef.current = null;
+
+			// Broadcaster pour que le candidat reçoive immédiatement
+			broadcastChannelRef.current?.send({
+				type: "broadcast",
+				event: "new_message",
+				payload: { message: insertedMsg },
+			});
+
+			// ── Notification groupée pour le candidat ───────────────────────
+			if (!candidateId) return;
+
+			// Vérifier si le candidat est actif sur cette conversation
+			const { data: presenceData } = await supabase
+				.from("user_presence")
+				.select("apply_id")
+				.eq("user_id", candidateId)
+				.eq("apply_id", applyId)
+				.gte("last_seen", new Date(Date.now() - 5000).toISOString())
+				.single();
+
+			if (presenceData) return; // Candidat actif → pas de notif
+
+			// Supprimer les anciennes notifications de cette conversation
+			await supabase.rpc("delete_conversation_notifications", {
+				p_recipient_id: candidateId,
+				p_apply_id: applyId,
+			});
+
+			// Compter les messages non lus de l'entreprise vers le candidat
+			const { data: unreadMsgs } = await supabase
+				.from("messages")
+				.select("id")
+				.eq("apply_id", applyId)
+				.eq("sender_id", companyId)
+				.or("is_read.is.false,is_read.is.null");
+
+			const msgCount = unreadMsgs?.length ?? 1;
+			const body =
+				msgCount > 1
+					? `${msgCount} nouveaux messages`
+					: "Nouveau message";
+
+			await supabase.from("notifications").insert({
+				actor_id: companyId,
+				recipient_id: candidateId,
+				type: "message",
+				title: application?.jobs?.title ?? "Nouveau message",
+				entity_type: "message",
+				entity_id: applyId,
+				body,
+				is_read: false,
+			});
+		} finally {
+			setSending(false);
+		}
+	}
+
+	// ── Indicateur de saisie ──────────────────────────────────────────────────
+	function handleTyping(e) {
+		const text = e.target.value;
+		setNewMsg(text);
+
+		if (text.length > 0) {
+			broadcastChannelRef.current?.send({
+				type: "broadcast",
+				event: "typing",
+				payload: { sender_id: companyId },
+			});
+			if (typingTimeoutRef.current)
+				clearTimeout(typingTimeoutRef.current);
+			typingTimeoutRef.current = setTimeout(() => {
+				broadcastChannelRef.current?.send({
+					type: "broadcast",
+					event: "typing_stop",
+					payload: { sender_id: companyId },
+				});
+				typingTimeoutRef.current = null;
+			}, 3000);
+		} else {
+			if (typingTimeoutRef.current) {
+				clearTimeout(typingTimeoutRef.current);
+				typingTimeoutRef.current = null;
+			}
+			broadcastChannelRef.current?.send({
+				type: "broadcast",
+				event: "typing_stop",
+				payload: { sender_id: companyId },
+			});
+		}
 	}
 
 	return (
@@ -372,6 +798,17 @@ function MessagingSheet({ open, onClose, application, companyId }) {
 								</div>
 							);
 						})}
+
+						{/* Indicateur de saisie du candidat */}
+						{isTyping && (
+							<div className='flex flex-col gap-0.5 items-start'>
+								<div className='bg-muted rounded-2xl rounded-bl-sm px-3.5 py-2.5 flex items-center gap-1'>
+									<span className='size-1.5 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:0ms]' />
+									<span className='size-1.5 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:150ms]' />
+									<span className='size-1.5 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:300ms]' />
+								</div>
+							</div>
+						)}
 					</div>
 				</div>
 
@@ -379,7 +816,7 @@ function MessagingSheet({ open, onClose, application, companyId }) {
 				<div className='border-t px-4 py-3 flex gap-2 shrink-0'>
 					<Input
 						value={newMsg}
-						onChange={(e) => setNewMsg(e.target.value)}
+						onChange={handleTyping}
 						placeholder='Écrire un message…'
 						onKeyDown={(e) =>
 							e.key === "Enter" && !e.shiftKey && sendMessage()
