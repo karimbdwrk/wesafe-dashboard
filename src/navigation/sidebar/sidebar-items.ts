@@ -1,6 +1,7 @@
 import {
   Banknote,
   Briefcase,
+  ClipboardList,
   Calendar,
   ChartBar,
   Fingerprint,
@@ -52,6 +53,11 @@ export const companySidebarItems: NavGroup[] = [
         title: "Offres d'emploi",
         url: "/dashboard/my-jobs",
         icon: Briefcase,
+      },
+      {
+        title: "Candidatures",
+        url: "/dashboard/my-applications",
+        icon: ClipboardList,
       },
     ],
   },
