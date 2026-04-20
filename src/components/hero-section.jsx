@@ -1,7 +1,7 @@
 import Image from "next/image";
 import iphonemockup from "@/assets/iphonemockup.png";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Zap } from "lucide-react";
 
 export function HeroSection() {
 	return (
@@ -22,15 +22,15 @@ export function HeroSection() {
 
 						<h1 className='font-[family-name:var(--font-heading)] text-4xl font-bold leading-tight tracking-tight text-foreground md:text-5xl lg:text-6xl text-balance'>
 							Le recrutement en
-							<span className='text-primary'> securite</span>,
-							reinvente.
+							<span className='text-primary'> sécurité</span>,
+							réinventé.
 						</h1>
 
 						<p className='mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground lg:max-w-lg'>
-							Trouvez les meilleurs agents de securite ou
-							decrochez votre prochain poste en quelques clics.
+							Trouvez les meilleurs agents de sécurité ou
+							décrochez votre prochain poste en quelques clics.
 							Offres classiques, missions last minute et contrats
-							generes automatiquement.
+							générés automatiquement.
 						</p>
 
 						<div className='mt-8 flex flex-col items-center gap-4 sm:flex-row lg:justify-start'>
@@ -40,12 +40,12 @@ export function HeroSection() {
 								Commencer gratuitement
 								<ArrowRight className='h-4 w-4' />
 							</Button>
-							<Button
+							{/* <Button
 								variant='outline'
 								size='lg'
 								className='border-border text-foreground hover:bg-secondary gap-2 px-8'>
 								Voir la demo
-							</Button>
+							</Button> */}
 						</div>
 
 						{/* Stats */}
@@ -94,21 +94,24 @@ export function HeroSection() {
 								/>
 							</div>
 							{/* Floating badge */}
-							<div className='absolute -right-6 top-20 rounded-xl border border-border bg-card px-4 py-3 shadow-xl'>
+							<div className='absolute -right-6 top-12 rounded-xl border border-border bg-card px-4 py-3 shadow-xl'>
 								<p className='text-xs text-muted-foreground'>
 									Nouvelle mission
 								</p>
 								<p className='font-[family-name:var(--font-heading)] text-sm font-semibold text-foreground'>
 									Agent SSIAP 1
 								</p>
-								<p className='text-xs text-primary'>
-									Last minute
-								</p>
+								<div className='flex items-center mt-1'>
+									<Zap className='h-3 w-3 text-primary inline-block mr-1' />
+									<p className='text-xs text-primary'>
+										Last Minute
+									</p>
+								</div>
 							</div>
 							{/* Floating badge bottom */}
-							<div className='absolute -left-6 bottom-32 rounded-xl border border-border bg-card px-4 py-3 shadow-xl'>
+							<div className='absolute -left-0 bottom-32 rounded-xl border border-border bg-card px-4 py-3 shadow-xl'>
 								<p className='text-xs text-muted-foreground'>
-									Contrat genere
+									Contrat généré
 								</p>
 								<p className='font-[family-name:var(--font-heading)] text-sm font-semibold text-primary'>
 									En 30 secondes
