@@ -12,6 +12,8 @@ import {
 	ArrowRight,
 	Building2,
 	ShieldCheck,
+	ClipboardList,
+	UserCircle,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase/supabaseClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -82,6 +84,37 @@ const ADMIN_LINKS = [
 	},
 ];
 
+const CANDIDATE_LINKS = [
+	{
+		label: "Mes candidatures",
+		description: "Suivez l'avancement de vos dossiers",
+		href: "/dashboard/my-applications",
+		icon: ClipboardList,
+		color: "bg-blue-500/10 text-blue-500",
+	},
+	{
+		label: "Offres disponibles",
+		description: "Explorez les annonces du moment",
+		href: "/dashboard/jobs",
+		icon: Briefcase,
+		color: "bg-amber-500/10 text-amber-500",
+	},
+	{
+		label: "Mes contrats",
+		description: "Contrats en attente de signature",
+		href: "/dashboard/contracts",
+		icon: FileText,
+		color: "bg-emerald-500/10 text-emerald-500",
+	},
+	{
+		label: "Mon profil",
+		description: "Complétez et mettez à jour votre profil",
+		href: "/dashboard/profile",
+		icon: UserCircle,
+		color: "bg-violet-500/10 text-violet-500",
+	},
+];
+
 // ─── Skeleton card ─────────────────────────────────────────────────────────────
 
 function CardSkeleton() {
@@ -127,7 +160,7 @@ function QuickLinkCard({ label, description, href, icon: Icon, color }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DefaultPage() {
-	const [role, setRole] = useState(null); // "company" | "admin" | "super_admin"
+	const [role, setRole] = useState(null); // "company" | "admin" | "super_admin" | "candidate"
 	const [userName, setUserName] = useState(null);
 	const [loading, setLoading] = useState(true);
 
@@ -140,12 +173,6 @@ export default function DefaultPage() {
 				return;
 			}
 
-			// Display name from metadata
-			const meta = user.user_metadata;
-			setUserName(
-				meta?.name || meta?.full_name || meta?.company_name || null,
-			);
-
 			// Detect role by table lookup
 			const { data: company } = await supabase
 				.from("companies")
@@ -154,7 +181,7 @@ export default function DefaultPage() {
 				.maybeSingle();
 
 			if (company) {
-				setUserName(company.name || userName);
+				setUserName(company.name || null);
 				setRole("company");
 				setLoading(false);
 				return;
@@ -167,7 +194,26 @@ export default function DefaultPage() {
 				.maybeSingle();
 
 			if (admin) {
+				const meta = user.user_metadata;
+				setUserName(meta?.full_name || meta?.name || null);
 				setRole(admin.role === "super_admin" ? "super_admin" : "admin");
+				setLoading(false);
+				return;
+			}
+
+			// Candidat : chercher dans profiles
+			const { data: profile } = await supabase
+				.from("profiles")
+				.select("firstname, lastname")
+				.eq("id", user.id)
+				.maybeSingle();
+
+			if (profile) {
+				setUserName(
+					`${profile.firstname ?? ""} ${profile.lastname ?? ""}`.trim() ||
+						null,
+				);
+				setRole("candidate");
 			}
 
 			setLoading(false);
@@ -176,7 +222,12 @@ export default function DefaultPage() {
 	}, []);
 
 	const isCompany = role === "company";
-	const links = isCompany ? COMPANY_LINKS : ADMIN_LINKS;
+	const isCandidate = role === "candidate";
+	const links = isCompany
+		? COMPANY_LINKS
+		: isCandidate
+			? CANDIDATE_LINKS
+			: ADMIN_LINKS;
 
 	const greeting = (() => {
 		const h = new Date().getHours();
@@ -185,106 +236,176 @@ export default function DefaultPage() {
 		return "Bonsoir";
 	})();
 
+	const roleLabel = isCompany
+		? "Entreprise"
+		: isCandidate
+			? "Candidat"
+			: role === "super_admin"
+				? "Super Admin"
+				: "Admin";
+
+	const roleBadgeClass = isCompany
+		? "bg-blue-500/10 text-blue-500 border-blue-500/20"
+		: isCandidate
+			? "bg-violet-500/10 text-violet-600 border-violet-500/20"
+			: "bg-amber-500/10 text-amber-600 border-amber-500/20";
+
+	const roleIcon = isCompany ? (
+		<Building2 className='size-3.5' />
+	) : isCandidate ? (
+		<UserCircle className='size-3.5' />
+	) : (
+		<ShieldCheck className='size-3.5' />
+	);
+
+	const subtitle = loading
+		? "Chargement de votre espace…"
+		: isCompany
+			? "Bienvenue sur votre espace entreprise WeSafe."
+			: isCandidate
+				? "Bienvenue sur votre espace candidat WeSafe."
+				: "Bienvenue sur le panneau d'administration WeSafe.";
+
 	return (
-		<div className='max-w-4xl mx-auto space-y-8 py-2'>
-			{/* Header */}
-			<div className='flex items-start justify-between gap-4'>
-				<div>
-					<h1 className='text-2xl font-semibold tracking-tight'>
-						{greeting}
-						{userName ? `, ${userName}` : ""} 👋
-					</h1>
-					<p className='text-muted-foreground text-sm mt-1'>
-						{loading
-							? "Chargement de votre espace…"
-							: isCompany
-								? "Bienvenue sur votre espace entreprise WeSafe."
-								: "Bienvenue sur le panneau d'administration WeSafe."}
-					</p>
-				</div>
-				{!loading && (
-					<div
-						className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${
-							isCompany
-								? "bg-blue-500/10 text-blue-500 border-blue-500/20"
-								: "bg-amber-500/10 text-amber-600 border-amber-500/20"
-						}`}>
-						{isCompany ? (
-							<Building2 className='size-3.5' />
-						) : (
-							<ShieldCheck className='size-3.5' />
-						)}
-						{isCompany
-							? "Entreprise"
-							: role === "super_admin"
-								? "Super Admin"
-								: "Admin"}
+		<div className='relative'>
+			{/* Contenu flouté pour les candidats */}
+			<div
+				className={`max-w-4xl mx-auto space-y-8 py-2 transition-all duration-300 ${
+					isCandidate ? "blur-sm pointer-events-none select-none" : ""
+				}`}>
+				{/* Header */}
+				<div className='flex items-start justify-between gap-4'>
+					<div>
+						<h1 className='text-2xl font-semibold tracking-tight'>
+							{greeting}
+							{userName ? `, ${userName}` : ""} 👋
+						</h1>
+						<p className='text-muted-foreground text-sm mt-1'>
+							{subtitle}
+						</p>
 					</div>
+					{!loading && (
+						<div
+							className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${roleBadgeClass}`}>
+							{roleIcon}
+							{roleLabel}
+						</div>
+					)}
+				</div>
+
+				{/* Quick links */}
+				<section>
+					<h2 className='text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4'>
+						Accès rapides
+					</h2>
+					<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'>
+						{loading
+							? Array.from({ length: 3 }).map((_, i) => (
+									<CardSkeleton key={i} />
+								))
+							: links.map((link) => (
+									<QuickLinkCard key={link.href} {...link} />
+								))}
+					</div>
+				</section>
+
+				{/* CTA company */}
+				{!loading && isCompany && (
+					<section>
+						<Card className='border-dashed bg-muted/30'>
+							<CardContent className='p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4'>
+								<div>
+									<p className='font-medium'>
+										Prêt à recruter ?
+									</p>
+									<p className='text-sm text-muted-foreground mt-0.5'>
+										Publiez une offre en quelques minutes et
+										trouvez le bon profil.
+									</p>
+								</div>
+								<Button asChild className='shrink-0'>
+									<Link href='/dashboard/my-jobs?new=true'>
+										<Plus className='size-4 mr-2' />
+										Nouvelle offre
+									</Link>
+								</Button>
+							</CardContent>
+						</Card>
+					</section>
+				)}
+
+				{/* CTA candidat (dans la zone floutée) */}
+				{!loading && isCandidate && (
+					<section>
+						<Card className='border-dashed bg-muted/30'>
+							<CardContent className='p-6'>
+								<p className='font-medium'>
+									Trouvez votre prochaine mission
+								</p>
+								<p className='text-sm text-muted-foreground mt-0.5'>
+									Parcourez les offres disponibles et postulez
+									en quelques secondes.
+								</p>
+							</CardContent>
+						</Card>
+					</section>
+				)}
+
+				{/* CTA admin */}
+				{!loading && !isCompany && !isCandidate && (
+					<section>
+						<Card className='border-dashed bg-muted/30'>
+							<CardContent className='p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4'>
+								<div>
+									<p className='font-medium'>
+										Plateforme WeSafe
+									</p>
+									<p className='text-sm text-muted-foreground mt-0.5'>
+										Vous avez accès à l'ensemble des outils
+										d'administration.
+									</p>
+								</div>
+								<Button
+									asChild
+									variant='outline'
+									className='shrink-0'>
+									<Link href='/dashboard/users'>
+										<Users className='size-4 mr-2' />
+										Voir les utilisateurs
+									</Link>
+								</Button>
+							</CardContent>
+						</Card>
+					</section>
 				)}
 			</div>
 
-			{/* Quick links */}
-			<section>
-				<h2 className='text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4'>
-					Accès rapides
-				</h2>
-				<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'>
-					{loading
-						? Array.from({ length: 3 }).map((_, i) => (
-								<CardSkeleton key={i} />
-							))
-						: links.map((link) => (
-								<QuickLinkCard key={link.href} {...link} />
-							))}
+			{/* Overlay candidat */}
+			{isCandidate && !loading && (
+				<div className='absolute inset-0 flex items-center justify-center z-10'>
+					<div className='bg-background/80 backdrop-blur-none border rounded-2xl shadow-xl p-8 max-w-md w-full mx-4 text-center space-y-4'>
+						<div className='size-14 rounded-full bg-violet-500/10 flex items-center justify-center mx-auto'>
+							<UserCircle className='size-7 text-violet-500' />
+						</div>
+						<div>
+							<h2 className='text-lg font-semibold'>
+								Espace non disponible sur web
+							</h2>
+							<p className='text-sm text-muted-foreground mt-2 leading-relaxed'>
+								Le dashboard web est réservé aux entreprises et
+								administrateurs. Pour accéder à vos
+								candidatures, contrats et offres d'emploi,
+								utilisez l'application mobile WeSafe.
+							</p>
+						</div>
+						<Button asChild className='w-full'>
+							<Link href='/jobs'>
+								<Briefcase className='size-4 mr-2' />
+								Voir les offres disponibles
+							</Link>
+						</Button>
+					</div>
 				</div>
-			</section>
-
-			{/* CTA contextuel */}
-			{!loading && isCompany && (
-				<section>
-					<Card className='border-dashed bg-muted/30'>
-						<CardContent className='p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4'>
-							<div>
-								<p className='font-medium'>Prêt à recruter ?</p>
-								<p className='text-sm text-muted-foreground mt-0.5'>
-									Publiez une offre en quelques minutes et
-									trouvez le bon profil.
-								</p>
-							</div>
-							<Button asChild className='shrink-0'>
-								<Link href='/dashboard/my-jobs?new=true'>
-									<Plus className='size-4 mr-2' />
-									Nouvelle offre
-								</Link>
-							</Button>
-						</CardContent>
-					</Card>
-				</section>
-			)}
-
-			{!loading && !isCompany && (
-				<section>
-					<Card className='border-dashed bg-muted/30'>
-						<CardContent className='p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4'>
-							<div>
-								<p className='font-medium'>Plateforme WeSafe</p>
-								<p className='text-sm text-muted-foreground mt-0.5'>
-									Vous avez accès à l'ensemble des outils
-									d'administration.
-								</p>
-							</div>
-							<Button
-								asChild
-								variant='outline'
-								className='shrink-0'>
-								<Link href='/dashboard/users'>
-									<Users className='size-4 mr-2' />
-									Voir les utilisateurs
-								</Link>
-							</Button>
-						</CardContent>
-					</Card>
-				</section>
 			)}
 		</div>
 	);
