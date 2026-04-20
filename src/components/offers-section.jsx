@@ -29,8 +29,10 @@ export function OffersSection() {
 			.from("jobs")
 			.select("*, companies(name, logo_url)")
 			.eq("status", "published")
+			.neq("isLastMinute", true)
+			.order("sponsorship_date", { ascending: false, nullsFirst: false })
 			.order("created_at", { ascending: false })
-			.limit(4)
+			.limit(6)
 			.then(({ data }) => {
 				setJobs(data ?? []);
 				setLoading(false);
@@ -55,9 +57,9 @@ export function OffersSection() {
 					</p>
 				</div>
 
-				<div className='mt-12 grid gap-4 md:grid-cols-2'>
+				<div className='mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
 					{loading
-						? Array.from({ length: 4 }).map((_, i) => (
+						? Array.from({ length: 6 }).map((_, i) => (
 								<JobCardSkeleton key={i} />
 							))
 						: jobs.map((job) => (
