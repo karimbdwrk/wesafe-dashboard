@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Shield, Menu, X } from "lucide-react";
+import { Shield, Menu, X, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { supabase } from "../lib/supabase/supabaseClient";
+import { useTheme } from "next-themes";
 
 const navLinks = [
 	{ label: "Fonctionnalites", href: "#fonctionnalites" },
@@ -17,6 +18,9 @@ const navLinks = [
 export function Header() {
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [isAuthenticated, setIsAuthenticated] = useState(false);
+	const { resolvedTheme, setTheme } = useTheme();
+	const [mounted, setMounted] = useState(false);
+	useEffect(() => setMounted(true), []);
 
 	useEffect(() => {
 		const checkSession = async () => {
@@ -87,6 +91,22 @@ export function Header() {
 						}>
 						Telecharger
 					</Button>
+					<Button
+						variant='ghost'
+						size='icon'
+						className='h-9 w-9 text-muted-foreground hover:text-foreground'
+						onClick={() =>
+							setTheme(
+								resolvedTheme === "dark" ? "light" : "dark",
+							)
+						}
+						aria-label='Changer de thème'>
+						{mounted && resolvedTheme === "dark" ? (
+							<Sun className='h-4 w-4' />
+						) : (
+							<Moon className='h-4 w-4' />
+						)}
+					</Button>
 				</div>
 
 				<button
@@ -147,6 +167,26 @@ export function Header() {
 										});
 								}}>
 								Telecharger
+							</Button>
+							<Button
+								variant='ghost'
+								size='sm'
+								className='justify-start gap-2 text-muted-foreground'
+								onClick={() =>
+									setTheme(
+										resolvedTheme === "dark"
+											? "light"
+											: "dark",
+									)
+								}>
+								{mounted && resolvedTheme === "dark" ? (
+									<Sun className='h-4 w-4' />
+								) : (
+									<Moon className='h-4 w-4' />
+								)}
+								{mounted && resolvedTheme === "dark"
+									? "Mode clair"
+									: "Mode sombre"}
 							</Button>
 						</div>
 					</nav>
