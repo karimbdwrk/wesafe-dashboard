@@ -109,21 +109,21 @@ export function Footer() {
 							</li>
 							<li>
 								<Link
-									href='#'
+									href='/politique-de-confidentialite'
 									className='text-sm text-muted-foreground transition-colors hover:text-foreground'>
-									Confidentialite
+									Confidentialité
 								</Link>
 							</li>
 							<li>
 								<Link
-									href='/cgu'
+									href='/conditions-generales-d-utilisation'
 									className='text-sm text-muted-foreground transition-colors hover:text-foreground'>
 									CGU
 								</Link>
 							</li>
 							<li>
 								<Link
-									href='/cgv'
+									href='/conditions-generales-de-vente'
 									className='text-sm text-muted-foreground transition-colors hover:text-foreground'>
 									Conditions Générales de Vente
 								</Link>
