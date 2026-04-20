@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MapPin, Clock, Zap, Building2 } from "lucide-react";
+import { MapPin, Clock, Zap, Building2, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CATEGORY } from "@/constants/categories";
 
@@ -81,12 +81,25 @@ export function JobCardSkeleton() {
 function JobCardContent({ job, salary, location, relativeDate }) {
 	const company = job.companies;
 
+	const isSponsored =
+		job.sponsorship_date && new Date(job.sponsorship_date) > new Date();
+
 	return (
 		<>
-			{job.isLastMinute && (
-				<div className='absolute top-3 right-3 flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary'>
-					<Zap className='h-2.5 w-2.5' />
-					Last Minute
+			{(job.isLastMinute || isSponsored) && (
+				<div className='absolute top-3 right-3 flex flex-col items-end gap-1'>
+					{isSponsored && (
+						<div className='flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700'>
+							<Star className='h-2.5 w-2.5' />
+							Sponsorisé
+						</div>
+					)}
+					{job.isLastMinute && (
+						<div className='flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary'>
+							<Zap className='h-2.5 w-2.5' />
+							Last Minute
+						</div>
+					)}
 				</div>
 			)}
 
@@ -185,29 +198,29 @@ export function JobCard({ job, href, onClick, selected = false, onApply }) {
 		/>
 	);
 
-	if (href) {
-		return (
-			<Link
-				href={href}
-				className='group relative rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/40 hover:shadow-sm block'>
-				{sharedContent}
-				{onApply && (
-					<div className='mt-3 pt-3 border-t border-border flex justify-end'>
-						<Button
-							size='sm'
-							variant='ghost'
-							className='text-primary hover:bg-primary/10 hover:text-primary h-7 text-xs'
-							onClick={(e) => {
-								e.preventDefault();
-								onApply();
-							}}>
-							Postuler
-						</Button>
-					</div>
-				)}
-			</Link>
-		);
-	}
+	// if (href) {
+	// 	return (
+	// 		<Link
+	// 			href={href}
+	// 			className='group relative rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/40 hover:shadow-sm block'>
+	// 			{sharedContent}
+	// 			{onApply && (
+	// 				<div className='mt-3 pt-3 border-t border-border flex justify-end'>
+	// 					<Button
+	// 						size='sm'
+	// 						variant='ghost'
+	// 						className='text-primary hover:bg-primary/10 hover:text-primary h-7 text-xs'
+	// 						onClick={(e) => {
+	// 							e.preventDefault();
+	// 							onApply();
+	// 						}}>
+	// 						Postuler
+	// 					</Button>
+	// 				</div>
+	// 			)}
+	// 		</Link>
+	// 	);
+	// }
 
 	return (
 		<button
