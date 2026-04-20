@@ -13,8 +13,8 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase/supabaseClient";
 
 const FormSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address." }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters." }),
+  email: z.string().email({ message: "Veuillez entrer une adresse email valide." }),
+  password: z.string().min(6, { message: "Le mot de passe doit contenir au moins 6 caractères." }),
   remember: z.boolean().optional(),
 });
 
@@ -95,7 +95,7 @@ export function LoginForm() {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email Address</FormLabel>
+              <FormLabel>Adresse email</FormLabel>
               <FormControl>
                 <Input id="email" type="email" placeholder="you@example.com" autoComplete="email" {...field} />
               </FormControl>
@@ -108,7 +108,7 @@ export function LoginForm() {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Password</FormLabel>
+              <FormLabel>Mot de passe</FormLabel>
               <FormControl>
                 <Input
                   id="password"
@@ -136,13 +136,13 @@ export function LoginForm() {
                 />
               </FormControl>
               <FormLabel htmlFor="login-remember" className="ml-1 font-medium text-muted-foreground text-sm">
-                Remember me for 30 days
+                Se souvenir de moi pendant 30 jours
               </FormLabel>
             </FormItem>
           )}
         />
         <Button className="w-full" type="submit">
-          Login
+          Se connecter
         </Button>
       </form>
     </Form>
