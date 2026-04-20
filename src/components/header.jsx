@@ -8,9 +8,9 @@ import { supabase } from "../lib/supabase/supabaseClient";
 import { useTheme } from "next-themes";
 
 const navLinks = [
-	{ label: "Fonctionnalites", href: "#fonctionnalites" },
-	{ label: "Comment ca marche", href: "#process" },
-	{ label: "Offres", href: "#offres" },
+	{ label: "Offres", href: "/jobs" },
+	{ label: "Tarifs", href: "/tarifs" },
+	{ label: "À Propos", href: "/a-propos" },
 	{ label: "Blog", href: "/blog" },
 	{ label: "Contact", href: "/contact" },
 ];
