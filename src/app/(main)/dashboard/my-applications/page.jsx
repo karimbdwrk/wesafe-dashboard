@@ -324,39 +324,55 @@ function MessagingSheet({ open, onClose, application, companyId }) {
 				if (typingStopTimeoutRef.current)
 					clearTimeout(typingStopTimeoutRef.current);
 				setIsTyping(false);
-				// Fetch immédiat : le message vient probablement d'être envoyé
-				setTimeout(async () => {
+
+				// Le mobile envoie typing_stop AVANT l'INSERT → on poll en rafale
+				// jusqu'à trouver un nouveau message (max 3s)
+				let attempts = 0;
+				const delays = [200, 400, 700, 1200, 2000];
+				let knownCount = 0;
+				setMessages((prev) => {
+					knownCount = prev.filter(
+						(m) => !String(m.id).startsWith("temp_"),
+					).length;
+					return prev;
+				});
+
+				const tryFetch = async () => {
+					if (attempts >= delays.length) return;
+					const delay = delays[attempts++];
+					await new Promise((r) => setTimeout(r, delay));
+
 					const { data } = await supabase
 						.from("messages")
 						.select("*")
 						.eq("apply_id", applyId)
 						.order("created_at", { ascending: true });
+
 					if (!data) return;
-					const unread = data.filter(
-						(m) => m.sender_id !== companyId && !m.is_read,
-					);
-					if (unread.length > 0) {
-						supabase
-							.from("messages")
-							.update({ is_read: true })
-							.in(
-								"id",
-								unread.map((m) => m.id),
-							)
-							.then(() => {});
-					}
-					setMessages((prev) => {
-						if (
-							data.length <=
-							prev.filter(
-								(m) => !String(m.id).startsWith("temp_"),
-							).length
-						)
-							return prev;
+
+					if (data.length > knownCount) {
+						// Nouveau message trouvé
+						const unread = data.filter(
+							(m) => m.sender_id !== companyId && !m.is_read,
+						);
+						if (unread.length > 0) {
+							supabase
+								.from("messages")
+								.update({ is_read: true })
+								.in(
+									"id",
+									unread.map((m) => m.id),
+								)
+								.then(() => {});
+						}
+						setMessages(data);
 						scrollToBottom();
-						return data;
-					});
-				}, 400);
+					} else {
+						// Pas encore arrivé → retry
+						tryFetch();
+					}
+				};
+				tryFetch();
 			})
 			.on("broadcast", { event: "new_message" }, (payload) => {
 				if (payload.payload?.message?.sender_id === companyId) return;
