@@ -378,6 +378,28 @@ const jobsColumns = [
 		},
 	},
 	{
+		accessorKey: "sponsorship_date",
+		header: ({ column }) => (
+			<DataTableColumnHeader
+				column={column}
+				title="Sponsorisé jusqu'au"
+			/>
+		),
+		cell: ({ row }) => {
+			const d = row.original.sponsorship_date;
+			if (!d)
+				return <span className='text-xs text-muted-foreground'>—</span>;
+			const date = new Date(d);
+			const isActive = date > new Date();
+			return (
+				<span
+					className={`text-sm whitespace-nowrap font-medium ${isActive ? "text-amber-600" : "text-muted-foreground line-through"}`}>
+					{date.toLocaleDateString("fr-FR")}
+				</span>
+			);
+		},
+	},
+	{
 		id: "actions",
 		header: "",
 		cell: ({ row }) => (
