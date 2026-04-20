@@ -73,9 +73,9 @@ export function Footer() {
 							</li>
 							<li>
 								<Link
-									href='#'
-									className='text-sm text-muted-foreground transition-colors hover:text-foreground'>
-									Blog
+									href='/blog'
+                                                                        className='text-sm text-muted-foreground transition-colors hover:text-foreground'>
+                                                                        Blog
 								</Link>
 							</li>
 							<li>
@@ -87,9 +87,9 @@ export function Footer() {
 							</li>
 							<li>
 								<Link
-									href='#'
-									className='text-sm text-muted-foreground transition-colors hover:text-foreground'>
-									Contact
+									href='/contact'
+                                                                        className='text-sm text-muted-foreground transition-colors hover:text-foreground'>
+                                                                        Contact
 								</Link>
 							</li>
 						</ul>
