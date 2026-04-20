@@ -14,6 +14,7 @@ import {
   type LucideIcon,
   Mail,
   MessageSquare,
+  Newspaper,
   ReceiptText,
   ShoppingBag,
   SquareArrowUpRight,
@@ -110,6 +111,11 @@ export const sidebarItems: NavGroup[] = [
         url: "/dashboard/messages",
         icon: MessageSquare,
         // comingSoon: true,
+      },
+      {
+        title: "Blog",
+        url: "/dashboard/blog",
+        icon: Newspaper,
       },
       // {
       //   title: "Analytics",
