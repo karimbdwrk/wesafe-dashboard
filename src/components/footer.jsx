@@ -18,8 +18,8 @@ export function Footer() {
 							</span>
 						</Link>
 						<p className='mt-4 text-sm leading-relaxed text-muted-foreground'>
-							La plateforme de recrutement dediee aux
-							professionnels de la securite privee.
+							La plateforme de recrutement dédiée aux
+							professionnels de la sécurité privée.
 						</p>
 					</div>
 
@@ -30,30 +30,16 @@ export function Footer() {
 						<ul className='mt-4 flex flex-col gap-3'>
 							<li>
 								<Link
-									href='#'
-									className='text-sm text-muted-foreground transition-colors hover:text-foreground'>
-									Fonctionnalites
-								</Link>
-							</li>
-							<li>
-								<Link
-									href='#'
+									href='/tarifs'
 									className='text-sm text-muted-foreground transition-colors hover:text-foreground'>
 									Tarifs
 								</Link>
 							</li>
 							<li>
 								<Link
-									href='#'
+									href='/jobs'
 									className='text-sm text-muted-foreground transition-colors hover:text-foreground'>
-									Offres d&apos;emploi
-								</Link>
-							</li>
-							<li>
-								<Link
-									href='#'
-									className='text-sm text-muted-foreground transition-colors hover:text-foreground'>
-									Last Minute
+									Offres d'emploi
 								</Link>
 							</li>
 						</ul>
@@ -66,9 +52,9 @@ export function Footer() {
 						<ul className='mt-4 flex flex-col gap-3'>
 							<li>
 								<Link
-									href='#'
+									href='/a-propos'
 									className='text-sm text-muted-foreground transition-colors hover:text-foreground'>
-									A propos
+									À propos
 								</Link>
 							</li>
 							<li>
@@ -76,13 +62,6 @@ export function Footer() {
 									href='/blog'
 									className='text-sm text-muted-foreground transition-colors hover:text-foreground'>
 									Blog
-								</Link>
-							</li>
-							<li>
-								<Link
-									href='#'
-									className='text-sm text-muted-foreground transition-colors hover:text-foreground'>
-									Carrieres
 								</Link>
 							</li>
 							<li>
@@ -104,28 +83,28 @@ export function Footer() {
 								<Link
 									href='/mentions-legales'
 									className='text-sm text-muted-foreground transition-colors hover:text-foreground'>
-									Mentions Légales
+									Mentions légales
 								</Link>
 							</li>
 							<li>
 								<Link
 									href='/politique-de-confidentialite'
 									className='text-sm text-muted-foreground transition-colors hover:text-foreground'>
-									Politique de Confidentialité
+									Politique de confidentialité
 								</Link>
 							</li>
 							<li>
 								<Link
 									href='/conditions-generales-d-utilisation'
 									className='text-sm text-muted-foreground transition-colors hover:text-foreground'>
-									Conditions Générales d'Utilisation
+									Conditions générales d'utilisation
 								</Link>
 							</li>
 							<li>
 								<Link
 									href='/conditions-generales-de-vente'
 									className='text-sm text-muted-foreground transition-colors hover:text-foreground'>
-									Conditions Générales de Vente
+									Conditions générales de vente
 								</Link>
 							</li>
 						</ul>
@@ -134,7 +113,8 @@ export function Footer() {
 
 				<div className='mt-12 border-t border-border pt-8 text-center'>
 					<p className='text-sm text-muted-foreground'>
-						SecuRecruit. Tous droits reserves.
+						© {new Date().getFullYear()} WeSafe. Tous droits
+						réservés.
 					</p>
 				</div>
 			</div>
