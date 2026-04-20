@@ -42,6 +42,7 @@ export function NotificationsDrawer() {
 	const [notifications, setNotifications] = useState<Notification[]>([]);
 	const [actorNames, setActorNames] = useState<Record<string, string>>({});
 	const [userId, setUserId] = useState<string | null>(null);
+	const [isCandidate, setIsCandidate] = useState(false);
 
 	useEffect(() => {
 		async function init() {
@@ -50,7 +51,7 @@ export function NotificationsDrawer() {
 			if (!user) return;
 			setUserId(user.id);
 
-			// Détecter le rôle : company ou admin
+			// Détecter le rôle : company ou admin ou candidat
 			const { data: company } = await supabase
 				.from("companies")
 				.select("id")
@@ -58,6 +59,18 @@ export function NotificationsDrawer() {
 				.maybeSingle();
 
 			const isCompany = !!company;
+
+			if (!isCompany) {
+				const { data: admin } = await supabase
+					.from("admins")
+					.select("id")
+					.eq("id", user.id)
+					.maybeSingle();
+				if (!admin) {
+					setIsCandidate(true);
+					return;
+				}
+			}
 
 			// Construction de la requête selon le rôle
 			let query = supabase
@@ -139,7 +152,8 @@ export function NotificationsDrawer() {
 				variant='outline'
 				size='icon'
 				className='relative'
-				onClick={() => setOpen(true)}
+				onClick={() => !isCandidate && setOpen(true)}
+				disabled={isCandidate}
 				aria-label='Notifications'>
 				<Bell className='h-4 w-4' />
 				{unreadCount > 0 && (
