@@ -14,7 +14,7 @@ export function Footer() {
 								<Shield className='h-5 w-5 text-primary-foreground' />
 							</div>
 							<span className='font-[family-name:var(--font-heading)] text-xl font-bold text-foreground'>
-								SecuRecruit
+								WeSafe
 							</span>
 						</Link>
 						<p className='mt-4 text-sm leading-relaxed text-muted-foreground'>
@@ -97,28 +97,28 @@ export function Footer() {
 
 					<div>
 						<h4 className='font-[family-name:var(--font-heading)] text-sm font-semibold text-foreground'>
-							Legal
+							Légal
 						</h4>
 						<ul className='mt-4 flex flex-col gap-3'>
 							<li>
 								<Link
 									href='/mentions-legales'
 									className='text-sm text-muted-foreground transition-colors hover:text-foreground'>
-									Mentions legales
+									Mentions Légales
 								</Link>
 							</li>
 							<li>
 								<Link
 									href='/politique-de-confidentialite'
 									className='text-sm text-muted-foreground transition-colors hover:text-foreground'>
-									Confidentialité
+									Politique de Confidentialité
 								</Link>
 							</li>
 							<li>
 								<Link
 									href='/conditions-generales-d-utilisation'
 									className='text-sm text-muted-foreground transition-colors hover:text-foreground'>
-									CGU
+									Conditions Générales d'Utilisation
 								</Link>
 							</li>
 							<li>
