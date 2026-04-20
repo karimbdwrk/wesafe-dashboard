@@ -74,8 +74,8 @@ export function Footer() {
 							<li>
 								<Link
 									href='/blog'
-                                                                        className='text-sm text-muted-foreground transition-colors hover:text-foreground'>
-                                                                        Blog
+									className='text-sm text-muted-foreground transition-colors hover:text-foreground'>
+									Blog
 								</Link>
 							</li>
 							<li>
@@ -88,8 +88,8 @@ export function Footer() {
 							<li>
 								<Link
 									href='/contact'
-                                                                        className='text-sm text-muted-foreground transition-colors hover:text-foreground'>
-                                                                        Contact
+									className='text-sm text-muted-foreground transition-colors hover:text-foreground'>
+									Contact
 								</Link>
 							</li>
 						</ul>
@@ -102,7 +102,7 @@ export function Footer() {
 						<ul className='mt-4 flex flex-col gap-3'>
 							<li>
 								<Link
-									href='#'
+									href='/mentions-legales'
 									className='text-sm text-muted-foreground transition-colors hover:text-foreground'>
 									Mentions legales
 								</Link>
@@ -116,9 +116,16 @@ export function Footer() {
 							</li>
 							<li>
 								<Link
-									href='#'
+									href='/cgu'
 									className='text-sm text-muted-foreground transition-colors hover:text-foreground'>
 									CGU
+								</Link>
+							</li>
+							<li>
+								<Link
+									href='/cgv'
+									className='text-sm text-muted-foreground transition-colors hover:text-foreground'>
+									Conditions Générales de Vente
 								</Link>
 							</li>
 						</ul>
