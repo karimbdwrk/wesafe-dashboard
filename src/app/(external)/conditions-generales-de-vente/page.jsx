@@ -966,7 +966,7 @@ Date : ___________
 					<div className='mt-10 pt-8 border-t border-border flex flex-wrap gap-3'>
 						<Link
 							href='/mentions-legales'
-							className='rounded-lg border border-primary bg-primary/5 px-4 py-2 text-sm font-medium text-primary'>
+							className='rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors'>
 							Mentions légales
 						</Link>
 						<Link
@@ -976,8 +976,13 @@ Date : ___________
 						</Link>
 						<Link
 							href='/conditions-generales-de-vente'
-							className='rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors'>
+							className='rounded-lg border border-primary bg-primary/5 px-4 py-2 text-sm font-medium text-primary'>
 							Conditions générales de vente
+						</Link>
+						<Link
+							href='/politique-de-confidentialite'
+							className='rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors'>
+							Politique de confidentialité
 						</Link>
 					</div>
 				</main>
