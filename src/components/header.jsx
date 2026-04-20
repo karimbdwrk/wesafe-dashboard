@@ -10,7 +10,8 @@ const navLinks = [
 	{ label: "Fonctionnalites", href: "#fonctionnalites" },
 	{ label: "Comment ca marche", href: "#process" },
 	{ label: "Offres", href: "#offres" },
-	{ label: "Contact", href: "#contact" },
+	{ label: "Blog", href: "/blog" },
+	{ label: "Contact", href: "/contact" },
 ];
 
 export function Header() {
@@ -67,7 +68,7 @@ export function Header() {
 							</Button>
 						</Link>
 					) : (
-						<Link href='/auth/v1/login'>
+						<Link href='/auth/login'>
 							<Button
 								variant='ghost'
 								size='sm'
