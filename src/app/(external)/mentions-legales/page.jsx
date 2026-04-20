@@ -597,6 +597,11 @@ export default function MentionsLegalesPage() {
 							className='rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors'>
 							Conditions générales de vente
 						</Link>
+						<Link
+							href='/politique-de-confidentialite'
+							className='rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors'>
+							Politique de confidentialité
+						</Link>
 					</div>
 				</main>
 			</div>
