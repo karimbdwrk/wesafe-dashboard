@@ -17,6 +17,7 @@ import {
   ReceiptText,
   ShoppingBag,
   SquareArrowUpRight,
+  UserCircle,
   Users,
 } from "lucide-react";
 
@@ -58,6 +59,32 @@ export const companySidebarItems: NavGroup[] = [
         title: "Candidatures",
         url: "/dashboard/my-applications",
         icon: ClipboardList,
+      },
+    ],
+  },
+];
+
+export const candidateSidebarItems: NavGroup[] = [
+  {
+    id: 1,
+    items: [
+      {
+        title: "Offres d'emploi",
+        url: "/dashboard/jobs",
+        icon: Briefcase,
+        comingSoon: true,
+      },
+      {
+        title: "Mes candidatures",
+        url: "/dashboard/my-applications",
+        icon: ClipboardList,
+        comingSoon: true,
+      },
+      {
+        title: "Infos personnelles",
+        url: "/dashboard/profile",
+        icon: UserCircle,
+        comingSoon: true,
       },
     ],
   },
