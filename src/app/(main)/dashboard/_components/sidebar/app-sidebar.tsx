@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { CircleHelp, ClipboardList, Command, Database, File, Search, Settings } from "lucide-react";
+import { CircleHelp, Command, Search, Settings } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 
 import {
@@ -17,74 +17,66 @@ import {
 import { useEffect, useState } from "react";
 
 import { APP_CONFIG } from "@/config/app-config";
-import { rootUser } from "@/data/users";
 import { supabase } from "@/lib/supabase/supabaseClient";
-import { companySidebarItems, sidebarItems } from "@/navigation/sidebar/sidebar-items";
+import { candidateSidebarItems, companySidebarItems, sidebarItems } from "@/navigation/sidebar/sidebar-items";
 import { usePreferencesStore } from "@/stores/preferences/preferences-provider";
 
 import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
 
-const _data = {
-  navSecondary: [
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings,
-    },
-    {
-      title: "Get Help",
-      url: "#",
-      icon: CircleHelp,
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: Search,
-    },
-  ],
-  documents: [
-    {
-      name: "Data Library",
-      url: "#",
-      icon: Database,
-    },
-    {
-      name: "Reports",
-      url: "#",
-      icon: ClipboardList,
-    },
-    {
-      name: "Word Assistant",
-      url: "#",
-      icon: File,
-    },
-  ],
-};
-
-const users = [{
-    id: "1",
-    name: "Super Admin",
-    username: "superadmin",
-    email: "superadmin@example.com",
-    avatar: "https://avatars.githubusercontent.com/u/43849669",
-    role: "administrator",
-  }]
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const [isCompany, setIsCompany] = useState(false);
+  const [role, setRole] = useState<"company" | "candidate" | "admin">("admin");
+  const [navUser, setNavUser] = useState({ name: "", email: "", avatar: "" });
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) return;
-      supabase
+      const userId = data.user.id;
+
+      const { data: company } = await supabase
         .from("companies")
-        .select("id")
-        .eq("id", data.user.id)
-        .maybeSingle()
-        .then(({ data: company }) => {
-          if (company) setIsCompany(true);
+        .select("id, name, email, logo_url")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (company) {
+        setRole("company");
+        setNavUser({
+          name: company.name ?? "",
+          email: company.email ?? data.user.email ?? "",
+          avatar: company.logo_url ?? "",
         });
+        return;
+      }
+
+      const { data: admin } = await supabase
+        .from("admins")
+        .select("id")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (!admin) {
+        // Candidat
+        setRole("candidate");
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("firstname, lastname, avatar_url")
+          .eq("id", userId)
+          .maybeSingle();
+        setNavUser({
+          name: (`${profile?.firstname ?? ""} ${profile?.lastname ?? ""}`.trim()) || (data.user.email ?? ""),
+          email: data.user.email ?? "",
+          avatar: profile?.avatar_url ?? "",
+        });
+        return;
+      }
+
+      setRole("admin");
+      setNavUser({
+        name: data.user.user_metadata?.full_name ?? data.user.email ?? "",
+        email: data.user.email ?? "",
+        avatar: data.user.user_metadata?.avatar_url ?? "",
+      });
     });
   }, []);
 
@@ -114,12 +106,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={isCompany ? companySidebarItems : sidebarItems} />
+        <NavMain items={role === "company" ? companySidebarItems : role === "candidate" ? candidateSidebarItems : sidebarItems} />
         {/* <NavDocuments items={data.documents} /> */}
         {/* <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={users[0]} />
+        <NavUser user={navUser} />
       </SidebarFooter>
     </Sidebar>
   );
