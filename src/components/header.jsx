@@ -58,7 +58,7 @@ export function Header() {
 
 				<div className='hidden items-center gap-3 md:flex'>
 					{isAuthenticated ? (
-						<Link href='/dashboard/users'>
+						<Link href='/dashboard/default'>
 							<Button
 								variant='ghost'
 								size='sm'
@@ -116,7 +116,7 @@ export function Header() {
 						))}
 						<div className='flex flex-col gap-2 pt-4'>
 							{isAuthenticated ? (
-								<Link href='/dashboard/users'>
+								<Link href='/dashboard/default'>
 									<Button
 										variant='ghost'
 										size='sm'
