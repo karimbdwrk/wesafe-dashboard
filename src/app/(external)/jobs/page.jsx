@@ -455,6 +455,8 @@ export default function JobsPage() {
 			.from("jobs")
 			.select("*, companies(name, logo_url)")
 			.eq("status", "published")
+			.neq("isLastMinute", true)
+			.order("sponsorship_date", { ascending: false, nullsFirst: false })
 			.order("created_at", { ascending: false })
 			.then(({ data }) => {
 				const list = data ?? [];
