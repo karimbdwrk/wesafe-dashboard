@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MapPin, Clock, Zap, Building2, Star } from "lucide-react";
+import { MapPin, Clock, Zap, Building2, Star, Banknote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CATEGORY } from "@/constants/categories";
 
@@ -13,6 +13,12 @@ export function getCatAcronym(id) {
 	return (
 		CATEGORY.find((c) => c.id === id)?.acronym ?? id?.toUpperCase() ?? ""
 	);
+}
+
+export function getCatLabel(id) {
+	const cat = CATEGORY.find((c) => c.id === id);
+	if (!cat) return id?.toUpperCase() ?? "";
+	return `${cat.acronym} - ${cat.name}`.toUpperCase();
 }
 
 export function getSalaryDisplay(job) {
@@ -120,7 +126,7 @@ function JobCardContent({ job, salary, location, relativeDate }) {
 				</div>
 
 				{/* Contenu */}
-				<div className='min-w-0 flex-1 pr-16'>
+				<div className='min-w-0 flex-1'>
 					<p className='text-[11px] text-muted-foreground font-medium truncate'>
 						{company?.name ?? "Entreprise"}
 					</p>
@@ -137,22 +143,25 @@ function JobCardContent({ job, salary, location, relativeDate }) {
 								</span>
 							</span>
 						)}
+					</div>
+					<div className='mt-2 flex flex-wrap gap-1.5'>
+						{job.category && (
+							<span className='rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground'>
+								{getCatLabel(job.category)}
+							</span>
+						)}
+					</div>
+
+					<div className='mt-2 flex items-center justify-between gap-2'>
 						{job.contract_type && (
 							<span className='rounded border border-border px-1.5 py-0.5 text-[11px] font-medium text-foreground'>
 								{contractTypeLabel[job.contract_type] ??
 									job.contract_type.toUpperCase()}
 							</span>
 						)}
-						{job.category && (
-							<span className='rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground'>
-								{getCatAcronym(job.category)}
-							</span>
-						)}
-					</div>
-
-					<div className='mt-2 flex items-center justify-between gap-2'>
 						{salary && (
-							<span className='text-xs font-semibold text-foreground'>
+							<span className='flex items-center gap-1 text-xs font-semibold text-foreground'>
+								<Banknote className='h-3.5 w-3.5 shrink-0 text-muted-foreground' />
 								{salary}
 							</span>
 						)}
