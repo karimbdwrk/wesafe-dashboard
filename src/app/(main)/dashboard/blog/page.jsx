@@ -17,6 +17,11 @@ import {
 	ExternalLink,
 	Upload,
 	Loader2,
+	Heading2,
+	List,
+	Bold,
+	Italic,
+	Link as LinkIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -72,6 +77,108 @@ const ArticleSchema = z.object({
 });
 
 // ─── Upload cover image ──────────────────────────────────────────────────────
+
+// ─── Éditeur WYSIWYG ─────────────────────────────────────────────────────────
+
+function RichEditor({ value, onChange }) {
+	const editorRef = useRef(null);
+
+	useEffect(() => {
+		if (
+			editorRef.current &&
+			editorRef.current.innerHTML !== (value ?? "")
+		) {
+			editorRef.current.innerHTML = value ?? "";
+		}
+	}, [value]);
+
+	const exec = (cmd, val) => {
+		editorRef.current?.focus();
+		document.execCommand(cmd, false, val ?? undefined);
+		onChange(editorRef.current?.innerHTML ?? "");
+	};
+
+	const btn =
+		"flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors select-none";
+
+	return (
+		<div className='rounded-md border border-input bg-transparent shadow-sm focus-within:ring-1 focus-within:ring-ring'>
+			<div className='flex flex-wrap gap-0.5 border-b border-border p-1.5'>
+				<button
+					type='button'
+					className={btn}
+					onMouseDown={(e) => {
+						e.preventDefault();
+						exec("formatBlock", "h2");
+					}}>
+					<Heading2 className='h-3.5 w-3.5' /> H2
+				</button>
+				<button
+					type='button'
+					className={btn}
+					onMouseDown={(e) => {
+						e.preventDefault();
+						exec("formatBlock", "h3");
+					}}>
+					<Heading2 className='h-3 w-3' /> H3
+				</button>
+				<div className='w-px bg-border mx-0.5 self-stretch' />
+				<button
+					type='button'
+					className={btn}
+					onMouseDown={(e) => {
+						e.preventDefault();
+						exec("bold");
+					}}>
+					<Bold className='h-3.5 w-3.5' /> Gras
+				</button>
+				<button
+					type='button'
+					className={btn}
+					onMouseDown={(e) => {
+						e.preventDefault();
+						exec("italic");
+					}}>
+					<Italic className='h-3.5 w-3.5' /> Italique
+				</button>
+				<div className='w-px bg-border mx-0.5 self-stretch' />
+				<button
+					type='button'
+					className={btn}
+					onMouseDown={(e) => {
+						e.preventDefault();
+						exec("insertUnorderedList");
+					}}>
+					<List className='h-3.5 w-3.5' /> Liste à puces
+				</button>
+				<button
+					type='button'
+					className={btn}
+					onMouseDown={(e) => {
+						e.preventDefault();
+						exec("formatBlock", "p");
+					}}>
+					Paragraphe
+				</button>
+			</div>
+			<div
+				ref={editorRef}
+				contentEditable
+				suppressContentEditableWarning
+				onInput={() => onChange(editorRef.current?.innerHTML ?? "")}
+				data-placeholder='Commencez à rédiger votre article…'
+				className='
+					min-h-52 px-3 py-2 text-sm outline-none
+					[&_h2]:text-lg [&_h2]:font-bold [&_h2]:mt-3 [&_h2]:mb-1
+					[&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-2 [&_h3]:mb-1
+					[&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-1
+					[&_p]:my-1 [&_b]:font-bold [&_i]:italic
+					empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground empty:before:pointer-events-none
+				'
+			/>
+		</div>
+	);
+}
 
 function CoverImageUpload({ value, onChange }) {
 	const [dragging, setDragging] = useState(false);
@@ -326,6 +433,21 @@ function ArticleForm({ article, onClose, onSaved }) {
 		},
 	});
 
+	// Réinitialise le formulaire quand l'article change (mode édition)
+	useEffect(() => {
+		form.reset({
+			title: article?.title ?? "",
+			slug: article?.slug ?? "",
+			excerpt: article?.excerpt ?? "",
+			content: article?.content ?? "",
+			cover_image: article?.cover_image ?? "",
+			author: article?.author ?? "",
+			category: article?.category ?? "",
+			reading_time: article?.reading_time ?? "",
+			published: article?.published ?? false,
+		});
+	}, [article]);
+
 	// Auto-slug depuis le titre (seulement en création)
 	const titleValue = form.watch("title");
 	useEffect(() => {
@@ -512,18 +634,11 @@ function ArticleForm({ article, onClose, onSaved }) {
 						name='content'
 						render={({ field }) => (
 							<FormItem className='sm:col-span-2'>
-								<FormLabel>Contenu (HTML)</FormLabel>
+								<FormLabel>Contenu</FormLabel>
 								<FormControl>
-									<textarea
-										{...field}
-										rows={8}
-										placeholder='<h2>...</h2><p>...</p>'
-										className='flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm font-mono shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-y'
-										onChange={(e) =>
-											field.onChange(
-												capSentence(e.target.value),
-											)
-										}
+									<RichEditor
+										value={field.value}
+										onChange={field.onChange}
 									/>
 								</FormControl>
 								<FormMessage />
@@ -587,10 +702,11 @@ export default function BlogAdminPage() {
 		const { data } = await supabase
 			.from("articles")
 			.select(
-				"id, slug, title, excerpt, cover_image, author, category, reading_time, published, published_at",
+				"id, slug, title, excerpt, content, cover_image, author, category, reading_time, published, published_at",
 			)
 			.order("created_at", { ascending: false });
 		setArticles(data ?? []);
+		console.log("data", data);
 		setLoading(false);
 	};
 
@@ -721,6 +837,7 @@ export default function BlogAdminPage() {
 						</DialogTitle>
 					</DialogHeader>
 					<ArticleForm
+						key={editArticle?.id ?? "new"}
 						article={editArticle}
 						onClose={() => setFormOpen(false)}
 						onSaved={fetchArticles}
