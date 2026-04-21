@@ -117,6 +117,11 @@ export const sidebarItems: NavGroup[] = [
         url: "/dashboard/blog",
         icon: Newspaper,
       },
+      {
+        title: "Newsletter",
+        url: "/dashboard/newsletter",
+        icon: Mail,
+      },
       // {
       //   title: "Analytics",
       //   url: "/dashboard/coming-soon",
