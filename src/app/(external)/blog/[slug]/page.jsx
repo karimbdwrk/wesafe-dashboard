@@ -165,7 +165,25 @@ export default function ArticlePage() {
 						{/* Contenu HTML */}
 						{article.content ? (
 							<div
-								className='prose prose-neutral dark:prose-invert max-w-none'
+								className='
+									text-foreground text-base leading-7
+									[&_h1]:font-[family-name:var(--font-heading)] [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:mt-8 [&_h1]:mb-3 [&_h1]:leading-tight
+									[&_h2]:font-[family-name:var(--font-heading)] [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mt-8 [&_h2]:mb-3 [&_h2]:leading-tight
+									[&_h3]:font-[family-name:var(--font-heading)] [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:mt-6 [&_h3]:mb-2
+									[&_h4]:text-lg [&_h4]:font-semibold [&_h4]:mt-4 [&_h4]:mb-2
+									[&_p]:my-4 [&_p]:text-muted-foreground [&_p]:leading-7
+									[&_ul]:my-4 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:space-y-1 [&_ul]:text-muted-foreground
+									[&_ol]:my-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:space-y-1 [&_ol]:text-muted-foreground
+									[&_li]:leading-7
+									[&_strong]:font-semibold [&_strong]:text-foreground
+									[&_em]:italic
+									[&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 hover:[&_a]:opacity-80
+									[&_blockquote]:border-l-4 [&_blockquote]:border-primary/40 [&_blockquote]:pl-4 [&_blockquote]:my-4 [&_blockquote]:italic [&_blockquote]:text-muted-foreground
+									[&_code]:bg-muted [&_code]:rounded [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-sm [&_code]:font-mono
+									[&_pre]:bg-muted [&_pre]:rounded-lg [&_pre]:p-4 [&_pre]:overflow-x-auto [&_pre]:my-4
+									[&_hr]:my-8 [&_hr]:border-border
+									[&_img]:rounded-lg [&_img]:my-6 [&_img]:max-w-full
+								'
 								// biome-ignore lint/security/noDangerouslySetInnerHtml: contenu contrôlé côté admin
 								dangerouslySetInnerHTML={{
 									__html: article.content,
