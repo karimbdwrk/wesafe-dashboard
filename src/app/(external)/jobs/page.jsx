@@ -513,7 +513,7 @@ export default function JobsPage() {
 	].filter(Boolean).length;
 
 	return (
-		<div className='h-dvh bg-background flex flex-col mt-12 overflow-hidden'>
+		<div className='h-dvh bg-background flex flex-col mt-16 overflow-hidden'>
 			{/* ── Barre de recherche ── */}
 			<div className='border-b border-border bg-card/50 px-4 py-5'>
 				<div className='mx-auto max-w-7xl'>
