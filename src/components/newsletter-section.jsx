@@ -26,12 +26,8 @@ export function NewsletterSection() {
 			.from("newsletter_subscribers")
 			.insert({ email: email.trim().toLowerCase(), role });
 		setLoading(false);
-		if (error) {
-			if (error.code === "23505") {
-				toast.info("Vous êtes déjà inscrit à notre newsletter !");
-			} else {
-				toast.error("Une erreur est survenue. Réessayez plus tard.");
-			}
+		if (error && error.code !== "23505") {
+			toast.error("Une erreur est survenue. Réessayez plus tard.");
 		} else {
 			toast.success("Inscription confirmée ! Merci 🎉");
 			setEmail("");
