@@ -4,6 +4,7 @@ import { FeaturesSection } from "@/components/features-section";
 import { ProcessSection } from "@/components/process-section";
 import { OffersSection } from "@/components/offers-section";
 import { CtaSection } from "@/components/cta-section";
+import { NewsletterSection } from "@/components/newsletter-section";
 import { Footer } from "@/components/footer";
 
 export default function Home() {
@@ -15,6 +16,7 @@ export default function Home() {
 			<ProcessSection />
 			<OffersSection />
 			<CtaSection />
+			<NewsletterSection />
 			<Footer />
 		</main>
 	);
