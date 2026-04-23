@@ -1,7 +1,8 @@
 "use client";
 
-import { TrendingDown, TrendingUp } from "lucide-react";
 import { useMemo } from "react";
+
+import { TrendingDown, TrendingUp } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,10 +20,14 @@ const SPONSORSHIP_TYPES = [
   "sponsorhip_purchase_one_month",
 ];
 
-function sumByTypes(rows: any[], types: string[]) {
-  return rows
-    .filter((r) => types.includes(r.transaction_type))
-    .reduce((acc, r) => acc + (r.amount ?? 0), 0);
+interface Transaction {
+  transaction_type: string;
+  amount?: number | null;
+  created_at: string;
+}
+
+function sumByTypes(rows: Transaction[], types: string[]) {
+  return rows.filter((r) => types.includes(r.transaction_type)).reduce((acc, r) => acc + (r.amount ?? 0), 0);
 }
 
 function formatEur(val: number) {
@@ -35,24 +40,26 @@ function pctChange(curr: number, prev: number) {
 }
 
 interface SectionCardsProps {
-  transactions: any[];
+  transactions: Transaction[];
 }
 
 export function SectionCards({ transactions = [] }: SectionCardsProps) {
-  const now = new Date();
-  const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const [startOfThisMonth, startOfLastMonth] = useMemo(() => {
+    const now = new Date();
+    return [new Date(now.getFullYear(), now.getMonth(), 1), new Date(now.getFullYear(), now.getMonth() - 1, 1)];
+  }, []);
 
   const thisMonth = useMemo(
     () => transactions.filter((r) => new Date(r.created_at) >= startOfThisMonth),
-    [transactions]
+    [transactions, startOfThisMonth],
   );
   const lastMonth = useMemo(
-    () => transactions.filter((r) => {
-      const d = new Date(r.created_at);
-      return d >= startOfLastMonth && d < startOfThisMonth;
-    }),
-    [transactions]
+    () =>
+      transactions.filter((r) => {
+        const d = new Date(r.created_at);
+        return d >= startOfLastMonth && d < startOfThisMonth;
+      }),
+    [transactions, startOfLastMonth, startOfThisMonth],
   );
 
   const kpis = useMemo(() => {
@@ -86,7 +93,7 @@ export function SectionCards({ transactions = [] }: SectionCardsProps) {
   }, [thisMonth, lastMonth]);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs dark:*:data-[slot=card]:bg-card">
+    <div className="grid grid-cols-1 gap-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs sm:grid-cols-2 lg:grid-cols-4 dark:*:data-[slot=card]:from-secondary/60">
       {kpis.map((kpi) => {
         const pct = pctChange(kpi.curr, kpi.prev);
         const up = pct >= 0;
@@ -100,7 +107,8 @@ export function SectionCards({ transactions = [] }: SectionCardsProps) {
               <CardAction>
                 <Badge variant="outline">
                   {up ? <TrendingUp /> : <TrendingDown />}
-                  {pct >= 0 ? "+" : ""}{pct.toFixed(1)}%
+                  {pct >= 0 ? "+" : ""}
+                  {pct.toFixed(1)}%
                 </Badge>
               </CardAction>
             </CardHeader>
