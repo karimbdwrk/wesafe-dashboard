@@ -1,699 +1,628 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Send, MessageSquare, CheckCheck } from "lucide-react";
-import { supabase } from "@/lib/supabase/supabaseClient";
-import { sendSupportNotification } from "@/server/server-actions";
+
+import { useRouter } from "next/navigation";
+
+import { CheckCheck, MessageSquare, Send } from "lucide-react";
+
 import { useNotifications } from "@/app/(main)/dashboard/_components/notification-context";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/lib/supabase/supabaseClient";
+import { sendSupportNotification } from "@/server/server-actions";
 
 const SUPERADMIN_ID = "c5f72d6f-7ab4-4e19-8b3b-12714740efad";
 
 function TypingIndicator() {
-	return (
-		<div className='flex justify-start'>
-			<div className='bg-muted px-4 py-3 rounded-2xl rounded-bl-sm flex gap-1 items-center'>
-				<span className='w-1.5 h-1.5 bg-muted-foreground/60 rounded-full animate-bounce [animation-delay:0ms]' />
-				<span className='w-1.5 h-1.5 bg-muted-foreground/60 rounded-full animate-bounce [animation-delay:150ms]' />
-				<span className='w-1.5 h-1.5 bg-muted-foreground/60 rounded-full animate-bounce [animation-delay:300ms]' />
-			</div>
-		</div>
-	);
+  return (
+    <div className="flex justify-start">
+      <div className="flex items-center gap-1 rounded-2xl rounded-bl-sm bg-muted px-4 py-3">
+        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:0ms]" />
+        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:150ms]" />
+        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:300ms]" />
+      </div>
+    </div>
+  );
 }
 
 function timeLabel(dateStr) {
-	const d = new Date(dateStr);
-	const now = new Date();
-	const diffDays = Math.floor((now - d) / 86400000);
-	if (diffDays === 0)
-		return d.toLocaleTimeString("fr-FR", {
-			hour: "2-digit",
-			minute: "2-digit",
-		});
-	if (diffDays === 1) return "Hier";
-	if (diffDays < 7)
-		return d.toLocaleDateString("fr-FR", { weekday: "short" });
-	return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diffDays = Math.floor((now - d) / 86400000);
+  if (diffDays === 0)
+    return d.toLocaleTimeString("fr-FR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  if (diffDays === 1) return "Hier";
+  if (diffDays < 7) return d.toLocaleDateString("fr-FR", { weekday: "short" });
+  return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
 
 function fullTime(dateStr) {
-	return new Date(dateStr).toLocaleTimeString("fr-FR", {
-		hour: "2-digit",
-		minute: "2-digit",
-	});
+  return new Date(dateStr).toLocaleTimeString("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export default function Page() {
-	const { fetchCount, setActiveConversationId } = useNotifications();
+  const router = useRouter();
+  const { fetchCount, setActiveConversationId } = useNotifications();
 
-	const [conversations, setConversations] = useState([]);
-	const [actorNames, setActorNames] = useState({});
-	const [selected, setSelected] = useState(null);
-	const [messages, setMessages] = useState([]);
-	const [input, setInput] = useState("");
-	const [sending, setSending] = useState(false);
-	const [isTyping, setIsTyping] = useState(false);
-	// true quand une activité récente (typing ou message) a été reçue du participant
-	// Présence globale : userId → boolean, persisté entre les changements de conv
-	const [onlineUsers, setOnlineUsers] = useState({});
-	const messagesContainerRef = useRef(null);
-	const typingTimeoutRef = useRef(null);
-	// Timeouts de présence par userId
-	const onlineTimeoutsRef = useRef({});
-	// Canaux broadcast persistants par convId (ne sont JAMAIS détruits pendant la session)
-	const channelsByConvIdRef = useRef({});
-	// Canal de la conv active (alias vers channelsByConvIdRef[selected.id])
-	const convChannelRef = useRef(null);
-	const selectedRef = useRef(null);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [conversations, setConversations] = useState([]);
+  const [actorNames, setActorNames] = useState({});
+  const [selected, setSelected] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [sending, setSending] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  // true quand une activité récente (typing ou message) a été reçue du participant
+  // Présence globale : userId → boolean, persisté entre les changements de conv
+  const [onlineUsers, setOnlineUsers] = useState({});
+  const messagesContainerRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
+  // Timeouts de présence par userId
+  const onlineTimeoutsRef = useRef({});
+  // Canaux broadcast persistants par convId (ne sont JAMAIS détruits pendant la session)
+  const channelsByConvIdRef = useRef({});
+  // Canal de la conv active (alias vers channelsByConvIdRef[selected.id])
+  const convChannelRef = useRef(null);
+  const selectedRef = useRef(null);
 
-	useEffect(() => {
-		supabase
-			.from("support_conversations")
-			.select(
-				"*, support_messages(id, content, created_at, sender_id, is_read)",
-			)
-			.order("created_at", { ascending: false })
-			.then(async ({ data, error }) => {
-				if (error) {
-					// Fallback : construire conversations depuis les messages directement
-					const { data: msgs } = await supabase
-						.from("support_messages")
-						.select("*")
-						.order("created_at", { ascending: false });
+  useEffect(() => {
+    async function checkAuth() {
+      const { data: auth } = await supabase.auth.getUser();
+      const user = auth?.user;
+      if (!user) {
+        router.replace("/unauthorized");
+        return;
+      }
+      const { data: admin } = await supabase.from("admins").select("role").eq("id", user.id).maybeSingle();
+      if (admin?.role !== "super_admin") {
+        router.replace("/unauthorized");
+        return;
+      }
+      setIsAuthorized(true);
+    }
+    checkAuth();
+  }, [router]);
 
-					if (!msgs) return;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: isAuthorized is the intentional trigger
+  useEffect(() => {
+    if (!isAuthorized) return;
+    supabase
+      .from("support_conversations")
+      .select("*, support_messages(id, content, created_at, sender_id, is_read)")
+      .order("created_at", { ascending: false })
+      .then(async ({ data, error }) => {
+        if (error) {
+          // Fallback : construire conversations depuis les messages directement
+          const { data: msgs } = await supabase
+            .from("support_messages")
+            .select("*")
+            .order("created_at", { ascending: false });
 
-					// Grouper par conversation_id
-					const convMap = {};
-					msgs.forEach((m) => {
-						if (!convMap[m.conversation_id]) {
-							convMap[m.conversation_id] = {
-								id: m.conversation_id,
-								lastMessage: m,
-								unread: 0,
-								participantId:
-									m.sender_id !== SUPERADMIN_ID
-										? m.sender_id
-										: null,
-							};
-						}
-						if (!m.is_read && m.sender_id !== SUPERADMIN_ID) {
-							convMap[m.conversation_id].unread++;
-						}
-					});
+          if (!msgs) return;
 
-					const convList = Object.values(convMap).sort((a, b) => {
-						const ta = a.lastMessage?.created_at ?? "";
-						const tb = b.lastMessage?.created_at ?? "";
-						return tb.localeCompare(ta);
-					});
-					setConversations(convList);
-					await loadActorNames(
-						convList.map((c) => c.participantId).filter(Boolean),
-					);
-				} else {
-					const convList = (data ?? [])
-						.map((c) => {
-							const msgs = c.support_messages ?? [];
-							const sorted = [...msgs].sort(
-								(a, b) =>
-									new Date(b.created_at) -
-									new Date(a.created_at),
-							);
-							const unread = msgs.filter(
-								(m) =>
-									!m.is_read && m.sender_id !== SUPERADMIN_ID,
-							).length;
-							const participantId =
-								msgs.find((m) => m.sender_id !== SUPERADMIN_ID)
-									?.sender_id ?? null;
-							return {
-								...c,
-								lastMessage: sorted[0] ?? null,
-								unread,
-								participantId,
-							};
-						})
-						.sort((a, b) => {
-							const ta = a.lastMessage?.created_at ?? "";
-							const tb = b.lastMessage?.created_at ?? "";
-							return tb.localeCompare(ta);
-						});
-					setConversations(convList);
-					await loadActorNames(
-						convList.map((c) => c.participantId).filter(Boolean),
-					);
-				}
-			});
-	}, []);
+          // Grouper par conversation_id
+          const convMap = {};
+          msgs.forEach((m) => {
+            if (!convMap[m.conversation_id]) {
+              convMap[m.conversation_id] = {
+                id: m.conversation_id,
+                lastMessage: m,
+                unread: 0,
+                participantId: m.sender_id !== SUPERADMIN_ID ? m.sender_id : null,
+              };
+            }
+            if (!m.is_read && m.sender_id !== SUPERADMIN_ID) {
+              convMap[m.conversation_id].unread++;
+            }
+          });
 
-	// ── Realtime global : mise à jour de la liste des conversations ──────
-	useEffect(() => {
-		const listChannel = supabase
-			.channel("all-messages-list")
-			.on(
-				"postgres_changes",
-				{
-					event: "INSERT",
-					schema: "public",
-					table: "support_messages",
-				},
-				(payload) => {
-					const msg = payload.new;
-					setConversations((prev) => {
-						const convId = msg.conversation_id;
-						const exists = prev.find((c) => c.id === convId);
-						let updated;
-						if (exists) {
-							updated = prev.map((c) => {
-								if (c.id !== convId) return c;
-								const isSelected =
-									selectedRef.current?.id === convId;
-								const isFromOther =
-									msg.sender_id !== SUPERADMIN_ID;
-								return {
-									...c,
-									lastMessage: msg,
-									// Incrémenter non-lu seulement si conv non active et message entrant
-									unread:
-										isFromOther && !isSelected
-											? (c.unread ?? 0) + 1
-											: c.unread,
-								};
-							});
-						} else {
-							// Nouvelle conversation inconnue : l'ajouter
-							const newConv = {
-								id: convId,
-								lastMessage: msg,
-								unread: msg.sender_id !== SUPERADMIN_ID ? 1 : 0,
-								participantId:
-									msg.sender_id !== SUPERADMIN_ID
-										? msg.sender_id
-										: null,
-							};
-							updated = [...prev, newConv];
-							// Charger le nom du nouveau participant
-							if (newConv.participantId) {
-								loadActorNames([newConv.participantId]);
-							}
-						}
-						return updated.sort((a, b) => {
-							const ta = a.lastMessage?.created_at ?? "";
-							const tb = b.lastMessage?.created_at ?? "";
-							return tb.localeCompare(ta);
-						});
-					});
-				},
-			)
-			.subscribe();
+          const convList = Object.values(convMap).sort((a, b) => {
+            const ta = a.lastMessage?.created_at ?? "";
+            const tb = b.lastMessage?.created_at ?? "";
+            return tb.localeCompare(ta);
+          });
+          setConversations(convList);
+          await loadActorNames(convList.map((c) => c.participantId).filter(Boolean));
+        } else {
+          const convList = (data ?? [])
+            .map((c) => {
+              const msgs = c.support_messages ?? [];
+              const sorted = [...msgs].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+              const unread = msgs.filter((m) => !m.is_read && m.sender_id !== SUPERADMIN_ID).length;
+              const participantId = msgs.find((m) => m.sender_id !== SUPERADMIN_ID)?.sender_id ?? null;
+              return {
+                ...c,
+                lastMessage: sorted[0] ?? null,
+                unread,
+                participantId,
+              };
+            })
+            .sort((a, b) => {
+              const ta = a.lastMessage?.created_at ?? "";
+              const tb = b.lastMessage?.created_at ?? "";
+              return tb.localeCompare(ta);
+            });
+          setConversations(convList);
+          await loadActorNames(convList.map((c) => c.participantId).filter(Boolean));
+        }
+      });
+  }, [isAuthorized]);
 
-		return () => {
-			supabase.removeChannel(listChannel);
-		};
-	}, []);
+  // ── Realtime global : mise à jour de la liste des conversations ──────
+  // biome-ignore lint/correctness/useExhaustiveDependencies: isAuthorized is the intentional trigger
+  useEffect(() => {
+    if (!isAuthorized) return;
+    const listChannel = supabase
+      .channel("all-messages-list")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "support_messages",
+        },
+        (payload) => {
+          const msg = payload.new;
+          setConversations((prev) => {
+            const convId = msg.conversation_id;
+            const exists = prev.find((c) => c.id === convId);
+            let updated;
+            if (exists) {
+              updated = prev.map((c) => {
+                if (c.id !== convId) return c;
+                const isSelected = selectedRef.current?.id === convId;
+                const isFromOther = msg.sender_id !== SUPERADMIN_ID;
+                return {
+                  ...c,
+                  lastMessage: msg,
+                  // Incrémenter non-lu seulement si conv non active et message entrant
+                  unread: isFromOther && !isSelected ? (c.unread ?? 0) + 1 : c.unread,
+                };
+              });
+            } else {
+              // Nouvelle conversation inconnue : l'ajouter
+              const newConv = {
+                id: convId,
+                lastMessage: msg,
+                unread: msg.sender_id !== SUPERADMIN_ID ? 1 : 0,
+                participantId: msg.sender_id !== SUPERADMIN_ID ? msg.sender_id : null,
+              };
+              updated = [...prev, newConv];
+              // Charger le nom du nouveau participant
+              if (newConv.participantId) {
+                loadActorNames([newConv.participantId]);
+              }
+            }
+            return updated.sort((a, b) => {
+              const ta = a.lastMessage?.created_at ?? "";
+              const tb = b.lastMessage?.created_at ?? "";
+              return tb.localeCompare(ta);
+            });
+          });
+        },
+      )
+      .subscribe();
 
-	// Marque un user comme en ligne et programme son expiration (30s sans signal)
-	function markUserOnline(userId) {
-		if (!userId) return;
-		setOnlineUsers((prev) => ({ ...prev, [userId]: true }));
-		clearTimeout(onlineTimeoutsRef.current[userId]);
-		onlineTimeoutsRef.current[userId] = setTimeout(() => {
-			setOnlineUsers((prev) => {
-				const next = { ...prev };
-				delete next[userId];
-				return next;
-			});
-		}, 30_000);
-	}
+    return () => {
+      supabase.removeChannel(listChannel);
+    };
+  }, []);
 
-	async function loadActorNames(ids) {
-		if (!ids.length) return;
-		const unique = [...new Set(ids)];
-		const [{ data: profiles }, { data: companies }] = await Promise.all([
-			supabase
-				.from("profiles")
-				.select("id, firstname, lastname")
-				.in("id", unique),
-			supabase.from("companies").select("id, name").in("id", unique),
-		]);
-		const map = {};
-		profiles?.forEach((p) => {
-			map[p.id] =
-				`${p.firstname || ""} ${p.lastname || ""}`.trim() || "Candidat";
-		});
-		companies?.forEach((c) => {
-			map[c.id] = c.name || "Entreprise";
-		});
-		setActorNames((prev) => ({ ...prev, ...map }));
-	}
+  // Marque un user comme en ligne et programme son expiration (30s sans signal)
+  function markUserOnline(userId) {
+    if (!userId) return;
+    setOnlineUsers((prev) => ({ ...prev, [userId]: true }));
+    clearTimeout(onlineTimeoutsRef.current[userId]);
+    onlineTimeoutsRef.current[userId] = setTimeout(() => {
+      setOnlineUsers((prev) => {
+        const next = { ...prev };
+        delete next[userId];
+        return next;
+      });
+    }, 30_000);
+  }
 
-	// Charger les messages d'une conversation
-	async function selectConversation(conv) {
-		setActiveConversationId(conv.id);
-		setSelected(conv);
-		const { data } = await supabase
-			.from("support_messages")
-			.select("*")
-			.eq("conversation_id", conv.id)
-			.order("created_at", { ascending: true });
-		setMessages(data ?? []);
+  async function loadActorNames(ids) {
+    if (!ids.length) return;
+    const unique = [...new Set(ids)];
+    const [{ data: profiles }, { data: companies }] = await Promise.all([
+      supabase.from("profiles").select("id, firstname, lastname").in("id", unique),
+      supabase.from("companies").select("id, name").in("id", unique),
+    ]);
+    const map = {};
+    profiles?.forEach((p) => {
+      map[p.id] = `${p.firstname || ""} ${p.lastname || ""}`.trim() || "Candidat";
+    });
+    companies?.forEach((c) => {
+      map[c.id] = c.name || "Entreprise";
+    });
+    setActorNames((prev) => ({ ...prev, ...map }));
+  }
 
-		// Marquer comme lus
-		await supabase
-			.from("support_messages")
-			.update({ is_read: true })
-			.eq("conversation_id", conv.id)
-			.eq("is_read", false)
-			.neq("sender_id", SUPERADMIN_ID);
+  // Charger les messages d'une conversation
+  async function selectConversation(conv) {
+    setActiveConversationId(conv.id);
+    setSelected(conv);
+    const { data } = await supabase
+      .from("support_messages")
+      .select("*")
+      .eq("conversation_id", conv.id)
+      .order("created_at", { ascending: true });
+    setMessages(data ?? []);
 
-		// Mettre à jour le badge directement via le contexte
-		fetchCount();
+    // Marquer comme lus
+    await supabase
+      .from("support_messages")
+      .update({ is_read: true })
+      .eq("conversation_id", conv.id)
+      .eq("is_read", false)
+      .neq("sender_id", SUPERADMIN_ID);
 
-		setConversations((prev) =>
-			prev.map((c) => (c.id === conv.id ? { ...c, unread: 0 } : c)),
-		);
-	}
+    // Mettre à jour le badge directement via le contexte
+    fetchCount();
 
-	// Envoyer un message
-	async function sendMessage(e) {
-		e.preventDefault();
-		if (!input.trim() || !selected || sending) return;
-		setSending(true);
-		const { data, error } = await supabase
-			.from("support_messages")
-			.insert({
-				conversation_id: selected.id,
-				sender_id: SUPERADMIN_ID,
-				content: input.trim(),
-				is_read: false,
-			})
-			.select()
-			.single();
-		setSending(false);
-		if (!error && data) {
-			setMessages((prev) => [...prev, data]);
-			setInput("");
-			// Broadcaster le message pour que l'app user le reçoive immédiatement
-			// sans dépendre du CDC postgres_changes (plus fiable)
-			convChannelRef.current?.send({
-				type: "broadcast",
-				event: "new_message",
-				payload: data,
-			});
-			// Notification uniquement si le participant n'est pas en ligne sur la conversation
-			// Passe par une server action (service_role) pour bypasser les RLS Supabase
-			if (
-				!onlineUsers[selected.participantId] &&
-				selected.participantId
-			) {
-				sendSupportNotification({
-					recipientId: selected.participantId,
-					conversationId: selected.id,
-					messageContent: data.content,
-				});
-			}
-			setConversations((prev) => {
-				const updated = prev.map((c) =>
-					c.id === selected.id ? { ...c, lastMessage: data } : c,
-				);
-				return [...updated].sort((a, b) => {
-					const ta = a.lastMessage?.created_at ?? "";
-					const tb = b.lastMessage?.created_at ?? "";
-					return tb.localeCompare(ta);
-				});
-			});
-		}
-	}
+    setConversations((prev) => prev.map((c) => (c.id === conv.id ? { ...c, unread: 0 } : c)));
+  }
 
-	// Scroll to bottom quand les messages changent
-	useEffect(() => {
-		const el = messagesContainerRef.current;
-		if (el) el.scrollTop = el.scrollHeight;
-	}, [messages, isTyping]);
+  // Envoyer un message
+  async function sendMessage(e) {
+    e.preventDefault();
+    if (!input.trim() || !selected || sending) return;
+    setSending(true);
+    const { data, error } = await supabase
+      .from("support_messages")
+      .insert({
+        conversation_id: selected.id,
+        sender_id: SUPERADMIN_ID,
+        content: input.trim(),
+        is_read: false,
+      })
+      .select()
+      .single();
+    setSending(false);
+    if (!error && data) {
+      setMessages((prev) => [...prev, data]);
+      setInput("");
+      // Broadcaster le message pour que l'app user le reçoive immédiatement
+      // sans dépendre du CDC postgres_changes (plus fiable)
+      convChannelRef.current?.send({
+        type: "broadcast",
+        event: "new_message",
+        payload: data,
+      });
+      // Notification uniquement si le participant n'est pas en ligne sur la conversation
+      // Passe par une server action (service_role) pour bypasser les RLS Supabase
+      if (!onlineUsers[selected.participantId] && selected.participantId) {
+        sendSupportNotification({
+          recipientId: selected.participantId,
+          conversationId: selected.id,
+          messageContent: data.content,
+        });
+      }
+      setConversations((prev) => {
+        const updated = prev.map((c) => (c.id === selected.id ? { ...c, lastMessage: data } : c));
+        return [...updated].sort((a, b) => {
+          const ta = a.lastMessage?.created_at ?? "";
+          const tb = b.lastMessage?.created_at ?? "";
+          return tb.localeCompare(ta);
+        });
+      });
+    }
+  }
 
-	// ── Canaux broadcast persistants pour TOUTES les convs ────────────────
-	// Chaque canal reste abonné toute la session → présence reçue même quand
-	// l'admin est sur une autre conversation.
-	useEffect(() => {
-		conversations.forEach((conv) => {
-			if (!conv.participantId) return;
-			if (channelsByConvIdRef.current[conv.id]) return; // déjà abonné
+  // Scroll to bottom quand les messages changent
+  useEffect(() => {
+    const el = messagesContainerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, []);
 
-			const ch = supabase.channel(`conv-${conv.id}`, {
-				config: { broadcast: { self: false } },
-			});
+  // ── Canaux broadcast persistants pour TOUTES les convs ────────────────
+  // Chaque canal reste abonné toute la session → présence reçue même quand
+  // l'admin est sur une autre conversation.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: markUserOnline is intentionally excluded — it changes on every render
+  useEffect(() => {
+    conversations.forEach((conv) => {
+      if (!conv.participantId) return;
+      if (channelsByConvIdRef.current[conv.id]) return; // déjà abonné
 
-			ch.on("broadcast", { event: "typing" }, ({ payload }) => {
-				if (payload?.sender_id === SUPERADMIN_ID) return;
-				markUserOnline(conv.participantId);
-				if (selectedRef.current?.id === conv.id) {
-					setIsTyping(true);
-					clearTimeout(typingTimeoutRef.current);
-					typingTimeoutRef.current = setTimeout(
-						() => setIsTyping(false),
-						3000,
-					);
-				}
-			})
-				.on("broadcast", { event: "online" }, ({ payload }) => {
-					if (payload?.sender_id === SUPERADMIN_ID) return;
-					markUserOnline(conv.participantId);
-				})
-				.on("broadcast", { event: "pong" }, ({ payload }) => {
-					if (payload?.sender_id === SUPERADMIN_ID) return;
-					markUserOnline(conv.participantId);
-				})
-				.on("broadcast", { event: "read_receipt" }, ({ payload }) => {
-					if (payload?.sender_id === SUPERADMIN_ID) return;
-					markUserOnline(conv.participantId);
-					if (selectedRef.current?.id === conv.id) {
-						setMessages((prev) =>
-							prev.map((m) =>
-								m.sender_id === SUPERADMIN_ID
-									? { ...m, is_read: true }
-									: m,
-							),
-						);
-					}
-				})
-				.subscribe((status) => {
-					if (status === "SUBSCRIBED") {
-						// Ping pour détecter si le participant est déjà en ligne
-						ch.send({
-							type: "broadcast",
-							event: "ping",
-							payload: { sender_id: SUPERADMIN_ID },
-						});
-					}
-				});
+      const ch = supabase.channel(`conv-${conv.id}`, {
+        config: { broadcast: { self: false } },
+      });
 
-			channelsByConvIdRef.current[conv.id] = ch;
-		});
-	}, [conversations.length]); // re-run seulement quand une nouvelle conv apparaît
+      ch.on("broadcast", { event: "typing" }, ({ payload }) => {
+        if (payload?.sender_id === SUPERADMIN_ID) return;
+        markUserOnline(conv.participantId);
+        if (selectedRef.current?.id === conv.id) {
+          setIsTyping(true);
+          clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 3000);
+        }
+      })
+        .on("broadcast", { event: "online" }, ({ payload }) => {
+          if (payload?.sender_id === SUPERADMIN_ID) return;
+          markUserOnline(conv.participantId);
+        })
+        .on("broadcast", { event: "pong" }, ({ payload }) => {
+          if (payload?.sender_id === SUPERADMIN_ID) return;
+          markUserOnline(conv.participantId);
+        })
+        .on("broadcast", { event: "read_receipt" }, ({ payload }) => {
+          if (payload?.sender_id === SUPERADMIN_ID) return;
+          markUserOnline(conv.participantId);
+          if (selectedRef.current?.id === conv.id) {
+            setMessages((prev) => prev.map((m) => (m.sender_id === SUPERADMIN_ID ? { ...m, is_read: true } : m)));
+          }
+        })
+        .subscribe((status) => {
+          if (status === "SUBSCRIBED") {
+            // Ping pour détecter si le participant est déjà en ligne
+            ch.send({
+              type: "broadcast",
+              event: "ping",
+              payload: { sender_id: SUPERADMIN_ID },
+            });
+          }
+        });
 
-	// Nettoyage global à la fermeture du composant
-	useEffect(() => {
-		return () => {
-			Object.values(channelsByConvIdRef.current).forEach((ch) =>
-				supabase.removeChannel(ch),
-			);
-			channelsByConvIdRef.current = {};
-			Object.values(onlineTimeoutsRef.current).forEach(clearTimeout);
-		};
-	}, []);
+      channelsByConvIdRef.current[conv.id] = ch;
+    });
+  }, [conversations.length]); // re-run seulement quand une nouvelle conv apparaît
 
-	// ── Realtime par conversation active : messages DB + ping continu ──────
-	useEffect(() => {
-		if (!selected) return;
-		selectedRef.current = selected;
-		setIsTyping(false);
-		clearTimeout(typingTimeoutRef.current);
+  // Nettoyage global à la fermeture du composant
+  useEffect(() => {
+    return () => {
+      Object.values(channelsByConvIdRef.current).forEach((ch) => {
+        supabase.removeChannel(ch);
+      });
+      channelsByConvIdRef.current = {};
+      Object.values(onlineTimeoutsRef.current).forEach(clearTimeout);
+    };
+  }, []);
 
-		// Pointer convChannelRef vers le canal de cette conv (peut être déjà créé)
-		const refSync = setTimeout(() => {
-			const ch = channelsByConvIdRef.current[selected.id];
-			convChannelRef.current = ch ?? null;
-			// Ping immédiat en entrant dans la conv
-			ch?.send({
-				type: "broadcast",
-				event: "ping",
-				payload: { sender_id: SUPERADMIN_ID },
-			});
-		}, 150);
+  // ── Realtime par conversation active : messages DB + ping continu ──────
+  // biome-ignore lint/correctness/useExhaustiveDependencies: markUserOnline intentionally excluded — it changes on every render
+  useEffect(() => {
+    if (!selected) return;
+    selectedRef.current = selected;
+    setIsTyping(false);
+    clearTimeout(typingTimeoutRef.current);
 
-		// Ping continu toutes les 5s pour maintenir la détection
-		const pingInterval = setInterval(() => {
-			channelsByConvIdRef.current[selected.id]?.send({
-				type: "broadcast",
-				event: "ping",
-				payload: { sender_id: SUPERADMIN_ID },
-			});
-		}, 5000);
+    // Pointer convChannelRef vers le canal de cette conv (peut être déjà créé)
+    const refSync = setTimeout(() => {
+      const ch = channelsByConvIdRef.current[selected.id];
+      convChannelRef.current = ch ?? null;
+      // Ping immédiat en entrant dans la conv
+      ch?.send({
+        type: "broadcast",
+        event: "ping",
+        payload: { sender_id: SUPERADMIN_ID },
+      });
+    }, 150);
 
-		// Postgres Changes — nouveaux messages + confirmations de lecture
-		const msgChannel = supabase
-			.channel(`db-messages-${selected.id}`)
-			.on(
-				"postgres_changes",
-				{
-					event: "INSERT",
-					schema: "public",
-					table: "support_messages",
-					filter: `conversation_id=eq.${selected.id}`,
-				},
-				(payload) => {
-					const msg = payload.new;
-					if (msg.sender_id === SUPERADMIN_ID) return;
-					markUserOnline(selected.participantId);
-					setMessages((prev) => [...prev, msg]);
-					setIsTyping(false);
-					supabase
-						.from("support_messages")
-						.update({ is_read: true })
-						.eq("id", msg.id)
-						.then(() => fetchCount());
-					setConversations((prev) => {
-						const updated = prev.map((c) =>
-							c.id === selectedRef.current?.id
-								? { ...c, lastMessage: msg }
-								: c,
-						);
-						return [...updated].sort((a, b) => {
-							const ta = a.lastMessage?.created_at ?? "";
-							const tb = b.lastMessage?.created_at ?? "";
-							return tb.localeCompare(ta);
-						});
-					});
-				},
-			)
-			.on(
-				"postgres_changes",
-				{
-					event: "UPDATE",
-					schema: "public",
-					table: "support_messages",
-				},
-				(payload) => {
-					const updated = payload.new;
-					if (updated.conversation_id !== selectedRef.current?.id)
-						return;
-					setMessages((prev) =>
-						prev.map((m) =>
-							m.id === updated.id
-								? { ...m, is_read: updated.is_read }
-								: m,
-						),
-					);
-				},
-			)
-			.subscribe();
+    // Ping continu toutes les 5s pour maintenir la détection
+    const pingInterval = setInterval(() => {
+      channelsByConvIdRef.current[selected.id]?.send({
+        type: "broadcast",
+        event: "ping",
+        payload: { sender_id: SUPERADMIN_ID },
+      });
+    }, 5000);
 
-		return () => {
-			clearTimeout(refSync);
-			clearInterval(pingInterval);
-			supabase.removeChannel(msgChannel);
-			convChannelRef.current = null;
-			setIsTyping(false);
-			clearTimeout(typingTimeoutRef.current);
-			setActiveConversationId(null);
-		};
-	}, [selected?.id]);
+    // Postgres Changes — nouveaux messages + confirmations de lecture
+    const msgChannel = supabase
+      .channel(`db-messages-${selected.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "support_messages",
+          filter: `conversation_id=eq.${selected.id}`,
+        },
+        (payload) => {
+          const msg = payload.new;
+          if (msg.sender_id === SUPERADMIN_ID) return;
+          markUserOnline(selected.participantId);
+          setMessages((prev) => [...prev, msg]);
+          setIsTyping(false);
+          supabase
+            .from("support_messages")
+            .update({ is_read: true })
+            .eq("id", msg.id)
+            .then(() => fetchCount());
+          setConversations((prev) => {
+            const updated = prev.map((c) => (c.id === selectedRef.current?.id ? { ...c, lastMessage: msg } : c));
+            return [...updated].sort((a, b) => {
+              const ta = a.lastMessage?.created_at ?? "";
+              const tb = b.lastMessage?.created_at ?? "";
+              return tb.localeCompare(ta);
+            });
+          });
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "support_messages",
+        },
+        (payload) => {
+          const updated = payload.new;
+          if (updated.conversation_id !== selectedRef.current?.id) return;
+          setMessages((prev) => prev.map((m) => (m.id === updated.id ? { ...m, is_read: updated.is_read } : m)));
+        },
+      )
+      .subscribe();
 
-	const handleInputChange = useCallback((e) => {
-		let val = e.target.value;
-		// Auto-capitalise : première lettre et lettre après ". " ou "."
-		if (val.length === 1) {
-			val = val.charAt(0).toUpperCase() + val.slice(1);
-		} else if (val.length > 1) {
-			val = val.replace(
-				/(^|[.!?]\s+)([a-z])/g,
-				(_, prefix, letter) => prefix + letter.toUpperCase(),
-			);
-		}
-		setInput(val);
-		// Pas de broadcast typing côté admin pour ne pas polluer l'app user
-	}, []);
+    return () => {
+      clearTimeout(refSync);
+      clearInterval(pingInterval);
+      supabase.removeChannel(msgChannel);
+      convChannelRef.current = null;
+      setIsTyping(false);
+      clearTimeout(typingTimeoutRef.current);
+      setActiveConversationId(null);
+    };
+  }, [selected?.id, setActiveConversationId, selected?.participantId, fetchCount]);
 
-	return (
-		<div className='flex h-[calc(100vh-7rem)] rounded-xl border overflow-hidden bg-background'>
-			{/* ─── Colonne gauche : liste des conversations ─── */}
-			<div className='w-72 shrink-0 border-r flex flex-col'>
-				<div className='px-4 py-3 border-b'>
-					<h2 className='font-semibold text-sm'>Conversations</h2>
-				</div>
-				<div className='flex-1 min-h-0 overflow-y-auto'>
-					{conversations.length === 0 ? (
-						<div className='flex flex-col items-center justify-center gap-2 text-muted-foreground py-16 text-sm'>
-							<MessageSquare className='h-8 w-8 opacity-20' />
-							Aucune conversation
-						</div>
-					) : (
-						conversations.map((conv) => {
-							const name = conv.participantId
-								? (actorNames[conv.participantId] ?? "…")
-								: "Conversation";
-							const isActive = selected?.id === conv.id;
-							// Vert si une activité récente a été reçue du participant (toutes convs)
-							const isOnline = !!(
-								conv.participantId &&
-								onlineUsers[conv.participantId]
-							);
-							return (
-								<button
-									key={conv.id}
-									type='button'
-									onClick={() => selectConversation(conv)}
-									className={`w-full text-left px-4 py-3 flex gap-3 items-start hover:bg-muted transition-colors ${isActive ? "bg-muted" : ""}`}>
-									{/* Avatar initiales + indicateur en ligne */}
-									<div className='relative shrink-0'>
-										<div className='h-9 w-9 rounded-full bg-black text-white flex items-center justify-center text-xs font-semibold'>
-											{name.slice(0, 2).toUpperCase()}
-										</div>
-										{isOnline && (
-											<span className='absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-background' />
-										)}
-									</div>
-									<div className='flex-1 min-w-0'>
-										<div className='flex items-center justify-between'>
-											<span className='text-sm font-medium truncate'>
-												{name}
-											</span>
-											{conv.lastMessage && (
-												<span className='text-[10px] text-muted-foreground shrink-0 ml-1'>
-													{timeLabel(
-														conv.lastMessage
-															.created_at,
-													)}
-												</span>
-											)}
-										</div>
-										<p className='text-xs text-muted-foreground truncate mt-0.5'>
-											{conv.lastMessage?.content ??
-												"Pas encore de message"}
-										</p>
-									</div>
-									{conv.unread > 0 && (
-										<Badge className='shrink-0 h-4 min-w-4 px-1 text-[10px] rounded-full'>
-											{conv.unread}
-										</Badge>
-									)}
-								</button>
-							);
-						})
-					)}
-				</div>
-			</div>
+  const handleInputChange = useCallback((e) => {
+    let val = e.target.value;
+    // Auto-capitalise : première lettre et lettre après ". " ou "."
+    if (val.length === 1) {
+      val = val.charAt(0).toUpperCase() + val.slice(1);
+    } else if (val.length > 1) {
+      val = val.replace(/(^|[.!?]\s+)([a-z])/g, (_, prefix, letter) => prefix + letter.toUpperCase());
+    }
+    setInput(val);
+    // Pas de broadcast typing côté admin pour ne pas polluer l'app user
+  }, []);
 
-			{/* ─── Colonne droite : messages ─── */}
-			<div className='flex-1 flex flex-col min-w-0'>
-				{!selected ? (
-					<div className='flex-1 flex flex-col items-center justify-center gap-2 text-muted-foreground'>
-						<MessageSquare className='h-10 w-10 opacity-20' />
-						<p className='text-sm'>Sélectionne une conversation</p>
-					</div>
-				) : (
-					<>
-						{/* Header conversation */}
-						<div className='px-4 py-3 border-b flex items-center gap-3 shrink-0'>
-							<div className='relative'>
-								<div className='h-8 w-8 rounded-full bg-black text-white flex items-center justify-center text-xs font-semibold'>
-									{(selected.participantId
-										? (actorNames[selected.participantId] ??
-											"?")
-										: "?"
-									)
-										.slice(0, 2)
-										.toUpperCase()}
-								</div>
-								{!!(
-									selected?.participantId &&
-									onlineUsers[selected.participantId]
-								) && (
-									<span className='absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-background' />
-								)}
-							</div>
-							<div>
-								<p className='font-semibold text-sm leading-none'>
-									{selected.participantId
-										? (actorNames[selected.participantId] ??
-											"…")
-										: "Conversation"}
-								</p>
-								{!!(
-									selected?.participantId &&
-									onlineUsers[selected.participantId]
-								) && (
-									<p className='text-[11px] text-green-500 mt-0.5'>
-										En ligne
-									</p>
-								)}
-							</div>
-						</div>
+  if (!isAuthorized) return null;
 
-						{/* Bulles de messages */}
-						<div
-							ref={messagesContainerRef}
-							className='flex-1 min-h-0 overflow-y-auto px-4 py-4'>
-							<div className='flex flex-col gap-2'>
-								{messages.map((msg) => {
-									const isMe =
-										msg.sender_id === SUPERADMIN_ID;
-									return (
-										<div
-											key={msg.id}
-											className={`flex flex-col gap-0.5 ${isMe ? "items-end" : "items-start"}`}>
-											<div
-												className={`max-w-[70%] px-3 py-2 rounded-2xl text-sm leading-snug ${
-													isMe
-														? "bg-primary text-primary-foreground rounded-br-sm"
-														: "bg-muted text-foreground rounded-bl-sm"
-												}`}>
-												<p>{msg.content}</p>
-											</div>
-											<div className='flex items-center gap-0.5 px-1'>
-												<span className='text-[10px] text-muted-foreground'>
-													{fullTime(msg.created_at)}
-												</span>
-												{isMe && (
-													<CheckCheck
-														className={`h-3 w-3 ${
-															msg.is_read
-																? "text-green-500"
-																: "text-muted-foreground/50"
-														}`}
-													/>
-												)}
-											</div>
-										</div>
-									);
-								})}
-								{isTyping && <TypingIndicator />}
-							</div>
-						</div>
-						{/* Input réponse */}
-						<form
-							onSubmit={sendMessage}
-							className='px-4 py-3 border-t flex gap-2 shrink-0'>
-							<Input
-								value={input}
-								onChange={handleInputChange}
-								placeholder='Écrire un message…'
-								className='flex-1'
-								autoFocus
-							/>
-							<Button
-								type='submit'
-								size='icon'
-								disabled={!input.trim() || sending}>
-								<Send className='h-4 w-4' />
-							</Button>
-						</form>
-					</>
-				)}
-			</div>
-		</div>
-	);
+  return (
+    <div className="flex h-[calc(100vh-7rem)] overflow-hidden rounded-xl border bg-background">
+      {/* ─── Colonne gauche : liste des conversations ─── */}
+      <div className="flex w-72 shrink-0 flex-col border-r">
+        <div className="border-b px-4 py-3">
+          <h2 className="font-semibold text-sm">Conversations</h2>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {conversations.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-2 py-16 text-muted-foreground text-sm">
+              <MessageSquare className="h-8 w-8 opacity-20" />
+              Aucune conversation
+            </div>
+          ) : (
+            conversations.map((conv) => {
+              const name = conv.participantId ? (actorNames[conv.participantId] ?? "…") : "Conversation";
+              const isActive = selected?.id === conv.id;
+              // Vert si une activité récente a été reçue du participant (toutes convs)
+              const isOnline = !!(conv.participantId && onlineUsers[conv.participantId]);
+              return (
+                <button
+                  key={conv.id}
+                  type="button"
+                  onClick={() => selectConversation(conv)}
+                  className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-muted ${isActive ? "bg-muted" : ""}`}
+                >
+                  {/* Avatar initiales + indicateur en ligne */}
+                  <div className="relative shrink-0">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-black font-semibold text-white text-xs">
+                      {name.slice(0, 2).toUpperCase()}
+                    </div>
+                    {isOnline && (
+                      <span className="absolute right-0 bottom-0 h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-background" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="truncate font-medium text-sm">{name}</span>
+                      {conv.lastMessage && (
+                        <span className="ml-1 shrink-0 text-[10px] text-muted-foreground">
+                          {timeLabel(conv.lastMessage.created_at)}
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-0.5 truncate text-muted-foreground text-xs">
+                      {conv.lastMessage?.content ?? "Pas encore de message"}
+                    </p>
+                  </div>
+                  {conv.unread > 0 && (
+                    <Badge className="h-4 min-w-4 shrink-0 rounded-full px-1 text-[10px]">{conv.unread}</Badge>
+                  )}
+                </button>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {/* ─── Colonne droite : messages ─── */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        {!selected ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-2 text-muted-foreground">
+            <MessageSquare className="h-10 w-10 opacity-20" />
+            <p className="text-sm">Sélectionne une conversation</p>
+          </div>
+        ) : (
+          <>
+            {/* Header conversation */}
+            <div className="flex shrink-0 items-center gap-3 border-b px-4 py-3">
+              <div className="relative">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-black font-semibold text-white text-xs">
+                  {(selected.participantId ? (actorNames[selected.participantId] ?? "?") : "?")
+                    .slice(0, 2)
+                    .toUpperCase()}
+                </div>
+                {!!(selected?.participantId && onlineUsers[selected.participantId]) && (
+                  <span className="absolute right-0 bottom-0 h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-background" />
+                )}
+              </div>
+              <div>
+                <p className="font-semibold text-sm leading-none">
+                  {selected.participantId ? (actorNames[selected.participantId] ?? "…") : "Conversation"}
+                </p>
+                {!!(selected?.participantId && onlineUsers[selected.participantId]) && (
+                  <p className="mt-0.5 text-[11px] text-green-500">En ligne</p>
+                )}
+              </div>
+            </div>
+
+            {/* Bulles de messages */}
+            <div ref={messagesContainerRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+              <div className="flex flex-col gap-2">
+                {messages.map((msg) => {
+                  const isMe = msg.sender_id === SUPERADMIN_ID;
+                  return (
+                    <div key={msg.id} className={`flex flex-col gap-0.5 ${isMe ? "items-end" : "items-start"}`}>
+                      <div
+                        className={`max-w-[70%] rounded-2xl px-3 py-2 text-sm leading-snug ${
+                          isMe
+                            ? "rounded-br-sm bg-primary text-primary-foreground"
+                            : "rounded-bl-sm bg-muted text-foreground"
+                        }`}
+                      >
+                        <p>{msg.content}</p>
+                      </div>
+                      <div className="flex items-center gap-0.5 px-1">
+                        <span className="text-[10px] text-muted-foreground">{fullTime(msg.created_at)}</span>
+                        {isMe && (
+                          <CheckCheck
+                            className={`h-3 w-3 ${msg.is_read ? "text-green-500" : "text-muted-foreground/50"}`}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                {isTyping && <TypingIndicator />}
+              </div>
+            </div>
+            {/* Input réponse */}
+            <form onSubmit={sendMessage} className="flex shrink-0 gap-2 border-t px-4 py-3">
+              <Input
+                value={input}
+                onChange={handleInputChange}
+                placeholder="Écrire un message…"
+                className="flex-1"
+                autoFocus
+              />
+              <Button type="submit" size="icon" disabled={!input.trim() || sending}>
+                <Send className="h-4 w-4" />
+              </Button>
+            </form>
+          </>
+        )}
+      </div>
+    </div>
+  );
 }
