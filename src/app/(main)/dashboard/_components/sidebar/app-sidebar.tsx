@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import Link from "next/link";
 
 import { CircleHelp, Command, Search, Settings } from "lucide-react";
@@ -14,8 +16,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { useEffect, useState } from "react";
-
 import { APP_CONFIG } from "@/config/app-config";
 import { supabase } from "@/lib/supabase/supabaseClient";
 import { candidateSidebarItems, companySidebarItems, sidebarItems } from "@/navigation/sidebar/sidebar-items";
@@ -25,7 +25,7 @@ import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const [role, setRole] = useState<"company" | "candidate" | "admin">("admin");
+  const [role, setRole] = useState<"company" | "candidate" | "admin" | "super_admin" | null>(null);
   const [navUser, setNavUser] = useState({ name: "", email: "", avatar: "" });
 
   useEffect(() => {
@@ -49,11 +49,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         return;
       }
 
-      const { data: admin } = await supabase
-        .from("admins")
-        .select("id")
-        .eq("id", userId)
-        .maybeSingle();
+      const { data: admin } = await supabase.from("admins").select("role").eq("id", userId).maybeSingle();
 
       if (!admin) {
         // Candidat
@@ -64,14 +60,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           .eq("id", userId)
           .maybeSingle();
         setNavUser({
-          name: (`${profile?.firstname ?? ""} ${profile?.lastname ?? ""}`.trim()) || (data.user.email ?? ""),
+          name: `${profile?.firstname ?? ""} ${profile?.lastname ?? ""}`.trim() || (data.user.email ?? ""),
           email: data.user.email ?? "",
           avatar: profile?.avatar_url ?? "",
         });
         return;
       }
 
-      setRole("admin");
+      setRole(admin.role === "super_admin" ? "super_admin" : "admin");
       setNavUser({
         name: data.user.user_metadata?.full_name ?? data.user.email ?? "",
         email: data.user.email ?? "",
@@ -106,7 +102,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={role === "company" ? companySidebarItems : role === "candidate" ? candidateSidebarItems : sidebarItems} />
+        {role !== null && (
+          <NavMain
+            items={
+              role === "company"
+                ? companySidebarItems
+                : role === "candidate"
+                  ? candidateSidebarItems
+                  : role === "super_admin"
+                    ? sidebarItems
+                    : []
+            }
+          />
+        )}
         {/* <NavDocuments items={data.documents} /> */}
         {/* <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>
