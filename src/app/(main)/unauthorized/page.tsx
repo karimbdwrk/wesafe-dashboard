@@ -1,9 +1,12 @@
 "use client";
 
+import { Suspense } from "react";
+
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
-import { ShieldOff, UserRound, Building2 } from "lucide-react";
+
+import { Building2, ShieldOff, UserRound } from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
 
 const roleConfig = {
@@ -27,8 +30,7 @@ const roleConfig = {
     icon: ShieldOff,
     badge: "Accès refusé",
     title: "Accès non autorisé",
-    description:
-      "Votre compte ne dispose pas des permissions nécessaires pour accéder à cet espace administrateur.",
+    description: "Votre compte ne dispose pas des permissions nécessaires pour accéder à cet espace administrateur.",
     hint: "Contactez l'administrateur si vous pensez qu'il s'agit d'une erreur.",
   },
 };
@@ -68,7 +70,7 @@ function UnauthorizedContent() {
 
         {/* Back link */}
         <Link
-          href="/"
+          href="/dashboard/default"
           prefetch={false}
           className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
         >
