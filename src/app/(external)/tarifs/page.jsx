@@ -126,35 +126,35 @@ export default function TarifsPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero */}
-      <section className="border-b border-border bg-primary py-20 mt-14">
+      <section className="mt-14 border-border border-b bg-primary py-20">
         <div className="mx-auto max-w-4xl px-6 text-center">
-          <p className="text-primary-foreground/60 text-sm font-medium uppercase tracking-widest mb-3">Tarifs</p>
-          <h1 className="font-(family-name:--font-heading) text-4xl font-bold text-primary-foreground md:text-5xl mb-5">
+          <p className="mb-3 font-medium text-primary-foreground/60 text-sm uppercase tracking-widest">Tarifs</p>
+          <h1 className="font-(family-name:--font-heading) mb-5 font-bold text-4xl text-primary-foreground md:text-5xl">
             Simple, transparent, adapté aux pros
           </h1>
-          <p className="text-primary-foreground/75 text-lg leading-relaxed max-w-2xl mx-auto">
+          <p className="mx-auto max-w-2xl text-lg text-primary-foreground/75 leading-relaxed">
             Les entreprises choisissent leur formule. Les candidats accèdent à toutes les fonctionnalités{" "}
             <strong className="text-primary-foreground">gratuitement</strong>, sans conditions.
           </p>
         </div>
       </section>
 
-      <div className="mx-auto max-w-6xl px-6 py-16 space-y-20">
+      <div className="mx-auto max-w-6xl space-y-20 px-6 py-16">
         {/* Candidats vs Entreprises */}
-        <section aria-label="Accès selon le profil" className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="rounded-2xl border border-border bg-card p-8 flex flex-col gap-4">
+        <section aria-label="Accès selon le profil" className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-8">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
               <UserCheck className="h-6 w-6 text-primary" aria-hidden="true" />
             </div>
             <div>
-              <h2 className="font-(family-name:--font-heading) text-xl font-bold text-foreground mb-1">Candidats</h2>
-              <p className="text-3xl font-bold text-primary mb-2">100 % gratuit</p>
+              <h2 className="font-(family-name:--font-heading) mb-1 font-bold text-foreground text-xl">Candidats</h2>
+              <p className="mb-2 font-bold text-3xl text-primary">100 % gratuit</p>
               <p className="text-muted-foreground text-sm leading-6">
                 WeSafe est entièrement gratuit pour les agents et professionnels de la sécurité. Créez votre profil,
                 déposez vos documents, postulez aux offres et signez vos contrats — sans jamais payer.
               </p>
             </div>
-            <ul className="space-y-2 mt-2" aria-label="Fonctionnalités incluses">
+            <ul className="mt-2 space-y-2" aria-label="Fonctionnalités incluses">
               {[
                 "Inscription & profil complet",
                 "Consultation de toutes les offres",
@@ -163,8 +163,8 @@ export default function TarifsPage() {
                 "Signature électronique de contrats",
                 "Gestion des documents (CNAPS, SSIAP…)",
               ].map((f) => (
-                <li key={f} className="flex items-center gap-2.5 text-sm text-muted-foreground">
-                  <CheckCircle2 className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
+                <li key={f} className="flex items-center gap-2.5 text-muted-foreground text-sm">
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                   {f}
                 </li>
               ))}
@@ -179,19 +179,19 @@ export default function TarifsPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border bg-card p-8 flex flex-col gap-4">
+          <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-8">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
               <Building2 className="h-6 w-6 text-primary" aria-hidden="true" />
             </div>
             <div>
-              <h2 className="font-(family-name:--font-heading) text-xl font-bold text-foreground mb-1">Entreprises</h2>
-              <p className="text-3xl font-bold text-primary mb-2">À partir de 0 €</p>
+              <h2 className="font-(family-name:--font-heading) mb-1 font-bold text-foreground text-xl">Entreprises</h2>
+              <p className="mb-2 font-bold text-3xl text-primary">À partir de 0 €</p>
               <p className="text-muted-foreground text-sm leading-6">
                 Les entreprises bénéficient d'un accès de base gratuit et peuvent upgrader pour accéder aux outils
                 avancés : annonces Last Minute, génération de contrats, statistiques et support dédié.
               </p>
             </div>
-            <ul className="space-y-2 mt-2" aria-label="Fonctionnalités incluses">
+            <ul className="mt-2 space-y-2" aria-label="Fonctionnalités incluses">
               {[
                 "Plan Standard gratuit, sans engagement",
                 "Plans payants dès 19 €/mois",
@@ -200,8 +200,8 @@ export default function TarifsPage() {
                 "Facturation sécurisée par Stripe",
                 "Résiliation à tout moment (mensuel)",
               ].map((f) => (
-                <li key={f} className="flex items-center gap-2.5 text-sm text-muted-foreground">
-                  <CheckCircle2 className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
+                <li key={f} className="flex items-center gap-2.5 text-muted-foreground text-sm">
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                   {f}
                 </li>
               ))}
@@ -219,52 +219,52 @@ export default function TarifsPage() {
 
         {/* Grille tarifaire entreprises */}
         <section aria-labelledby="plans-heading">
-          <div className="text-center mb-10">
+          <div className="mb-10 text-center">
             <h2
               id="plans-heading"
-              className="font-(family-name:--font-heading) text-3xl font-bold text-foreground mb-2"
+              className="font-(family-name:--font-heading) mb-2 font-bold text-3xl text-foreground"
             >
               Formules Entreprises
             </h2>
             <p className="text-muted-foreground">Tous les prix sont TTC. Paiement sécurisé par Stripe.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+          <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-3">
             {PLANS.map((plan) => (
               <div
                 key={plan.name}
-                className={`relative rounded-2xl p-7 flex flex-col gap-5 ${
+                className={`relative flex flex-col gap-5 rounded-2xl p-7 ${
                   plan.highlight ? "border-2 border-primary bg-card shadow-lg" : "border border-border bg-card"
                 }`}
               >
                 {plan.badge && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-0.5 text-xs font-bold text-primary-foreground">
+                  <div className="-top-3 -translate-x-1/2 absolute left-1/2">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-0.5 font-bold text-primary-foreground text-xs">
                       <Star className="h-3 w-3" aria-hidden="true" />
                       {plan.badge}
                     </span>
                   </div>
                 )}
                 <div>
-                  <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                  <p className="mb-2 font-semibold text-muted-foreground text-sm uppercase tracking-wider">
                     {plan.name}
                   </p>
-                  <div className="flex items-end gap-1 mb-1">
-                    <span className="font-(family-name:--font-heading) text-4xl font-bold text-foreground">
+                  <div className="mb-1 flex items-end gap-1">
+                    <span className="font-(family-name:--font-heading) font-bold text-4xl text-foreground">
                       {plan.price}
                     </span>
-                    <span className="text-sm text-muted-foreground mb-1.5">{plan.period}</span>
+                    <span className="mb-1.5 text-muted-foreground text-sm">{plan.period}</span>
                   </div>
-                  <p className="text-xs text-muted-foreground">{plan.sub}</p>
+                  <p className="text-muted-foreground text-xs">{plan.sub}</p>
                 </div>
 
-                <ul className="space-y-2.5 flex-1" aria-label={`Fonctionnalités du plan ${plan.name}`}>
+                <ul className="flex-1 space-y-2.5" aria-label={`Fonctionnalités du plan ${plan.name}`}>
                   {plan.features.map((f) => (
                     <li key={f.label} className="flex items-start gap-2 text-sm">
                       {f.ok ? (
-                        <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                       ) : (
-                        <XCircle className="h-4 w-4 text-border shrink-0 mt-0.5" aria-hidden="true" />
+                        <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-border" aria-hidden="true" />
                       )}
                       <span className={f.ok ? "text-muted-foreground" : "text-muted-foreground/50"}>
                         {!f.ok && <span className="sr-only">Non inclus : </span>}
@@ -289,31 +289,31 @@ export default function TarifsPage() {
 
         {/* Options supplémentaires */}
         <section aria-labelledby="addons-heading">
-          <div className="text-center mb-8">
+          <div className="mb-8 text-center">
             <h2
               id="addons-heading"
-              className="font-(family-name:--font-heading) text-2xl font-bold text-foreground mb-2"
+              className="font-(family-name:--font-heading) mb-2 font-bold text-2xl text-foreground"
             >
               Options supplémentaires
             </h2>
             <p className="text-muted-foreground text-sm">Disponibles en complément de votre abonnement</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             {ADD_ONS.map((addon) => (
-              <div key={addon.name} className="rounded-xl border border-border bg-card p-6 flex gap-4">
+              <div key={addon.name} className="flex gap-4 rounded-xl border border-border bg-card p-6">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                   <addon.icon className="h-5 w-5 text-primary" aria-hidden="true" />
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-start justify-between gap-2 mb-1">
+                  <div className="mb-1 flex items-start justify-between gap-2">
                     <h3 className="font-semibold text-foreground">{addon.name}</h3>
-                    <div className="text-right shrink-0">
+                    <div className="shrink-0 text-right">
                       <p className="font-bold text-foreground text-sm">{addon.price}</p>
-                      <p className="text-xs text-muted-foreground">{addon.detail}</p>
+                      <p className="text-muted-foreground text-xs">{addon.detail}</p>
                     </div>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-2">{addon.desc}</p>
-                  <span className="inline-block rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
+                  <p className="mb-2 text-muted-foreground text-sm">{addon.desc}</p>
+                  <span className="inline-block rounded-full bg-muted px-2.5 py-0.5 text-muted-foreground text-xs">
                     {addon.req}
                   </span>
                 </div>
@@ -326,20 +326,20 @@ export default function TarifsPage() {
         <section
           role="note"
           aria-label="Conditions tarifaires"
-          className="rounded-2xl border border-border bg-muted px-8 py-6 flex flex-col sm:flex-row items-start sm:items-center gap-4"
+          className="flex flex-col items-start gap-4 rounded-2xl border border-border bg-muted px-8 py-6 sm:flex-row sm:items-center"
         >
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted-foreground/10">
             <Info className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
           </div>
           <div className="flex-1">
-            <p className="font-semibold text-foreground mb-0.5">Conditions tarifaires complètes</p>
-            <p className="text-sm text-muted-foreground leading-6">
+            <p className="mb-0.5 font-semibold text-foreground">Conditions tarifaires complètes</p>
+            <p className="text-muted-foreground text-sm leading-6">
               Les prix affichés sur cette page sont donnés à titre indicatif et susceptibles d&apos;évoluer. Les
               conditions contractuelles précises (TVA, modalités de paiement, remboursement, résiliation) sont définies
               dans nos{" "}
               <Link
                 href="/conditions-generales-de-vente"
-                className="font-medium underline underline-offset-2 text-foreground hover:text-muted-foreground transition-colors"
+                className="font-medium text-foreground underline underline-offset-2 transition-colors hover:text-muted-foreground"
               >
                 Conditions Générales de Vente
               </Link>
@@ -356,16 +356,16 @@ export default function TarifsPage() {
 
         {/* FAQ */}
         <section aria-labelledby="faq-heading">
-          <div className="text-center mb-8">
-            <h2 id="faq-heading" className="font-(family-name:--font-heading) text-2xl font-bold text-foreground">
+          <div className="mb-8 text-center">
+            <h2 id="faq-heading" className="font-(family-name:--font-heading) font-bold text-2xl text-foreground">
               Questions fréquentes
             </h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             {FAQ.map((item) => (
               <div key={item.q} className="rounded-xl border border-border bg-card p-5">
-                <p className="font-semibold text-foreground mb-2 text-sm">{item.q}</p>
-                <p className="text-sm text-muted-foreground leading-6">{item.a}</p>
+                <p className="mb-2 font-semibold text-foreground text-sm">{item.q}</p>
+                <p className="text-muted-foreground text-sm leading-6">{item.a}</p>
               </div>
             ))}
           </div>
@@ -373,14 +373,14 @@ export default function TarifsPage() {
 
         {/* CTA final */}
         <section className="rounded-2xl border border-border bg-card p-10 text-center">
-          <h2 className="font-(family-name:--font-heading) text-2xl font-bold text-foreground mb-3">
+          <h2 className="font-(family-name:--font-heading) mb-3 font-bold text-2xl text-foreground">
             Prêt à démarrer ?
           </h2>
-          <p className="text-muted-foreground max-w-md mx-auto mb-7 text-sm leading-6">
+          <p className="mx-auto mb-7 max-w-md text-muted-foreground text-sm leading-6">
             Créez votre compte gratuitement et accédez immédiatement à la plateforme. Aucune carte bancaire requise pour
             commencer.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <div className="flex flex-col justify-center gap-3 sm:flex-row">
             <Link href="/auth/login">
               <Button size="lg" className="gap-2">
                 Créer un compte gratuit

@@ -31,14 +31,17 @@ const chartConfig = {
 export function ChartAreaInteractive() {
   const isMobile = useIsMobile();
   const [timeRange, setTimeRange] = React.useState("90d");
-  const [rawData, setRawData] = React.useState<Record<string, { credits: number; subscriptions: number; sponsorships: number }>>({}); 
+  const [rawData, setRawData] = React.useState<
+    Record<string, { credits: number; subscriptions: number; sponsorships: number }>
+  >({});
 
   React.useEffect(() => {
     if (isMobile) setTimeRange("7d");
   }, [isMobile]);
 
   React.useEffect(() => {
-    const daysToSubtract = timeRange === "7d" ? 7 : timeRange === "30d" ? 30 : timeRange === "90d" ? 90 : timeRange === "180d" ? 180 : 365;
+    const daysToSubtract =
+      timeRange === "7d" ? 7 : timeRange === "30d" ? 30 : timeRange === "90d" ? 90 : timeRange === "180d" ? 180 : 365;
     const from = new Date();
     from.setDate(from.getDate() - daysToSubtract);
     from.setHours(0, 0, 0, 0);
@@ -79,7 +82,8 @@ export function ChartAreaInteractive() {
   }, [timeRange]);
 
   const filteredData = React.useMemo(() => {
-    const daysToSubtract = timeRange === "7d" ? 7 : timeRange === "30d" ? 30 : timeRange === "90d" ? 90 : timeRange === "180d" ? 180 : 365;
+    const daysToSubtract =
+      timeRange === "7d" ? 7 : timeRange === "30d" ? 30 : timeRange === "90d" ? 90 : timeRange === "180d" ? 180 : 365;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const days: { date: string; credits: number; subscriptions: number; sponsorships: number }[] = [];
@@ -87,7 +91,12 @@ export function ChartAreaInteractive() {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
       const key = d.toISOString().slice(0, 10);
-      days.push({ date: key, credits: rawData[key]?.credits ?? 0, subscriptions: rawData[key]?.subscriptions ?? 0, sponsorships: rawData[key]?.sponsorships ?? 0 });
+      days.push({
+        date: key,
+        credits: rawData[key]?.credits ?? 0,
+        subscriptions: rawData[key]?.subscriptions ?? 0,
+        sponsorships: rawData[key]?.sponsorships ?? 0,
+      });
     }
     return days;
   }, [timeRange, rawData]);
@@ -123,11 +132,21 @@ export function ChartAreaInteractive() {
               <SelectValue placeholder="3 derniers mois" />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
-              <SelectItem value="365d" className="rounded-lg">12 derniers mois</SelectItem>
-              <SelectItem value="180d" className="rounded-lg">6 derniers mois</SelectItem>
-              <SelectItem value="90d" className="rounded-lg">3 derniers mois</SelectItem>
-              <SelectItem value="30d" className="rounded-lg">30 derniers jours</SelectItem>
-              <SelectItem value="7d" className="rounded-lg">7 derniers jours</SelectItem>
+              <SelectItem value="365d" className="rounded-lg">
+                12 derniers mois
+              </SelectItem>
+              <SelectItem value="180d" className="rounded-lg">
+                6 derniers mois
+              </SelectItem>
+              <SelectItem value="90d" className="rounded-lg">
+                3 derniers mois
+              </SelectItem>
+              <SelectItem value="30d" className="rounded-lg">
+                30 derniers jours
+              </SelectItem>
+              <SelectItem value="7d" className="rounded-lg">
+                7 derniers jours
+              </SelectItem>
             </SelectContent>
           </Select>
         </CardAction>
@@ -156,9 +175,7 @@ export function ChartAreaInteractive() {
               axisLine={false}
               tickMargin={8}
               minTickGap={32}
-              tickFormatter={(value) =>
-                new Date(value).toLocaleDateString("fr-FR", { month: "short", day: "numeric" })
-              }
+              tickFormatter={(value) => new Date(value).toLocaleDateString("fr-FR", { month: "short", day: "numeric" })}
             />
             <ChartTooltip
               cursor={false}
@@ -170,15 +187,37 @@ export function ChartAreaInteractive() {
                   }
                   formatter={(value, name) => [
                     `${Number(value).toFixed(2)} €`,
-                    name === "credits" ? "Crédits & Tokens" : name === "subscriptions" ? "Abonnements" : "Annonces sponsorisées",
+                    name === "credits"
+                      ? "Crédits & Tokens"
+                      : name === "subscriptions"
+                        ? "Abonnements"
+                        : "Annonces sponsorisées",
                   ]}
                   indicator="dot"
                 />
               }
             />
-            <Area dataKey="sponsorships" type="monotone" fill="url(#fillSponsorships)" stroke="var(--color-sponsorships)" stackId="a" />
-            <Area dataKey="subscriptions" type="monotone" fill="url(#fillSubscriptions)" stroke="var(--color-subscriptions)" stackId="a" />
-            <Area dataKey="credits" type="monotone" fill="url(#fillCredits)" stroke="var(--color-credits)" stackId="a" />
+            <Area
+              dataKey="sponsorships"
+              type="monotone"
+              fill="url(#fillSponsorships)"
+              stroke="var(--color-sponsorships)"
+              stackId="a"
+            />
+            <Area
+              dataKey="subscriptions"
+              type="monotone"
+              fill="url(#fillSubscriptions)"
+              stroke="var(--color-subscriptions)"
+              stackId="a"
+            />
+            <Area
+              dataKey="credits"
+              type="monotone"
+              fill="url(#fillCredits)"
+              stroke="var(--color-credits)"
+              stackId="a"
+            />
           </AreaChart>
         </ChartContainer>
       </CardContent>

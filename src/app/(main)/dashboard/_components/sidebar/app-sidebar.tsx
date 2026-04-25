@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 import Link from "next/link";
 
-import { CircleHelp, Command, Search, Settings } from "lucide-react";
+import { Command } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 
 import {

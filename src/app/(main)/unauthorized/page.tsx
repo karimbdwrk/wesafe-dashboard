@@ -50,7 +50,7 @@ function UnauthorizedContent() {
         </div>
 
         {/* Badge */}
-        <Badge variant="secondary" className="mx-auto text-sm px-3 py-1">
+        <Badge variant="secondary" className="mx-auto px-3 py-1 text-sm">
           {config.badge}
         </Badge>
 
@@ -62,7 +62,7 @@ function UnauthorizedContent() {
 
         {/* Hint card */}
         <div className="rounded-xl border bg-muted/50 px-5 py-4 text-left">
-          <p className="text-xs text-muted-foreground leading-relaxed">
+          <p className="text-muted-foreground text-xs leading-relaxed">
             <span className="font-semibold text-foreground">💡 Note — </span>
             {config.hint}
           </p>
@@ -72,7 +72,7 @@ function UnauthorizedContent() {
         <Link
           href="/dashboard/default"
           prefetch={false}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 font-medium text-primary-foreground text-sm shadow-sm transition-colors hover:bg-primary/90"
         >
           Retour à l&apos;accueil
         </Link>

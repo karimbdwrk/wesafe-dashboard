@@ -101,9 +101,15 @@ export function ChartAreaInteractive() {
               <SelectValue placeholder="3 derniers mois" />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
-              <SelectItem value="90d" className="rounded-lg">3 derniers mois</SelectItem>
-              <SelectItem value="30d" className="rounded-lg">30 derniers jours</SelectItem>
-              <SelectItem value="7d" className="rounded-lg">7 derniers jours</SelectItem>
+              <SelectItem value="90d" className="rounded-lg">
+                3 derniers mois
+              </SelectItem>
+              <SelectItem value="30d" className="rounded-lg">
+                30 derniers jours
+              </SelectItem>
+              <SelectItem value="7d" className="rounded-lg">
+                7 derniers jours
+              </SelectItem>
             </SelectContent>
           </Select>
         </CardAction>
@@ -128,9 +134,7 @@ export function ChartAreaInteractive() {
               axisLine={false}
               tickMargin={8}
               minTickGap={32}
-              tickFormatter={(value) =>
-                new Date(value).toLocaleDateString("fr-FR", { month: "short", day: "numeric" })
-              }
+              tickFormatter={(value) => new Date(value).toLocaleDateString("fr-FR", { month: "short", day: "numeric" })}
             />
             <ChartTooltip
               cursor={false}
@@ -152,7 +156,6 @@ export function ChartAreaInteractive() {
     </Card>
   );
 }
-
 
 // const chartData = [
 //   { date: "2024-04-01", desktop: 222, mobile: 150 },

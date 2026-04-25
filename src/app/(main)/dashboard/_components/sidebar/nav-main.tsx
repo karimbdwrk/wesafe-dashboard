@@ -27,6 +27,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import type { NavGroup, NavMainItem } from "@/navigation/sidebar/sidebar-items";
+
 import { useNotifications } from "../notification-context";
 
 interface NavMainProps {
@@ -196,9 +197,12 @@ export function NavMain({ items }: NavMainProps) {
                 if (state === "collapsed" && !isMobile) {
                   // If no subItems, just render the button as a link
                   if (!item.subItems) {
-                    const msgBadge = item.url === "/dashboard/messages" && unreadMessages > 0
-                      ? <Badge className="ml-auto h-4 min-w-4 px-1 text-[10px] rounded-full">{unreadMessages > 99 ? "99+" : unreadMessages}</Badge>
-                      : null;
+                    const msgBadge =
+                      item.url === "/dashboard/messages" && unreadMessages > 0 ? (
+                        <Badge className="ml-auto h-4 min-w-4 rounded-full px-1 text-[10px]">
+                          {unreadMessages > 99 ? "99+" : unreadMessages}
+                        </Badge>
+                      ) : null;
                     return (
                       <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton
@@ -220,11 +224,20 @@ export function NavMain({ items }: NavMainProps) {
                   return <NavItemCollapsed key={item.title} item={item} isActive={isItemActive} />;
                 }
                 // Expanded view
-                const expandedBadge = item.url === "/dashboard/messages" && unreadMessages > 0
-                  ? <Badge className="ml-auto h-4 min-w-4 px-1 text-[10px] rounded-full">{unreadMessages > 99 ? "99+" : unreadMessages}</Badge>
-                  : undefined;
+                const expandedBadge =
+                  item.url === "/dashboard/messages" && unreadMessages > 0 ? (
+                    <Badge className="ml-auto h-4 min-w-4 rounded-full px-1 text-[10px]">
+                      {unreadMessages > 99 ? "99+" : unreadMessages}
+                    </Badge>
+                  ) : undefined;
                 return (
-                  <NavItemExpanded key={item.title} item={item} isActive={isItemActive} isSubmenuOpen={isSubmenuOpen} badge={expandedBadge} />
+                  <NavItemExpanded
+                    key={item.title}
+                    item={item}
+                    isActive={isItemActive}
+                    isSubmenuOpen={isSubmenuOpen}
+                    badge={expandedBadge}
+                  />
                 );
               })}
             </SidebarMenu>

@@ -23,15 +23,7 @@ import {
   Zap,
 } from "lucide-react";
 
-import {
-  contractTypeLabel,
-  formatRelativeDate,
-  getCatAcronym,
-  getLocation,
-  getSalaryDisplay,
-  JobCard,
-  JobCardSkeleton,
-} from "@/components/job-card";
+import { contractTypeLabel, getLocation, getSalaryDisplay, JobCard } from "@/components/job-card";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -127,7 +119,7 @@ function JobDetail({ job, onClose }) {
           <button
             type="button"
             onClick={onClose}
-            className="mb-6 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="mb-6 flex items-center gap-1.5 text-muted-foreground text-sm transition-colors hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             Retour aux offres
@@ -135,26 +127,26 @@ function JobDetail({ job, onClose }) {
         )}
 
         {/* Header entreprise */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="mb-6 flex items-center gap-4">
           {company?.logo_url ? (
             <img
               src={company.logo_url}
               alt={company.name}
               loading="lazy"
-              className="h-14 w-14 rounded-xl object-cover border shrink-0"
+              className="h-14 w-14 shrink-0 rounded-xl border object-cover"
             />
           ) : (
-            <div className="h-14 w-14 rounded-xl bg-muted border flex items-center justify-center shrink-0">
-              <Building2 className="w-6 h-6 text-muted-foreground" aria-hidden="true" />
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border bg-muted">
+              <Building2 className="h-6 w-6 text-muted-foreground" aria-hidden="true" />
             </div>
           )}
           <div>
-            <p className="text-sm text-muted-foreground font-medium">{company?.name || "Entreprise"}</p>
-            <h1 className="text-xl font-bold leading-tight flex items-center gap-2 flex-wrap">
+            <p className="font-medium text-muted-foreground text-sm">{company?.name || "Entreprise"}</p>
+            <h1 className="flex flex-wrap items-center gap-2 font-bold text-xl leading-tight">
               {job.title}
               {job.isLastMinute && (
-                <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 rounded-full px-2 py-0.5">
-                  <Zap className="w-3 h-3" aria-hidden="true" />
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-semibold text-primary text-xs">
+                  <Zap className="h-3 w-3" aria-hidden="true" />
                   Last Minute
                 </span>
               )}
@@ -163,16 +155,16 @@ function JobDetail({ job, onClose }) {
         </div>
 
         {/* Badges */}
-        <div className="flex flex-wrap gap-2 mb-6">
+        <div className="mb-6 flex flex-wrap gap-2">
           {location && (
             <Badge variant="outline" className="flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5" aria-hidden="true" />
+              <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
               {location}
             </Badge>
           )}
           {job.contract_type && (
             <Badge variant="outline" className="flex items-center gap-1.5">
-              <Briefcase className="w-3.5 h-3.5" aria-hidden="true" />
+              <Briefcase className="h-3.5 w-3.5" aria-hidden="true" />
               {contractTypeLabel[job.contract_type] ?? job.contract_type.toUpperCase()}
             </Badge>
           )}
@@ -180,41 +172,41 @@ function JobDetail({ job, onClose }) {
           {job.work_schedule && workScheduleLabel[job.work_schedule] && (
             <Badge variant="outline" className="flex items-center gap-1.5">
               {job.work_schedule === "nightly" ? (
-                <Moon className="w-3.5 h-3.5" aria-hidden="true" />
+                <Moon className="h-3.5 w-3.5" aria-hidden="true" />
               ) : job.work_schedule === "daily" ? (
-                <Sun className="w-3.5 h-3.5" aria-hidden="true" />
+                <Sun className="h-3.5 w-3.5" aria-hidden="true" />
               ) : (
-                <Timer className="w-3.5 h-3.5" aria-hidden="true" />
+                <Timer className="h-3.5 w-3.5" aria-hidden="true" />
               )}
               {workScheduleLabel[job.work_schedule]}
             </Badge>
           )}
           {job.work_time && workTimeLabel[job.work_time] && (
             <Badge variant="outline" className="flex items-center gap-1.5">
-              <Timer className="w-3.5 h-3.5" aria-hidden="true" />
+              <Timer className="h-3.5 w-3.5" aria-hidden="true" />
               {workTimeLabel[job.work_time]}
             </Badge>
           )}
           {salary && (
             <Badge variant="outline" className="flex items-center gap-1.5">
-              <Euro className="w-3.5 h-3.5" aria-hidden="true" />
+              <Euro className="h-3.5 w-3.5" aria-hidden="true" />
               {salary}
             </Badge>
           )}
           {job.start_date_asap ? (
             <Badge variant="outline" className="flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5" aria-hidden="true" />
+              <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
               Dès que possible
             </Badge>
           ) : job.start_date ? (
             <Badge variant="outline" className="flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5" aria-hidden="true" />
+              <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
               Début {formatDate(job.start_date)}
             </Badge>
           ) : null}
           {job.end_date && (
             <Badge variant="outline" className="flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5" aria-hidden="true" />
+              <Clock className="h-3.5 w-3.5" aria-hidden="true" />
               Fin {formatDate(job.end_date)}
             </Badge>
           )}
@@ -224,7 +216,7 @@ function JobDetail({ job, onClose }) {
 
         {/* Description */}
         {job.description?.trim() ? (
-          <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{job.description.trim()}</p>
+          <p className="whitespace-pre-wrap text-foreground text-sm leading-relaxed">{job.description.trim()}</p>
         ) : (
           <p className="text-muted-foreground text-sm">Aucune description disponible.</p>
         )}
@@ -235,17 +227,17 @@ function JobDetail({ job, onClose }) {
           if (!items) return null;
           return (
             <div className="mt-8">
-              <h2 className="text-sm font-semibold mb-2">Missions</h2>
+              <h2 className="mb-2 font-semibold text-sm">Missions</h2>
               {Array.isArray(items) ? (
-                <ul className="list-disc list-inside space-y-1">
+                <ul className="list-inside list-disc space-y-1">
                   {items.map((item, i) => (
-                    <li key={i} className="text-sm text-foreground">
+                    <li key={i} className="text-foreground text-sm">
                       {item}
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{items}</p>
+                <p className="whitespace-pre-wrap text-foreground text-sm leading-relaxed">{items}</p>
               )}
             </div>
           );
@@ -257,17 +249,17 @@ function JobDetail({ job, onClose }) {
           if (!items) return null;
           return (
             <div className="mt-8">
-              <h2 className="text-sm font-semibold mb-2">Profil recherché</h2>
+              <h2 className="mb-2 font-semibold text-sm">Profil recherché</h2>
               {Array.isArray(items) ? (
-                <ul className="list-disc list-inside space-y-1">
+                <ul className="list-inside list-disc space-y-1">
                   {items.map((item, i) => (
-                    <li key={i} className="text-sm text-foreground">
+                    <li key={i} className="text-foreground text-sm">
                       {item}
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{items}</p>
+                <p className="whitespace-pre-wrap text-foreground text-sm leading-relaxed">{items}</p>
               )}
             </div>
           );
@@ -280,7 +272,7 @@ function JobDetail({ job, onClose }) {
           if (!diplomas && !certs) return null;
           return (
             <div className="mt-8">
-              <h2 className="text-sm font-semibold mb-2">Qualifications requises</h2>
+              <h2 className="mb-2 font-semibold text-sm">Qualifications requises</h2>
               <div className="flex flex-wrap gap-2">
                 {diplomas?.map?.((d, i) => (
                   <Badge key={i} variant="secondary">
@@ -300,7 +292,7 @@ function JobDetail({ job, onClose }) {
         {/* Avantages */}
         {(job.accommodations || job.packed_lunch || job.reimbursements || job.vacations) && (
           <div className="mt-8">
-            <h2 className="text-sm font-semibold mb-3">Avantages</h2>
+            <h2 className="mb-3 font-semibold text-sm">Avantages</h2>
             <div className="flex flex-wrap gap-2">
               {job.accommodations && <Badge variant="secondary">Logement</Badge>}
               {job.packed_lunch && <Badge variant="secondary">Panier repas</Badge>}
@@ -311,8 +303,8 @@ function JobDetail({ job, onClose }) {
         )}
 
         {/* CTA */}
-        <div className="mt-10 pt-6 border-t flex items-center justify-between gap-4 flex-wrap">
-          <p className="text-xs text-muted-foreground">Publiée le {formatDate(job.created_at)}</p>
+        <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t pt-6">
+          <p className="text-muted-foreground text-xs">Publiée le {formatDate(job.created_at)}</p>
           <Button size="sm" onClick={() => setApplyOpen(true)}>
             Postuler à cette offre
           </Button>
@@ -325,21 +317,21 @@ function JobDetail({ job, onClose }) {
           <button
             type="button"
             onClick={() => setApplyOpen(false)}
-            className="absolute top-3 right-3 rounded-sm opacity-70 hover:opacity-100 transition-opacity"
+            className="absolute top-3 right-3 rounded-sm opacity-70 transition-opacity hover:opacity-100"
           >
             <X className="h-4 w-4" />
             <span className="sr-only">Fermer</span>
           </button>
           <AlertDialogHeader className="items-center">
-            <div className="text-4xl mb-2">📱</div>
+            <div className="mb-2 text-4xl">📱</div>
             <AlertDialogTitle className="text-xl">Postulez depuis l'application</AlertDialogTitle>
-            <AlertDialogDescription className="text-sm text-muted-foreground leading-relaxed">
+            <AlertDialogDescription className="text-muted-foreground text-sm leading-relaxed">
               Pour postuler à cette offre et suivre vos candidatures en temps réel, téléchargez l'application mobile
               WeSafe. Disponible gratuitement sur iOS et Android.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
-            <Button asChild className="w-full bg-black hover:bg-zinc-800 text-white gap-2">
+            <Button asChild className="w-full gap-2 bg-black text-white hover:bg-zinc-800">
               <a href={APPSTORE_URL} target="_blank" rel="noopener noreferrer">
                 <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden="true">
                   <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98l-.09.06c-.22.15-2.18 1.27-2.16 3.8.03 3.02 2.65 4.03 2.68 4.04l-.06.18zM13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
@@ -427,14 +419,14 @@ export default function JobsPage() {
   const activeFiltersCount = [contractFilter, categoryFilter, regionFilter].filter(Boolean).length;
 
   return (
-    <div className="h-dvh bg-background flex flex-col mt-16 overflow-hidden">
+    <div className="mt-16 flex h-dvh flex-col overflow-hidden bg-background">
       {/* ── Barre de recherche ── */}
-      <div className="border-b border-border bg-card/50 px-4 py-5">
+      <div className="border-border border-b bg-card/50 px-4 py-5">
         <div className="mx-auto max-w-7xl">
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <div className="relative flex-1">
               <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+                className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3 h-4 w-4 text-muted-foreground"
                 aria-hidden="true"
               />
               <label htmlFor="job-search" className="sr-only">
@@ -446,7 +438,7 @@ export default function JobsPage() {
                 placeholder="Poste, entreprise, ville…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-lg border border-border bg-background pl-9 pr-4 py-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="w-full rounded-lg border border-border bg-background py-2.5 pr-4 pl-9 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>
             <Button
@@ -454,12 +446,12 @@ export default function JobsPage() {
               aria-expanded={showFilters}
               aria-controls="filter-panel"
               onClick={() => setShowFilters((v) => !v)}
-              className="flex items-center gap-2 shrink-0"
+              className="flex shrink-0 items-center gap-2"
             >
               <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
               Filtres
               {activeFiltersCount > 0 && (
-                <span className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground font-bold">
+                <span className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-primary font-bold text-[10px] text-primary-foreground">
                   {activeFiltersCount}
                 </span>
               )}
@@ -467,7 +459,7 @@ export default function JobsPage() {
           </div>
 
           {showFilters && (
-            <div id="filter-panel" className="mt-3 flex flex-col sm:flex-row gap-3">
+            <div id="filter-panel" className="mt-3 flex flex-col gap-3 sm:flex-row">
               <select
                 aria-label="Filtrer par type de contrat"
                 value={contractFilter}
@@ -513,7 +505,7 @@ export default function JobsPage() {
                     setCategoryFilter("");
                     setRegionFilter("");
                   }}
-                  className="text-muted-foreground flex items-center gap-1"
+                  className="flex items-center gap-1 text-muted-foreground"
                 >
                   <X className="h-3.5 w-3.5" aria-hidden="true" />
                   Réinitialiser
@@ -525,29 +517,29 @@ export default function JobsPage() {
       </div>
 
       {/* ── Corps deux colonnes ── */}
-      <div className="flex-1 mx-auto w-full max-w-7xl flex overflow-hidden" style={{ height: "calc(100dvh - 112px)" }}>
+      <div className="mx-auto flex w-full max-w-7xl flex-1 overflow-hidden" style={{ height: "calc(100dvh - 112px)" }}>
         {/* ─ Colonne gauche (liste) ─ */}
-        <div className="flex flex-col border-r border-border bg-background w-full lg:w-95 xl:w-105 shrink-0">
+        <div className="flex w-full shrink-0 flex-col border-border border-r bg-background lg:w-95 xl:w-105">
           {/* Compteur */}
-          <div className="px-4 py-3 border-b border-border shrink-0">
-            <p className="text-xs text-muted-foreground">
+          <div className="shrink-0 border-border border-b px-4 py-3">
+            <p className="text-muted-foreground text-xs">
               {loading ? "Chargement…" : `${filtered.length} offre${filtered.length !== 1 ? "s" : ""}`}
             </p>
           </div>
 
           {/* Liste scrollable */}
-          <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
+          <div className="flex-1 space-y-2 overflow-y-auto px-3 py-3">
             {loading ? (
               <div className="flex items-center justify-center py-16">
-                <div className="h-7 w-7 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                <div className="h-7 w-7 animate-spin rounded-full border-2 border-primary border-t-transparent" />
               </div>
             ) : paginated.length === 0 ? (
-              <output className="flex flex-col items-center justify-center py-16 gap-2 text-center">
+              <output className="flex flex-col items-center justify-center gap-2 py-16 text-center">
                 <p className="text-2xl" aria-hidden="true">
                   🔍
                 </p>
-                <p className="text-sm font-medium">Aucune offre trouvée</p>
-                <p className="text-xs text-muted-foreground">Modifiez vos critères de recherche.</p>
+                <p className="font-medium text-sm">Aucune offre trouvée</p>
+                <p className="text-muted-foreground text-xs">Modifiez vos critères de recherche.</p>
               </output>
             ) : (
               paginated.map((job) => (
@@ -563,7 +555,7 @@ export default function JobsPage() {
 
           {/* Pagination */}
           {!loading && totalPages > 1 && (
-            <div className="shrink-0 border-t border-border px-4 py-3 flex items-center justify-between gap-2">
+            <div className="flex shrink-0 items-center justify-between gap-2 border-border border-t px-4 py-3">
               <Button
                 variant="outline"
                 size="sm"
@@ -574,7 +566,7 @@ export default function JobsPage() {
               >
                 <ChevronLeft className="h-4 w-4" aria-hidden="true" />
               </Button>
-              <span className="text-xs text-muted-foreground" aria-live="polite">
+              <span className="text-muted-foreground text-xs" aria-live="polite">
                 Page {page} / {totalPages}
               </span>
               <Button
@@ -592,13 +584,13 @@ export default function JobsPage() {
         </div>
 
         {/* ─ Colonne droite (détail) ─ */}
-        <div className="flex-1 overflow-y-auto hidden lg:block">
+        <div className="hidden flex-1 overflow-y-auto lg:block">
           {selectedJob ? (
             <JobDetail job={selectedJob} onClose={null} />
           ) : (
-            <div className="h-full flex flex-col items-center justify-center gap-3 text-center px-8">
+            <div className="flex h-full flex-col items-center justify-center gap-3 px-8 text-center">
               <Briefcase className="h-10 w-10 text-muted-foreground/40" aria-hidden="true" />
-              <p className="text-sm font-medium text-muted-foreground">
+              <p className="font-medium text-muted-foreground text-sm">
                 Sélectionnez une offre pour afficher son détail
               </p>
             </div>

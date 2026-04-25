@@ -1,10 +1,11 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -40,11 +41,7 @@ export function LoginForm() {
     const userId = authData.user.id;
 
     // 1. Candidat → table profiles
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("id", userId)
-      .maybeSingle();
+    const { data: profileData } = await supabase.from("profiles").select("id").eq("id", userId).maybeSingle();
     if (profileData) {
       toast.success("Connexion réussie", { description: "Bienvenue !" });
       router.push("/jobs");
@@ -52,11 +49,7 @@ export function LoginForm() {
     }
 
     // 2. Super admin → table admins (role super_admin)
-    const { data: adminData } = await supabase
-      .from("admins")
-      .select("role")
-      .eq("id", userId)
-      .maybeSingle();
+    const { data: adminData } = await supabase.from("admins").select("role").eq("id", userId).maybeSingle();
     if (adminData?.role === "super_admin") {
       toast.success("Connexion réussie", { description: "Bienvenue, super admin !" });
       router.push("/dashboard/users");
@@ -64,11 +57,7 @@ export function LoginForm() {
     }
 
     // 3. Entreprise → table companies
-    const { data: companyData } = await supabase
-      .from("companies")
-      .select("id")
-      .eq("id", userId)
-      .maybeSingle();
+    const { data: companyData } = await supabase.from("companies").select("id").eq("id", userId).maybeSingle();
     if (companyData) {
       toast.success("Connexion réussie", { description: "Bienvenue !" });
       router.push("/dashboard/my-jobs");

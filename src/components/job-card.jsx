@@ -58,15 +58,15 @@ export function formatRelativeDate(dateStr) {
 
 export function JobCardSkeleton() {
   return (
-    <div className="rounded-xl border border-border bg-card p-4 animate-pulse">
+    <div className="animate-pulse rounded-xl border border-border bg-card p-4">
       <div className="flex items-start gap-3">
-        <div className="h-10 w-10 rounded-lg bg-muted shrink-0" />
+        <div className="h-10 w-10 shrink-0 rounded-lg bg-muted" />
         <div className="flex-1 space-y-2 pr-16">
-          <div className="h-3 w-24 bg-muted rounded" />
-          <div className="h-4 w-40 bg-muted rounded" />
-          <div className="flex gap-2 mt-2">
-            <div className="h-4 w-20 bg-muted rounded" />
-            <div className="h-4 w-12 bg-muted rounded" />
+          <div className="h-3 w-24 rounded bg-muted" />
+          <div className="h-4 w-40 rounded bg-muted" />
+          <div className="mt-2 flex gap-2">
+            <div className="h-4 w-20 rounded bg-muted" />
+            <div className="h-4 w-12 rounded bg-muted" />
           </div>
         </div>
       </div>
@@ -92,13 +92,13 @@ function JobCardContent({ job, salary, location, relativeDate }) {
       {hasBadge && (
         <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
           {isSponsored && (
-            <div className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+            <div className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 font-medium text-[10px] text-muted-foreground">
               <Star className="h-2.5 w-2.5" aria-hidden="true" />
               Sponsorisé
             </div>
           )}
           {job.isLastMinute && (
-            <div className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+            <div className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-medium text-[10px] text-primary">
               <Zap className="h-2.5 w-2.5" aria-hidden="true" />
               Last Minute
             </div>
@@ -114,29 +114,29 @@ function JobCardContent({ job, salary, location, relativeDate }) {
               src={company.logo_url}
               alt={company.name}
               loading="lazy"
-              className="h-10 w-10 rounded-lg object-cover border border-border"
+              className="h-10 w-10 rounded-lg border border-border object-cover"
             />
           ) : (
-            <div className="h-10 w-10 rounded-lg bg-muted border border-border flex items-center justify-center">
-              <Building2 className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted">
+              <Building2 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
             </div>
           )}
         </div>
 
         {/* Métadonnées */}
         <div className={`min-w-0 flex-1 ${hasBadge ? "pr-16" : ""}`}>
-          <p className="text-xs text-muted-foreground font-medium truncate">{company?.name ?? "Entreprise"}</p>
-          <p className="mt-0.5 text-sm font-semibold text-foreground leading-snug line-clamp-2">{job.title}</p>
+          <p className="truncate font-medium text-muted-foreground text-xs">{company?.name ?? "Entreprise"}</p>
+          <p className="mt-0.5 line-clamp-2 font-semibold text-foreground text-sm leading-snug">{job.title}</p>
 
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             {location && (
-              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1 text-muted-foreground text-xs">
                 <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
-                <span className="truncate max-w-30">{location}</span>
+                <span className="max-w-30 truncate">{location}</span>
               </span>
             )}
             {job.category && (
-              <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+              <span className="rounded bg-muted px-1.5 py-0.5 font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
                 {getCatAcronym(job.category)}
               </span>
             )}
@@ -144,18 +144,18 @@ function JobCardContent({ job, salary, location, relativeDate }) {
 
           <div className="mt-2 flex items-center justify-between gap-2">
             {job.contract_type && (
-              <span className="rounded border border-border px-1.5 py-0.5 text-[11px] font-medium text-foreground">
+              <span className="rounded border border-border px-1.5 py-0.5 font-medium text-[11px] text-foreground">
                 {contractTypeLabel[job.contract_type] ?? job.contract_type.toUpperCase()}
               </span>
             )}
             {salary && (
-              <span className="flex items-center gap-1 text-xs font-semibold text-foreground">
+              <span className="flex items-center gap-1 font-semibold text-foreground text-xs">
                 <Banknote className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
                 {salary}
               </span>
             )}
             {relativeDate && (
-              <span className="flex items-center gap-1 text-[11px] text-muted-foreground ml-auto">
+              <span className="ml-auto flex items-center gap-1 text-[11px] text-muted-foreground">
                 <Clock className="h-3 w-3" aria-hidden="true" />
                 {relativeDate}
               </span>
@@ -204,7 +204,7 @@ export function JobCard({ job, href, onClick, selected = false, onApply }) {
           </span>
         </Link>
         {onApply && (
-          <div className="relative z-10 mt-3 pt-3 border-t border-border">
+          <div className="relative z-10 mt-3 border-border border-t pt-3">
             <Button
               size="sm"
               variant="outline"

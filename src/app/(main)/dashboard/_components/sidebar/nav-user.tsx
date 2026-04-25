@@ -1,13 +1,13 @@
 "use client";
-import { supabase } from "../../../../../lib/supabase/supabaseClient";
+
 import { useRouter } from "next/navigation";
-import { CircleUser, CreditCard, EllipsisVertical, LogOut, MessageSquareDot } from "lucide-react";
+
+import { EllipsisVertical, LogOut } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { getInitials } from "@/lib/utils";
+
+import { supabase } from "../../../../../lib/supabase/supabaseClient";
 
 export function NavUser({
   user,
@@ -27,12 +29,12 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar();
 
-    const router = useRouter();
-  
-    const handleLogout = async () => {
-      await supabase.auth.signOut();
-      router.push("/");
-    };
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/");
+  };
 
   return (
     <SidebarMenu>

@@ -114,7 +114,7 @@ function getCatAcronym(id) {
   return CATEGORY.find((c) => c.id === id)?.acronym ?? id ?? "";
 }
 
-function getCatLabel(id) {
+function _getCatLabel(id) {
   const cat = CATEGORY.find((c) => c.id === id);
   return cat ? `${cat.acronym} — ${cat.name}` : (id ?? "");
 }
@@ -162,7 +162,7 @@ function buildTimelineSteps(events) {
 
 function Timeline({ events }) {
   const steps = buildTimelineSteps(events);
-  if (!steps.length) return <p className="text-sm text-muted-foreground">Aucun événement pour l'instant.</p>;
+  if (!steps.length) return <p className="text-muted-foreground text-sm">Aucun événement pour l'instant.</p>;
 
   return (
     <div className="flex flex-col">
@@ -175,17 +175,17 @@ function Timeline({ events }) {
           <div key={`${step.status}-${idx}`} className="flex gap-4">
             {/* dot + line */}
             <div className="flex flex-col items-center">
-              <div className={`mt-1 size-2.5 rounded-full shrink-0 ${isPending ? "bg-border" : cfg.dotClass}`} />
-              {!isLast && <div className="w-px flex-1 bg-border mt-1 mb-0 min-h-8" />}
+              <div className={`mt-1 size-2.5 shrink-0 rounded-full ${isPending ? "bg-border" : cfg.dotClass}`} />
+              {!isLast && <div className="mt-1 mb-0 min-h-8 w-px flex-1 bg-border" />}
             </div>
             {/* content */}
             <div className={`flex-1 ${isLast ? "pb-0" : "pb-5"}`}>
-              <p className={`text-sm font-medium ${isPending ? "text-muted-foreground" : ""}`}>{cfg.title}</p>
-              <p className={`text-xs mt-0.5 ${isPending ? "text-muted-foreground/50" : "text-muted-foreground"}`}>
+              <p className={`font-medium text-sm ${isPending ? "text-muted-foreground" : ""}`}>{cfg.title}</p>
+              <p className={`mt-0.5 text-xs ${isPending ? "text-muted-foreground/50" : "text-muted-foreground"}`}>
                 {isPending ? "En attente…" : cfg.description}
               </p>
               {!isPending && step.created_at && (
-                <div className="flex items-center gap-1 mt-1">
+                <div className="mt-1 flex items-center gap-1">
                   <CalendarClock className="size-3 text-muted-foreground/50" />
                   <span className="text-[11px] text-muted-foreground/50">{formatDatetime(step.created_at)}</span>
                 </div>
@@ -599,14 +599,14 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
     return (
       <>
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-medium">Type de contrat *</p>
-          <div className="flex gap-2 flex-wrap">
+          <p className="font-medium text-sm">Type de contrat *</p>
+          <div className="flex flex-wrap gap-2">
             {CONTRACT_TYPES.map((type) => (
               <button
                 key={type}
                 type="button"
                 onClick={() => update("contract_type", type)}
-                className={`px-5 py-2 rounded-full text-sm font-semibold border-2 transition-colors ${
+                className={`rounded-full border-2 px-5 py-2 font-semibold text-sm transition-colors ${
                   form.contract_type === type
                     ? "border-primary bg-primary text-primary-foreground"
                     : "border-border hover:bg-muted"
@@ -620,7 +620,7 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
 
         {form.contract_type === "CDD" && (
           <div className="flex flex-col gap-2">
-            <p className="text-sm font-medium">Motif de recours *</p>
+            <p className="font-medium text-sm">Motif de recours *</p>
             <Textarea
               placeholder="Ex : Remplacement d'un salarié absent, accroissement temporaire d'activité..."
               value={form.contract_reason}
@@ -631,13 +631,13 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
         )}
 
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-medium">Date de début *</p>
+          <p className="font-medium text-sm">Date de début *</p>
           <DatePicker value={form.start_date} onChange={(d) => update("start_date", d)} />
         </div>
 
         {form.contract_type !== "CDI" && (
           <div className="flex flex-col gap-2">
-            <p className="text-sm font-medium">
+            <p className="font-medium text-sm">
               Date de fin
               {form.contract_type === "CDD" ? " *" : ""}
             </p>
@@ -646,7 +646,7 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
         )}
 
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-medium">
+          <p className="font-medium text-sm">
             {form.contract_type === "CDI" ? "Heures mensuelles *" : "Heures totales *"}
           </p>
           <Input
@@ -660,30 +660,30 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
 
         <div className="flex flex-col gap-3 rounded-lg border p-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">Planning connu ?</p>
+            <p className="font-medium text-sm">Planning connu ?</p>
             <Switch checked={form.schedule_known} onCheckedChange={(v) => update("schedule_known", v)} />
           </div>
 
           {form.schedule_known && form.contract_type === "CDI" && (
-            <div className="flex flex-col gap-3 mt-1">
+            <div className="mt-1 flex flex-col gap-3">
               {WEEK_DAYS_LIST.map((day) => (
                 <div key={day} className="flex flex-col gap-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium w-24">{day}</span>
+                    <span className="w-24 font-medium text-sm">{day}</span>
                     <Switch
                       checked={form.week_schedule[day].enabled}
                       onCheckedChange={(v) => updateWeekDay(day, "enabled", v)}
                     />
                   </div>
                   {form.week_schedule[day].enabled && (
-                    <div className="flex items-center gap-2 ml-4">
+                    <div className="ml-4 flex items-center gap-2">
                       <Input
                         type="time"
                         value={form.week_schedule[day].start}
                         onChange={(e) => updateWeekDay(day, "start", e.target.value)}
                         className="flex-1"
                       />
-                      <span className="text-muted-foreground text-sm shrink-0">→</span>
+                      <span className="shrink-0 text-muted-foreground text-sm">→</span>
                       <Input
                         type="time"
                         value={form.week_schedule[day].end}
@@ -698,12 +698,12 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
           )}
 
           {form.schedule_known && form.contract_type !== "CDI" && (
-            <div className="flex flex-col gap-3 mt-1">
+            <div className="mt-1 flex flex-col gap-3">
               {form.vacations.map((vac, i) => (
                 // biome-ignore lint/suspicious/noArrayIndexKey: vacation list has no stable id
-                <div key={i} className="rounded-lg border p-3 flex flex-col gap-2">
+                <div key={i} className="flex flex-col gap-2 rounded-lg border p-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-muted-foreground">Vacation {i + 1}</span>
+                    <span className="font-semibold text-muted-foreground text-xs">Vacation {i + 1}</span>
                     <button
                       type="button"
                       onClick={() => removeVacation(i)}
@@ -720,7 +720,7 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
                       onChange={(e) => updateVacation(i, "start_time", e.target.value)}
                       className="flex-1"
                     />
-                    <span className="text-muted-foreground text-sm shrink-0">→</span>
+                    <span className="shrink-0 text-muted-foreground text-sm">→</span>
                     <Input
                       type="time"
                       value={vac.end_time}
@@ -733,7 +733,7 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
               <button
                 type="button"
                 onClick={addVacation}
-                className="flex items-center justify-center gap-2 rounded-lg border-2 border-dashed py-2.5 text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
+                className="flex items-center justify-center gap-2 rounded-lg border-2 border-dashed py-2.5 text-muted-foreground text-sm transition-colors hover:bg-muted/50"
               >
                 <Plus className="size-4" />
                 Ajouter une vacation
@@ -749,7 +749,7 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
     return (
       <>
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-medium">Intitulé du poste *</p>
+          <p className="font-medium text-sm">Intitulé du poste *</p>
           <Input
             placeholder="Ex : Agent de sécurité SSIAP 1"
             value={form.job_title}
@@ -758,7 +758,7 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
         </div>
 
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-medium">Nom du lieu (optionnel)</p>
+          <p className="font-medium text-sm">Nom du lieu (optionnel)</p>
           <Input
             placeholder="Ex : Centre Commercial Qwartz..."
             value={form.work_location_name}
@@ -767,8 +767,8 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
         </div>
 
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-medium">Type de lieu *</p>
-          <div className="flex gap-2 flex-wrap">
+          <p className="font-medium text-sm">Type de lieu *</p>
+          <div className="flex flex-wrap gap-2">
             {[
               { value: "single", label: "Adresse unique" },
               { value: "multiple", label: "Plusieurs adresses" },
@@ -788,7 +788,7 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
                   setZoneQuery("");
                   setZoneResults([]);
                 }}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold border-2 transition-colors ${
+                className={`rounded-full border-2 px-3 py-1.5 font-semibold text-xs transition-colors ${
                   form.work_location_type === value
                     ? "border-primary bg-primary text-primary-foreground"
                     : "border-border hover:bg-muted"
@@ -800,7 +800,7 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
           </div>
 
           {form.work_location_type === "single" && (
-            <div className="flex flex-col gap-1.5 mt-1">
+            <div className="mt-1 flex flex-col gap-1.5">
               <Input
                 placeholder="Rechercher une adresse..."
                 value={singleAddressQuery}
@@ -812,7 +812,7 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
                 }}
               />
               {singleAddressResults.length > 0 && (
-                <div className="rounded-lg border overflow-hidden">
+                <div className="overflow-hidden rounded-lg border">
                   {singleAddressResults.map((r, i) => (
                     // biome-ignore lint/suspicious/noArrayIndexKey: address results have no id
                     <button
@@ -823,7 +823,7 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
                         setSingleAddressQuery(r.label);
                         setSingleAddressResults([]);
                       }}
-                      className="w-full px-3 py-2 text-sm text-left hover:bg-muted border-b last:border-0 transition-colors"
+                      className="w-full border-b px-3 py-2 text-left text-sm transition-colors last:border-0 hover:bg-muted"
                     >
                       {r.label}
                     </button>
@@ -831,7 +831,7 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
                 </div>
               )}
               {form.work_location && singleAddressResults.length === 0 && singleAddressQuery && (
-                <div className="flex items-center gap-2 text-sm text-primary rounded-lg bg-primary/10 px-3 py-2">
+                <div className="flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-primary text-sm">
                   <MapPin className="size-4 shrink-0" />
                   {form.work_location}
                 </div>
@@ -840,8 +840,8 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
           )}
 
           {form.work_location_type === "multiple" && (
-            <div className="flex flex-col gap-2 mt-1">
-              {form.work_locations.map((addr, i) => (
+            <div className="mt-1 flex flex-col gap-2">
+              {form.work_locations.map((_addr, i) => (
                 // biome-ignore lint/suspicious/noArrayIndexKey: location list has no stable id
                 <div key={i} className="flex flex-col gap-1.5">
                   <div className="flex gap-2">
@@ -874,14 +874,14 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
                           setMultiAddressQueries(multiAddressQueries.filter((_, idx) => idx !== i));
                           setMultiAddressResults(multiAddressResults.filter((_, idx) => idx !== i));
                         }}
-                        className="text-destructive hover:opacity-70 shrink-0"
+                        className="shrink-0 text-destructive hover:opacity-70"
                       >
                         <Trash2 className="size-4" />
                       </button>
                     )}
                   </div>
                   {(multiAddressResults[i] || []).length > 0 && (
-                    <div className="rounded-lg border overflow-hidden">
+                    <div className="overflow-hidden rounded-lg border">
                       {(multiAddressResults[i] || []).map((r, j) => (
                         // biome-ignore lint/suspicious/noArrayIndexKey: address results have no id
                         <button
@@ -898,7 +898,7 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
                             ur[i] = [];
                             setMultiAddressResults(ur);
                           }}
-                          className="w-full px-3 py-2 text-sm text-left hover:bg-muted border-b last:border-0 transition-colors"
+                          className="w-full border-b px-3 py-2 text-left text-sm transition-colors last:border-0 hover:bg-muted"
                         >
                           {r.label}
                         </button>
@@ -914,7 +914,7 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
                   setMultiAddressQueries([...multiAddressQueries, ""]);
                   setMultiAddressResults([...multiAddressResults, []]);
                 }}
-                className="flex items-center justify-center gap-2 rounded-lg border-2 border-dashed py-2.5 text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
+                className="flex items-center justify-center gap-2 rounded-lg border-2 border-dashed py-2.5 text-muted-foreground text-sm transition-colors hover:bg-muted/50"
               >
                 <Plus className="size-4" />
                 Ajouter une adresse
@@ -923,7 +923,7 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
           )}
 
           {form.work_location_type === "zone" && (
-            <div className="flex flex-col gap-1.5 mt-1">
+            <div className="mt-1 flex flex-col gap-1.5">
               <Input
                 placeholder="Rechercher un département ou une région..."
                 value={zoneQuery}
@@ -935,7 +935,7 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
                 }}
               />
               {zoneResults.length > 0 && (
-                <div className="rounded-lg border overflow-hidden">
+                <div className="overflow-hidden rounded-lg border">
                   {zoneResults.map((r, i) => (
                     // biome-ignore lint/suspicious/noArrayIndexKey: zone results have no id
                     <button
@@ -946,10 +946,10 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
                         setZoneQuery(r.label);
                         setZoneResults([]);
                       }}
-                      className="w-full px-3 py-2 text-sm text-left hover:bg-muted border-b last:border-0 flex items-center gap-2 transition-colors"
+                      className="flex w-full items-center gap-2 border-b px-3 py-2 text-left text-sm transition-colors last:border-0 hover:bg-muted"
                     >
                       <span
-                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                        className={`rounded px-1.5 py-0.5 font-bold text-[10px] ${
                           r.type === "reg"
                             ? "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
                             : "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
@@ -967,7 +967,7 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
         </div>
 
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-medium">Description des missions *</p>
+          <p className="font-medium text-sm">Description des missions *</p>
           <Textarea
             placeholder="Détaillez les missions et responsabilités du poste..."
             value={form.job_description}
@@ -984,7 +984,7 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
       <>
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-2">
-            <p className="text-sm font-medium">Taux horaire brut (€) *</p>
+            <p className="font-medium text-sm">Taux horaire brut (€) *</p>
             <Input
               placeholder="12.50"
               value={form.hourly_rate}
@@ -994,7 +994,7 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
             />
           </div>
           <div className="flex flex-col gap-2">
-            <p className="text-sm font-medium">Taux H. sup. (€/h)</p>
+            <p className="font-medium text-sm">Taux H. sup. (€/h)</p>
             <Input
               placeholder="15.63"
               value={form.overtime_rate}
@@ -1007,7 +1007,7 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
 
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-2">
-            <p className="text-sm font-medium">Panier repas (€/j)</p>
+            <p className="font-medium text-sm">Panier repas (€/j)</p>
             <Input
               placeholder="6.50"
               value={form.meal_bonus}
@@ -1017,7 +1017,7 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
             />
           </div>
           <div className="flex flex-col gap-2">
-            <p className="text-sm font-medium">Transport (€/j)</p>
+            <p className="font-medium text-sm">Transport (€/j)</p>
             <Input
               placeholder="2.00"
               value={form.transport_bonus}
@@ -1028,14 +1028,14 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
           </div>
         </div>
 
-        <div className="rounded-lg border p-4 flex flex-col gap-3">
+        <div className="flex flex-col gap-3 rounded-lg border p-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">Travail de nuit</p>
+            <p className="font-medium text-sm">Travail de nuit</p>
             <Switch checked={form.is_night} onCheckedChange={(v) => update("is_night", v)} />
           </div>
           {form.is_night && (
             <div className="flex flex-col gap-1">
-              <p className="text-xs text-muted-foreground">Majoration nuit (€/h)</p>
+              <p className="text-muted-foreground text-xs">Majoration nuit (€/h)</p>
               <Input
                 placeholder="2.00"
                 value={form.night_bonus}
@@ -1047,14 +1047,14 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
           )}
         </div>
 
-        <div className="rounded-lg border p-4 flex flex-col gap-3">
+        <div className="flex flex-col gap-3 rounded-lg border p-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">Travail le dimanche</p>
+            <p className="font-medium text-sm">Travail le dimanche</p>
             <Switch checked={form.is_sunday} onCheckedChange={(v) => update("is_sunday", v)} />
           </div>
           {form.is_sunday && (
             <div className="flex flex-col gap-1">
-              <p className="text-xs text-muted-foreground">Majoration dimanche (€/h)</p>
+              <p className="text-muted-foreground text-xs">Majoration dimanche (€/h)</p>
               <Input
                 placeholder="2.00"
                 value={form.sunday_bonus}
@@ -1066,14 +1066,14 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
           )}
         </div>
 
-        <div className="rounded-lg border p-4 flex flex-col gap-3">
+        <div className="flex flex-col gap-3 rounded-lg border p-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">Jours fériés</p>
+            <p className="font-medium text-sm">Jours fériés</p>
             <Switch checked={form.is_holiday} onCheckedChange={(v) => update("is_holiday", v)} />
           </div>
           {form.is_holiday && (
             <div className="flex flex-col gap-1">
-              <p className="text-xs text-muted-foreground">Majoration fériés (€/h)</p>
+              <p className="text-muted-foreground text-xs">Majoration fériés (€/h)</p>
               <Input
                 placeholder="2.00"
                 value={form.holiday_bonus}
@@ -1091,14 +1091,14 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
   function renderStep4() {
     return (
       <>
-        <div className="rounded-lg border p-4 flex flex-col gap-3">
+        <div className="flex flex-col gap-3 rounded-lg border p-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">Équipement fourni</p>
+            <p className="font-medium text-sm">Équipement fourni</p>
             <Switch checked={form.equipment_provided} onCheckedChange={(v) => update("equipment_provided", v)} />
           </div>
           {form.equipment_provided && (
             <div className="flex flex-col gap-1">
-              <p className="text-xs text-muted-foreground">Détails de l'équipement</p>
+              <p className="text-muted-foreground text-xs">Détails de l'équipement</p>
               <Textarea
                 placeholder="Ex : Tenue de travail, badge, équipements de protection..."
                 value={form.equipment_details}
@@ -1110,7 +1110,7 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
         </div>
 
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-medium">Période d'essai</p>
+          <p className="font-medium text-sm">Période d'essai</p>
           <Input
             placeholder="Ex : 1 mois renouvelable, 2 semaines..."
             value={form.trial_period}
@@ -1119,7 +1119,7 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
         </div>
 
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-medium">Clauses particulières</p>
+          <p className="font-medium text-sm">Clauses particulières</p>
           <Textarea
             placeholder="Ajoutez ici toute clause spécifique au contrat..."
             value={form.custom_clauses}
@@ -1138,9 +1138,9 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
 
     function SummaryRow({ label, value }) {
       return (
-        <div className="flex justify-between gap-3 py-1.5 text-sm border-b last:border-0">
-          <span className="text-muted-foreground shrink-0">{label}</span>
-          <span className="font-medium text-right">{value || "—"}</span>
+        <div className="flex justify-between gap-3 border-b py-1.5 text-sm last:border-0">
+          <span className="shrink-0 text-muted-foreground">{label}</span>
+          <span className="text-right font-medium">{value || "—"}</span>
         </div>
       );
     }
@@ -1148,7 +1148,7 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
     function SummarySection({ title, children }) {
       return (
         <div className="flex flex-col gap-1">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{title}</p>
+          <p className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">{title}</p>
           <div className="rounded-lg border bg-card px-4">{children}</div>
         </div>
       );
@@ -1156,11 +1156,11 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
 
     return (
       <>
-        <div className="rounded-lg bg-muted/50 px-4 py-3 flex flex-col gap-0.5">
-          <p className="text-sm font-semibold">
+        <div className="flex flex-col gap-0.5 rounded-lg bg-muted/50 px-4 py-3">
+          <p className="font-semibold text-sm">
             {`${candidate?.firstname ?? ""} ${candidate?.lastname ?? ""}`.trim() || "Candidat"}
           </p>
-          <p className="text-xs text-muted-foreground">{job?.title ?? "—"}</p>
+          <p className="text-muted-foreground text-xs">{job?.title ?? "—"}</p>
         </div>
 
         <SummarySection title="Contrat">
@@ -1206,7 +1206,7 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
           </SummarySection>
         )}
 
-        <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800 text-sm dark:border-amber-800/40 dark:bg-amber-900/20 dark:text-amber-300">
           En cliquant sur <strong>Envoyer au candidat</strong>, le candidat sera notifié et le statut de la candidature
           passera à <strong>Contrat envoyé</strong>.
         </div>
@@ -1216,20 +1216,20 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent side="right" className="flex flex-col w-full max-w-2xl p-0 gap-0">
-        <SheetHeader className="px-6 py-4 border-b shrink-0">
+      <SheetContent side="right" className="flex w-full max-w-2xl flex-col gap-0 p-0">
+        <SheetHeader className="shrink-0 border-b px-6 py-4">
           <div className="flex items-center justify-between">
             <SheetTitle className="text-base">
               {existingContractId ? "Modifier le contrat" : "Générer un contrat"}
             </SheetTitle>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-muted-foreground text-xs">
               {step}/{CONTRACT_STEPS.length}
             </span>
           </div>
-          <p className="text-sm text-muted-foreground font-normal">{CONTRACT_STEPS[step - 1]}</p>
-          <div className="h-1 bg-muted rounded-full">
+          <p className="font-normal text-muted-foreground text-sm">{CONTRACT_STEPS[step - 1]}</p>
+          <div className="h-1 rounded-full bg-muted">
             <div
-              className="h-full bg-primary rounded-full transition-all duration-300"
+              className="h-full rounded-full bg-primary transition-all duration-300"
               style={{
                 width: `${(step / CONTRACT_STEPS.length) * 100}%`,
               }}
@@ -1238,9 +1238,9 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
         </SheetHeader>
 
         <div ref={contentRef} className="flex-1 overflow-y-auto">
-          <div className="p-6 flex flex-col gap-5">
+          <div className="flex flex-col gap-5 p-6">
             {formError && (
-              <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
+              <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-destructive text-sm">
                 {formError}
               </div>
             )}
@@ -1252,16 +1252,16 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
           </div>
         </div>
 
-        <div className="border-t px-6 py-4 flex items-center justify-between gap-3 shrink-0">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-t px-6 py-4">
           <Button variant="ghost" size="sm" onClick={step === 1 ? onClose : prevStep} disabled={submitting}>
-            <ChevronLeft className="size-4 mr-1" />
+            <ChevronLeft className="mr-1 size-4" />
             {step === 1 ? "Annuler" : "Précédent"}
           </Button>
 
           {step < CONTRACT_STEPS.length ? (
             <Button size="sm" onClick={nextStep}>
               Suivant
-              <ChevronRight className="size-4 ml-1" />
+              <ChevronRight className="ml-1 size-4" />
             </Button>
           ) : (
             <div className="flex gap-2">
@@ -1288,7 +1288,7 @@ function MessagingSheet({ open, onClose, application, companyId }) {
   const [isTyping, setIsTyping] = useState(false);
   const scrollContainerRef = useRef(null);
   const pendingOptimisticRef = useRef(null);
-  const presenceChannelRef = useRef(null);
+  const _presenceChannelRef = useRef(null);
   const broadcastChannelRef = useRef(null);
   const presenceIntervalRef = useRef(null);
   const typingTimeoutRef = useRef(null);
@@ -1747,8 +1747,8 @@ function MessagingSheet({ open, onClose, application, companyId }) {
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent side="right" className="flex flex-col w-full max-w-md p-0 gap-0">
-        <SheetHeader className="px-5 py-4 border-b shrink-0">
+      <SheetContent side="right" className="flex w-full max-w-md flex-col gap-0 p-0">
+        <SheetHeader className="shrink-0 border-b px-5 py-4">
           <div className="flex items-center gap-3">
             <Avatar className="size-9">
               <AvatarImage src={application?.profiles?.avatar_url} />
@@ -1757,17 +1757,17 @@ function MessagingSheet({ open, onClose, application, companyId }) {
               </AvatarFallback>
             </Avatar>
             <div>
-              <SheetTitle className="text-sm font-semibold leading-tight">{candidateName || "Candidat"}</SheetTitle>
-              <p className="text-xs text-muted-foreground font-normal">{application?.jobs?.title}</p>
+              <SheetTitle className="font-semibold text-sm leading-tight">{candidateName || "Candidat"}</SheetTitle>
+              <p className="font-normal text-muted-foreground text-xs">{application?.jobs?.title}</p>
             </div>
           </div>
         </SheetHeader>
 
         {/* Messages */}
-        <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto px-5 py-4">
+        <div ref={scrollContainerRef} className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           <div className="flex flex-col gap-3">
             {messages.length === 0 && (
-              <p className="text-center text-sm text-muted-foreground py-8">Aucun message pour l'instant.</p>
+              <p className="py-8 text-center text-muted-foreground text-sm">Aucun message pour l'instant.</p>
             )}
             {messages.map((msg) => {
               const isMe = msg.sender_id === companyId;
@@ -1776,8 +1776,8 @@ function MessagingSheet({ open, onClose, application, companyId }) {
                   <div
                     className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm ${
                       isMe
-                        ? "bg-primary text-primary-foreground rounded-br-sm"
-                        : "bg-muted text-foreground rounded-bl-sm"
+                        ? "rounded-br-sm bg-primary text-primary-foreground"
+                        : "rounded-bl-sm bg-muted text-foreground"
                     }`}
                   >
                     <p className="leading-snug">{msg.content}</p>
@@ -1799,11 +1799,11 @@ function MessagingSheet({ open, onClose, application, companyId }) {
 
             {/* Indicateur de saisie du candidat */}
             {isTyping && (
-              <div className="flex flex-col gap-0.5 items-start">
-                <div className="bg-muted rounded-2xl rounded-bl-sm px-3.5 py-2.5 flex items-center gap-1">
-                  <span className="size-1.5 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:0ms]" />
-                  <span className="size-1.5 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:150ms]" />
-                  <span className="size-1.5 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:300ms]" />
+              <div className="flex flex-col items-start gap-0.5">
+                <div className="flex items-center gap-1 rounded-2xl rounded-bl-sm bg-muted px-3.5 py-2.5">
+                  <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:0ms]" />
+                  <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:150ms]" />
+                  <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:300ms]" />
                 </div>
               </div>
             )}
@@ -1811,7 +1811,7 @@ function MessagingSheet({ open, onClose, application, companyId }) {
         </div>
 
         {/* Input */}
-        <div className="border-t px-4 py-3 flex gap-2 shrink-0">
+        <div className="flex shrink-0 gap-2 border-t px-4 py-3">
           <Input
             value={newMsg}
             onChange={handleTyping}
@@ -1833,7 +1833,7 @@ function MessagingSheet({ open, onClose, application, companyId }) {
 function Section({ title, children }) {
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{title}</p>
+      <p className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">{title}</p>
       {children}
     </div>
   );
@@ -1905,12 +1905,12 @@ function ApplicationDetail({
               <AvatarFallback>{getInitials(profile?.firstname, profile?.lastname)}</AvatarFallback>
             </Avatar>
             <div>
-              <h2 className="text-xl font-bold">{candidateName || "Candidat"}</h2>
-              <p className="text-sm text-muted-foreground">Candidature reçue le {formatDate(application.created_at)}</p>
+              <h2 className="font-bold text-xl">{candidateName || "Candidat"}</h2>
+              <p className="text-muted-foreground text-sm">Candidature reçue le {formatDate(application.created_at)}</p>
             </div>
           </div>
           {statusCfg && (
-            <Badge className={`shrink-0 text-[11px] px-2 h-6 font-medium ${statusCfg.badgeClass}`}>
+            <Badge className={`h-6 shrink-0 px-2 font-medium text-[11px] ${statusCfg.badgeClass}`}>
               {statusCfg.title}
             </Badge>
           )}
@@ -1921,11 +1921,11 @@ function ApplicationDetail({
         {/* Job info */}
         {job && (
           <Section title="Offre concernée">
-            <div className="rounded-xl border bg-muted/30 p-4 flex flex-col gap-2.5">
+            <div className="flex flex-col gap-2.5 rounded-xl border bg-muted/30 p-4">
               <p className="font-semibold">{job.title}</p>
               <div className="flex flex-wrap gap-2">
                 {job.category && (
-                  <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium">
+                  <span className="rounded bg-muted px-1.5 py-0.5 font-medium text-[11px]">
                     {getCatAcronym(job.category)}
                   </span>
                 )}
@@ -1935,20 +1935,20 @@ function ApplicationDetail({
                   </Badge>
                 )}
                 {job.city && (
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1 text-muted-foreground text-xs">
                     <MapPin className="size-3" />
                     {job.city}
                     {job.department_code && ` (${job.department_code})`}
                   </span>
                 )}
                 {salary && salary !== "Non spécifié" && (
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1 text-muted-foreground text-xs">
                     <Banknote className="size-3" />
                     {salary}
                   </span>
                 )}
                 {job.work_time && (
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1 text-muted-foreground text-xs">
                     <Clock className="size-3" />
                     {job.work_time === "fulltime" ? "Temps plein" : "Temps partiel"}
                   </span>
@@ -1983,18 +1983,18 @@ function ApplicationDetail({
                 href={contractId ? `/contracts/${contractId}` : "#"}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-xl border bg-card p-4 flex items-center gap-3 hover:shadow-sm transition-shadow block"
+                className="block flex items-center gap-3 rounded-xl border bg-card p-4 transition-shadow hover:shadow-sm"
               >
-                <div className="size-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
                   <FileText className="size-5 text-blue-600 dark:text-blue-400" />
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="font-medium text-sm">Contrat de mission</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-muted-foreground text-xs">
                     {status === "contract_signed_pro" ? "Voir le contrat" : "Voir & finaliser le contrat"}
                   </p>
                 </div>
-                <ChevronRight className="size-4 text-muted-foreground shrink-0" />
+                <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
               </Link>
             </Section>
           </>
@@ -2012,7 +2012,7 @@ function ApplicationDetail({
                     variant="outline"
                     className="w-full border-violet-500 text-violet-600 hover:bg-violet-50 dark:border-violet-400 dark:text-violet-400 dark:hover:bg-violet-950"
                   >
-                    <CheckCircle className="size-4 mr-2" />
+                    <CheckCircle className="mr-2 size-4" />
                     Sélectionner le candidat
                   </Button>
                   <Button
@@ -2020,7 +2020,7 @@ function ApplicationDetail({
                     variant="outline"
                     className="w-full border-destructive text-destructive hover:bg-destructive/5"
                   >
-                    <XCircle className="size-4 mr-2" />
+                    <XCircle className="mr-2 size-4" />
                     Refuser la candidature
                   </Button>
                 </div>
@@ -2034,12 +2034,12 @@ function ApplicationDetail({
                   >
                     {hasDraft ? (
                       <>
-                        <FileText className="size-4 mr-2" />
+                        <FileText className="mr-2 size-4" />
                         Modifier le brouillon
                       </>
                     ) : (
                       <>
-                        <FileCheck className="size-4 mr-2" />
+                        <FileCheck className="mr-2 size-4" />
                         Générer le contrat
                       </>
                     )}
@@ -2049,7 +2049,7 @@ function ApplicationDetail({
                     variant="outline"
                     className="w-full border-destructive text-destructive hover:bg-destructive/5"
                   >
-                    <XCircle className="size-4 mr-2" />
+                    <XCircle className="mr-2 size-4" />
                     Refuser la candidature
                   </Button>
                 </div>
@@ -2058,9 +2058,9 @@ function ApplicationDetail({
           </>
         )}
 
-        {status === "rejected" && <p className="text-sm text-muted-foreground">Cette candidature a été refusée.</p>}
+        {status === "rejected" && <p className="text-muted-foreground text-sm">Cette candidature a été refusée.</p>}
         {status === "contract_signed_pro" && (
-          <p className="text-sm text-muted-foreground">La mission est confirmée. Aucune action requise.</p>
+          <p className="text-muted-foreground text-sm">La mission est confirmée. Aucune action requise.</p>
         )}
       </div>
 
@@ -2204,8 +2204,8 @@ export default function MyApplicationsPage() {
     <div className="flex flex-col gap-6" style={{ height: "calc(100dvh - 96px)" }}>
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Candidatures</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="font-bold text-2xl tracking-tight">Candidatures</h1>
+        <p className="text-muted-foreground text-sm">
           {applications.length} candidature
           {applications.length !== 1 ? "s" : ""} reçue
           {applications.length !== 1 ? "s" : ""}
@@ -2215,32 +2215,32 @@ export default function MyApplicationsPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-xl border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Total</p>
-          <p className="text-2xl font-bold">{stats.total}</p>
+          <p className="text-muted-foreground text-sm">Total</p>
+          <p className="font-bold text-2xl">{stats.total}</p>
         </div>
         <div className="rounded-xl border bg-card p-4">
-          <p className="text-sm text-muted-foreground">En attente</p>
-          <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.applied}</p>
+          <p className="text-muted-foreground text-sm">En attente</p>
+          <p className="font-bold text-2xl text-blue-600 dark:text-blue-400">{stats.applied}</p>
         </div>
         <div className="rounded-xl border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Sélectionnés</p>
-          <p className="text-2xl font-bold text-violet-600 dark:text-violet-400">{stats.selected}</p>
+          <p className="text-muted-foreground text-sm">Sélectionnés</p>
+          <p className="font-bold text-2xl text-violet-600 dark:text-violet-400">{stats.selected}</p>
         </div>
         <div className="rounded-xl border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Contrats</p>
-          <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.finalized}</p>
+          <p className="text-muted-foreground text-sm">Contrats</p>
+          <p className="font-bold text-2xl text-emerald-600 dark:text-emerald-400">{stats.finalized}</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-2 items-center">
+      <div className="flex flex-wrap items-center gap-2">
         <Input
           placeholder="Rechercher un candidat ou une offre…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-64 shrink-0"
         />
-        <div className="flex gap-1.5 flex-wrap">
+        <div className="flex flex-wrap gap-1.5">
           {STATUS_FILTER_OPTIONS.map((opt) => (
             <Button
               key={opt.value}
@@ -2266,14 +2266,14 @@ export default function MyApplicationsPage() {
           <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed py-16 text-center">
             <Users className="size-10 text-muted-foreground/40" />
             <p className="font-medium">Aucune candidature pour l'instant</p>
-            <p className="text-sm text-muted-foreground">Les candidatures reçues sur vos offres apparaîtront ici.</p>
+            <p className="text-muted-foreground text-sm">Les candidatures reçues sur vos offres apparaîtront ici.</p>
           </div>
         ) : (
           <div className="flex h-full gap-4">
             {/* Left : list */}
-            <div className="flex w-full flex-col gap-2 overflow-y-auto lg:w-96 xl:w-105 lg:shrink-0">
+            <div className="flex w-full flex-col gap-2 overflow-y-auto lg:w-96 lg:shrink-0 xl:w-105">
               {filtered.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">Aucune candidature pour ce filtre.</p>
+                <p className="py-8 text-center text-muted-foreground text-sm">Aucune candidature pour ce filtre.</p>
               ) : (
                 filtered.map((app) => {
                   const cfg = STATUS_CONFIG[app.current_status];
@@ -2289,23 +2289,23 @@ export default function MyApplicationsPage() {
                       }`}
                     >
                       <div className="flex items-start gap-3">
-                        <Avatar className="size-9 mt-0.5 shrink-0">
+                        <Avatar className="mt-0.5 size-9 shrink-0">
                           <AvatarImage src={app.profiles?.avatar_url} />
                           <AvatarFallback className="text-xs">
                             {getInitials(app.profiles?.firstname, app.profiles?.lastname)}
                           </AvatarFallback>
                         </Avatar>
-                        <div className="flex-1 min-w-0">
+                        <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-2">
-                            <span className="font-semibold text-sm truncate">{name || "Candidat"}</span>
+                            <span className="truncate font-semibold text-sm">{name || "Candidat"}</span>
                             {cfg && (
-                              <Badge className={`text-[10px] px-1.5 h-5 shrink-0 font-medium ${cfg.badgeClass}`}>
+                              <Badge className={`h-5 shrink-0 px-1.5 font-medium text-[10px] ${cfg.badgeClass}`}>
                                 {cfg.title}
                               </Badge>
                             )}
                           </div>
-                          <p className="text-xs text-muted-foreground truncate mt-0.5">{app.jobs?.title ?? "—"}</p>
-                          <p className="text-[11px] text-muted-foreground/60 mt-1">{formatDate(app.created_at)}</p>
+                          <p className="mt-0.5 truncate text-muted-foreground text-xs">{app.jobs?.title ?? "—"}</p>
+                          <p className="mt-1 text-[11px] text-muted-foreground/60">{formatDate(app.created_at)}</p>
                         </div>
                       </div>
                     </button>
@@ -2315,7 +2315,7 @@ export default function MyApplicationsPage() {
             </div>
 
             {/* Right : detail */}
-            <div className="hidden lg:flex flex-1 rounded-xl border bg-card min-h-0 overflow-hidden">
+            <div className="hidden min-h-0 flex-1 overflow-hidden rounded-xl border bg-card lg:flex">
               {selectedApp ? (
                 <ApplicationDetail
                   application={selectedApp}
@@ -2327,7 +2327,7 @@ export default function MyApplicationsPage() {
                   draftRefreshKey={draftRefreshKey}
                 />
               ) : (
-                <div className="flex items-center justify-center w-full text-muted-foreground text-sm">
+                <div className="flex w-full items-center justify-center text-muted-foreground text-sm">
                   Sélectionnez une candidature
                 </div>
               )}

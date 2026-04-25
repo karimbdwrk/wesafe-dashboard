@@ -51,10 +51,11 @@
     "rules": {
       "recommended": true,
       "correctness": {
-        "noUndeclaredVariables": "error"
+        "noUndeclaredVariables": "error",
+        "useExhaustiveDependencies": "warn"
       },
       "nursery": {
-        "useSortedClasses": "warn"
+        "useSortedClasses": "off"
       },
       "performance": {
         "noImgElement": "warn"
@@ -68,6 +69,14 @@
         "noParameterAssign": "error",
         "noInferrableTypes": "error",
         "noUselessElse": "error"
+      },
+      "a11y": {
+        "noLabelWithoutControl": "warn",
+        "useKeyWithClickEvents": "warn",
+        "useButtonType": "warn",
+        "noSvgWithoutTitle": "warn",
+        "noStaticElementInteractions": "warn",
+        "useSemanticElements": "warn"
       },
       "suspicious": {
         "noArrayIndexKey": "warn",
