@@ -1,6 +1,7 @@
 import {
   Banknote,
   Briefcase,
+  Building2,
   ClipboardList,
   type LucideIcon,
   Mail,
@@ -40,6 +41,11 @@ export const companySidebarItems: NavGroup[] = [
   {
     id: 1,
     items: [
+      {
+        title: "Mon entreprise",
+        url: "/dashboard/company",
+        icon: Building2,
+      },
       {
         title: "Offres d'emploi",
         url: "/dashboard/my-jobs",
