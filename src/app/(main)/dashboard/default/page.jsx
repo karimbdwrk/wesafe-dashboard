@@ -34,10 +34,10 @@ const COMPANY_LINKS = [
     color: "bg-blue-500/10 text-blue-500",
   },
   {
-    label: "Publier une offre",
-    description: "Créer une nouvelle annonce",
-    href: "/dashboard/my-jobs?new=true",
-    icon: Plus,
+    label: "Voir les candidatures",
+    description: "Consultez les candidatures reçues",
+    href: "/dashboard/my-applications",
+    icon: ClipboardList,
     color: "bg-emerald-500/10 text-emerald-500",
   },
   {
