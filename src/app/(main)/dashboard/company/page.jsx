@@ -63,12 +63,6 @@ const DOC_STATUS_CONFIG = {
   },
 };
 
-function getBucketAndPath(url) {
-  const match = url?.match(/storage\/v1\/object\/[^/]+\/([^/]+)\/([^?#]+)/);
-  if (!match) return null;
-  return { bucket: match[1], path: match[2] };
-}
-
 function KbisCard({ company, onUpdate }) {
   const [uploading, setUploading] = useState(false);
   const [signedUrl, setSignedUrl] = useState(null);
@@ -86,14 +80,9 @@ function KbisCard({ company, onUpdate }) {
   }, [company?.siret]);
 
   useEffect(() => {
-    async function loadSignedUrl() {
-      if (!url) return setSignedUrl(null);
-      const info = getBucketAndPath(url);
-      if (!info) return setSignedUrl(url);
-      const { data } = await supabase.storage.from(info.bucket).createSignedUrl(info.path, 60 * 30);
-      setSignedUrl(data?.signedUrl ?? url);
-    }
-    loadSignedUrl();
+    if (!url) return setSignedUrl(null);
+    // Use the stored URL directly — bucket is public, no signed URL needed
+    setSignedUrl(url);
   }, [url]);
 
   function formatSiret(value) {
@@ -118,16 +107,14 @@ function KbisCard({ company, onUpdate }) {
     const ext = file.name.split(".").pop();
     const path = `${company.id}/kbis-${Date.now()}.${ext}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from("company-documents")
-      .upload(path, file, { upsert: true });
+    const { error: uploadError } = await supabase.storage.from("pro-documents").upload(path, file, { upsert: true });
     if (uploadError) {
       toast.error("Erreur upload", { description: uploadError.message });
       setUploading(false);
       return;
     }
 
-    const { data: urlData } = supabase.storage.from("company-documents").getPublicUrl(path);
+    const { data: urlData } = supabase.storage.from("pro-documents").getPublicUrl(path);
     const docUrl = urlData.publicUrl;
 
     const payload = {
@@ -198,8 +185,10 @@ function KbisCard({ company, onUpdate }) {
           rel="noopener noreferrer"
           className="flex w-fit items-center gap-1.5 text-primary text-sm hover:underline"
         >
-          <FileText className="size-4" />
-          Voir le document actuel
+          <FileText className="size-4 shrink-0" />
+          <span className="truncate max-w-48">
+            {decodeURIComponent(signedUrl.split("/").pop()?.split("?")[0] ?? "Document actuel")}
+          </span>
         </a>
       )}
 
