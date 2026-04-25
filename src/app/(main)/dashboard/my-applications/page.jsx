@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import Link from "next/link";
+
 import {
   Banknote,
   CalendarClock,
@@ -1850,6 +1852,7 @@ function ApplicationDetail({
 }) {
   const [messagingOpen, setMessagingOpen] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
+  const [contractId, setContractId] = useState(null);
 
   const status = application.current_status;
   const statusCfg = STATUS_CONFIG[status];
@@ -1875,6 +1878,21 @@ function ApplicationDetail({
       .maybeSingle()
       .then(({ data }) => setHasDraft(!!data));
   }, [application.id, status, draftRefreshKey]);
+
+  useEffect(() => {
+    if (!hasContract) {
+      setContractId(null);
+      return;
+    }
+    supabase
+      .from("contracts")
+      .select("id")
+      .eq("apply_id", application.id)
+      .eq("status", "published")
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => setContractId(data?.id ?? null));
+  }, [application.id, hasContract]);
 
   return (
     <div className="h-full overflow-y-auto">
@@ -1961,7 +1979,12 @@ function ApplicationDetail({
           <>
             <div className="h-px bg-border" />
             <Section title="Contrat de mission">
-              <div className="rounded-xl border bg-card p-4 flex items-center gap-3 cursor-pointer hover:shadow-sm transition-shadow">
+              <Link
+                href={contractId ? `/contracts/${contractId}` : "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-xl border bg-card p-4 flex items-center gap-3 hover:shadow-sm transition-shadow block"
+              >
                 <div className="size-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
                   <FileText className="size-5 text-blue-600 dark:text-blue-400" />
                 </div>
@@ -1972,7 +1995,7 @@ function ApplicationDetail({
                   </p>
                 </div>
                 <ChevronRight className="size-4 text-muted-foreground shrink-0" />
-              </div>
+              </Link>
             </Section>
           </>
         )}
