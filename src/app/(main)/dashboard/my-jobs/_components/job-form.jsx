@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { Loader2, Plus, Sparkles, Trash2, X, Zap } from "lucide-react";
+import { Loader2, MapPin, Plus, Sparkles, Trash2, X, Zap } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -340,6 +340,56 @@ export function JobForm({ companyId, initialData, lastMinuteCredits = 0, onCredi
     end_time: "",
   });
 
+  const [postcodeSearch, setPostcodeSearch] = useState(initialData?.postcode ?? "");
+  const [cityOptions, setCityOptions] = useState([]);
+  const [cityLoading, setCityLoading] = useState(false);
+
+  async function searchCities(postcode) {
+    setCityLoading(true);
+    setCityOptions([]);
+    try {
+      const { data: cached } = await supabase.from("cities").select("*").eq("postcode", postcode);
+      if (cached && cached.length > 0) {
+        setCityOptions(cached);
+        return;
+      }
+      const res = await fetch(
+        `https://geo.api.gouv.fr/communes?codePostal=${postcode}&fields=nom,code,codeDepartement,codeRegion&geometry=centre&format=geojson`,
+      );
+      const json = await res.json();
+      const normalized = (json.features ?? []).map((f) => ({
+        postcode,
+        code: f.properties.code,
+        nom: f.properties.nom,
+        department_code: f.properties.codeDepartement,
+        region_code: f.properties.codeRegion,
+        latitude: f.geometry?.coordinates?.[1] ?? null,
+        longitude: f.geometry?.coordinates?.[0] ?? null,
+      }));
+      for (const city of normalized) {
+        supabase
+          .from("cities")
+          .upsert(city, { onConflict: "code" })
+          .then(() => undefined);
+      }
+      setCityOptions(normalized);
+    } catch {
+      setCityOptions([]);
+    } finally {
+      setCityLoading(false);
+    }
+  }
+
+  function selectCity(city) {
+    setForm((prev) => ({
+      ...prev,
+      city: city.nom,
+      postcode: postcodeSearch,
+      department_code: city.department_code,
+    }));
+    setCityOptions([]);
+  }
+
   function update(field, value) {
     setForm((prev) => {
       if (field === "contract_type" && value === "cdi") {
@@ -401,7 +451,6 @@ export function JobForm({ companyId, initialData, lastMinuteCredits = 0, onCredi
     if (!form.title.trim() || form.title.length < 3) errs.title = "Titre requis (min. 3 caractères)";
     if (!form.category) errs.category = "Catégorie requise";
     if (!form.city.trim()) errs.city = "Ville requise";
-    if (!form.department_code) errs.department_code = "Département requis";
     const isVac = form.contract_type === "cdd" && form.date_mode === "vacations";
     if (!isVac && !form.start_date && !form.start_date_asap) errs.start_date = "Date de début requise";
     if (form.contract_type === "cdd" && form.date_mode === "dates" && !form.end_date)
@@ -764,33 +813,66 @@ export function JobForm({ companyId, initialData, lastMinuteCredits = 0, onCredi
       {/* ── Localisation ──────────────────────────────────────────────── */}
       <div className="flex flex-col gap-4">
         <SectionTitle>Localisation</SectionTitle>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Ville" required error={errors.city}>
-            <TextInput placeholder="Paris" value={form.city} onChange={(e) => update("city", e.target.value)} />
-          </Field>
-          <Field label="Code postal" error={errors.postcode}>
+
+        {/* Postcode search */}
+        <div className="flex flex-col gap-1.5">
+          <Label className="font-medium text-sm">Code postal *</Label>
+          <div className="relative">
             <TextInput
-              placeholder="75000"
+              placeholder="75001"
               maxLength={5}
-              value={form.postcode}
-              onChange={(e) => update("postcode", e.target.value.replace(/\D/g, "").slice(0, 5))}
+              value={postcodeSearch}
+              onChange={(e) => {
+                const v = e.target.value.replace(/\D/g, "").slice(0, 5);
+                setPostcodeSearch(v);
+                if (v.length === 5) searchCities(v);
+                else setCityOptions([]);
+              }}
             />
-          </Field>
-        </div>
-        <Field label="Département" required error={errors.department_code}>
-          <Select value={form.department_code} onValueChange={(v) => update("department_code", v)}>
-            <SelectTrigger className="h-9 text-sm">
-              <SelectValue placeholder="Département" />
-            </SelectTrigger>
-            <SelectContent>
-              {departements.map((d) => (
-                <SelectItem key={d.code} value={d.code}>
-                  {d.code} — {d.nom}
-                </SelectItem>
+            {cityLoading && (
+              <Loader2 className="absolute right-2.5 top-2.5 size-4 animate-spin text-muted-foreground" />
+            )}
+          </div>
+          {cityOptions.length > 0 && (
+            <div className="flex flex-col overflow-hidden rounded-md border bg-popover shadow-md">
+              {cityOptions.map((city) => (
+                <button
+                  key={city.code}
+                  type="button"
+                  onClick={() => selectCity(city)}
+                  className="flex items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-accent"
+                >
+                  <span className="font-medium">{city.nom}</span>
+                  <span className="text-muted-foreground text-xs">({city.department_code})</span>
+                </button>
               ))}
-            </SelectContent>
-          </Select>
-        </Field>
+            </div>
+          )}
+          {form.city ? (
+            <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm">
+              <MapPin className="size-3.5 shrink-0 text-muted-foreground" />
+              <span className="font-medium">{form.city}</span>
+              <span className="text-muted-foreground">
+                {form.postcode}
+                {form.department_code &&
+                  ` · ${departements.find((d) => d.code === form.department_code)?.nom ?? form.department_code} (${form.department_code})`}
+              </span>
+              <button
+                type="button"
+                className="ml-auto text-muted-foreground hover:text-foreground"
+                onClick={() => {
+                  setForm((prev) => ({ ...prev, city: "", postcode: "", department_code: "" }));
+                  setPostcodeSearch("");
+                  setCityOptions([]);
+                }}
+              >
+                <X className="size-3.5" />
+              </button>
+            </div>
+          ) : (
+            errors.city && <p className="text-destructive text-xs">{errors.city}</p>
+          )}
+        </div>
       </div>
 
       {/* ── Contrat & Dates ───────────────────────────────────────────── */}
