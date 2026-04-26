@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 
+import { useRouter, useSearchParams } from "next/navigation";
+
 import { Briefcase, CalendarDays, ChevronLeft, ChevronRight, MapPin, Pencil, Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   AlertDialog,
@@ -309,16 +312,34 @@ function JobDetail({ job, onEdit, onToggleStatus, onDelete }) {
 }
 
 export default function CompanyJobsPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [companyId, setCompanyId] = useState(null);
   const [companyName, setCompanyName] = useState("");
 
+  const [lastMinuteCredits, setLastMinuteCredits] = useState(0);
   const [selectedJob, setSelectedJob] = useState(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    if (searchParams.get("lastminute_success") === "true") {
+      toast.success("Offre Last Minute activée !");
+      router.replace("/dashboard/my-jobs");
+    }
+    if (searchParams.get("sponsorship_success") === "true") {
+      toast.success("Offre sponsorisée avec succès !");
+      router.replace("/dashboard/my-jobs");
+    }
+    if (searchParams.get("cancelled") === "true") {
+      toast.info("Paiement annulé.");
+      router.replace("/dashboard/my-jobs");
+    }
+  }, [searchParams, router]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: fetchJobs is defined below, stable init pattern
   useEffect(() => {
@@ -329,8 +350,15 @@ export default function CompanyJobsPage() {
       if (!user) return;
       setCompanyId(user.id);
 
-      const { data: company } = await supabase.from("companies").select("name").eq("id", user.id).maybeSingle();
-      if (company) setCompanyName(company.name);
+      const { data: company } = await supabase
+        .from("companies")
+        .select("name, last_minute_credits")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (company) {
+        setCompanyName(company.name);
+        setLastMinuteCredits(company.last_minute_credits ?? 0);
+      }
 
       fetchJobs(user.id);
     }
@@ -585,6 +613,8 @@ export default function CompanyJobsPage() {
           <JobForm
             companyId={companyId}
             initialData={editingJob}
+            lastMinuteCredits={lastMinuteCredits}
+            onCreditsUsed={() => setLastMinuteCredits((c) => Math.max(0, c - 1))}
             onSaved={handleSaved}
             onCancel={() => setSheetOpen(false)}
           />
