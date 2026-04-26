@@ -36,7 +36,9 @@ export async function POST(req: Request) {
 
       if (!companyId) break;
 
-      if (session.mode === "payment" && session.metadata?.type === "lastminute_credits") {
+      const paymentType = session.metadata?.type;
+
+      if (session.mode === "payment" && paymentType === "lastminute_credits") {
         const creditsToAdd = Number(session.metadata?.credits_amount ?? 0);
         if (creditsToAdd > 0) {
           const { data: company } = await supabaseAdmin
@@ -44,12 +46,52 @@ export async function POST(req: Request) {
             .select("last_minute_credits")
             .eq("id", companyId)
             .single();
-
           const current = company?.last_minute_credits ?? 0;
           await supabaseAdmin
             .from("companies")
             .update({ last_minute_credits: current + creditsToAdd })
             .eq("id", companyId);
+        }
+      } else if (session.mode === "payment" && paymentType === "lastminute_oneshot") {
+        const jobId = session.metadata?.job_id;
+        if (jobId) {
+          await supabaseAdmin.from("jobs").update({ isLastMinute: true }).eq("id", jobId);
+          await supabaseAdmin.from("transactions").insert({
+            company_id: companyId,
+            amount: 6.0,
+            currency: "EUR",
+            transaction_type: "payment",
+            credits_added: 0,
+            credits_deducted: 0,
+            description: "Paiement one-shot Last Minute (6€)",
+            event_type: "last_minute_oneshot_payment",
+            stripe_customer_id: session.customer as string | null,
+          });
+        }
+      } else if (session.mode === "payment" && paymentType === "job_sponsorship") {
+        const jobId = session.metadata?.job_id;
+        const duration = session.metadata?.sponsorship_duration;
+        if (jobId && duration) {
+          const d = new Date();
+          if (duration === "1w") d.setDate(d.getDate() + 7);
+          else if (duration === "2w") d.setDate(d.getDate() + 14);
+          else if (duration === "1m") d.setMonth(d.getMonth() + 1);
+          await supabaseAdmin
+            .from("jobs")
+            .update({ sponsorship_date: d.toISOString().split("T")[0] })
+            .eq("id", jobId);
+          const amountMap: Record<string, number> = { "1w": 9.99, "2w": 17.99, "1m": 29.99 };
+          await supabaseAdmin.from("transactions").insert({
+            company_id: companyId,
+            amount: amountMap[duration] ?? 0,
+            currency: "EUR",
+            transaction_type: "payment",
+            credits_added: 0,
+            credits_deducted: 0,
+            description: `Sponsoring d'annonce (${duration === "1w" ? "1 semaine" : duration === "2w" ? "2 semaines" : "1 mois"})`,
+            event_type: "sponsored_job_payment",
+            stripe_customer_id: session.customer as string | null,
+          });
         }
       } else {
         const planKey = session.metadata?.plan_key ?? null;
