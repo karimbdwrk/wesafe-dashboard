@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -138,18 +138,87 @@ function TypeButton({ active, onClick, children }) {
   );
 }
 
-function TagChip({ acronym, name, selected, onToggle }) {
+function MultiSelect({ groups, flatOptions, selected, onChange, placeholder }) {
+  const [selectKey, setSelectKey] = useState(0);
+  const selectedSet = new Set(selected);
+
+  function handleAdd(val) {
+    if (!selectedSet.has(val)) {
+      onChange([...selected, val]);
+      setSelectKey((k) => k + 1);
+    }
+  }
+
+  function handleRemove(val) {
+    onChange(selected.filter((v) => v !== val));
+  }
+
+  const allOptions = groups ? groups.flatMap((g) => g.items) : (flatOptions ?? []);
+  const hasAvailable = groups
+    ? groups.some((g) => g.items.some((i) => !selectedSet.has(i.value)))
+    : (flatOptions ?? []).some((o) => !selectedSet.has(o.value));
+
   return (
-    <button
-      type="button"
-      onClick={onToggle}
-      title={name}
-      className={`rounded px-2 py-0.5 font-bold text-xs transition-colors ${
-        selected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/70"
-      }`}
-    >
-      {acronym}
-    </button>
+    <div className="flex flex-col gap-2">
+      {hasAvailable && (
+        <Select key={selectKey} onValueChange={handleAdd}>
+          <SelectTrigger className="h-9 text-sm">
+            <SelectValue placeholder={placeholder} />
+          </SelectTrigger>
+          <SelectContent>
+            {groups
+              ? groups.map((group) => {
+                  const available = group.items.filter((i) => !selectedSet.has(i.value));
+                  if (!available.length) return null;
+                  return (
+                    <div key={group.label}>
+                      <p className="px-2 pb-1 pt-2 font-bold text-[11px] text-muted-foreground uppercase tracking-wide">
+                        {group.label}
+                      </p>
+                      {available.map((item) => (
+                        <SelectItem key={item.value} value={item.value}>
+                          <span className="font-bold">{item.value}</span>
+                          {item.name && <span className="text-muted-foreground"> — {item.name}</span>}
+                        </SelectItem>
+                      ))}
+                    </div>
+                  );
+                })
+              : (flatOptions ?? [])
+                  .filter((o) => !selectedSet.has(o.value))
+                  .map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      <span className="font-bold">{opt.value}</span>
+                      {opt.name && <span className="text-muted-foreground"> — {opt.name}</span>}
+                    </SelectItem>
+                  ))}
+          </SelectContent>
+        </Select>
+      )}
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {selected.map((val) => {
+            const opt = allOptions.find((o) => o.value === val);
+            return (
+              <span
+                key={val}
+                className="flex items-center gap-1 rounded-md border border-primary/20 bg-primary/10 px-2 py-0.5 text-primary text-xs"
+              >
+                <span className="font-bold">{val}</span>
+                {opt?.name && <span className="text-primary/70">— {opt.name}</span>}
+                <button
+                  type="button"
+                  onClick={() => handleRemove(val)}
+                  className="ml-0.5 text-primary/60 hover:text-primary"
+                >
+                  <X className="size-3" />
+                </button>
+              </span>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -296,13 +365,6 @@ export function JobForm({ companyId, initialData, onSaved, onCancel }) {
       }
       return { ...prev, [field]: value };
     });
-  }
-
-  function toggleArrayItem(field, acronym) {
-    setForm((prev) => ({
-      ...prev,
-      [field]: prev[field].includes(acronym) ? prev[field].filter((v) => v !== acronym) : [...prev[field], acronym],
-    }));
   }
 
   function addToList(field, value) {
@@ -531,63 +593,40 @@ export function JobForm({ companyId, initialData, onSaved, onCancel }) {
       {/* ── Diplômes requis ───────────────────────────────────────────── */}
       <div className="flex flex-col gap-4">
         <SectionTitle>Diplômes requis</SectionTitle>
-        {Object.entries(groupedDiplomas).map(([groupKey, items]) => (
-          <div key={groupKey} className="flex flex-col gap-1.5">
-            <p className="font-bold text-[11px] text-muted-foreground uppercase tracking-wide">
-              {DIPLOMA_GROUP_LABELS[groupKey] ?? groupKey}
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {items.map((d) => (
-                <TagChip
-                  key={d.key}
-                  acronym={d.acronym}
-                  name={d.name}
-                  selected={form.diplomas_required.includes(d.acronym)}
-                  onToggle={() => toggleArrayItem("diplomas_required", d.acronym)}
-                />
-              ))}
-            </div>
-          </div>
-        ))}
+        <MultiSelect
+          placeholder="Ajouter un diplôme…"
+          groups={Object.entries(groupedDiplomas).map(([key, items]) => ({
+            label: DIPLOMA_GROUP_LABELS[key] ?? key,
+            items: items.map((d) => ({ value: d.acronym, name: d.name })),
+          }))}
+          selected={form.diplomas_required}
+          onChange={(v) => update("diplomas_required", v)}
+        />
       </div>
 
       {/* ── Certifications requises ───────────────────────────────────── */}
       <div className="flex flex-col gap-4">
         <SectionTitle>Certifications requises</SectionTitle>
-        {Object.entries(groupedCertifs).map(([groupKey, items]) => (
-          <div key={groupKey} className="flex flex-col gap-1.5">
-            <p className="font-bold text-[11px] text-muted-foreground uppercase tracking-wide">
-              {CERTIF_GROUP_LABELS[groupKey] ?? groupKey}
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {items.map((c) => (
-                <TagChip
-                  key={c.key}
-                  acronym={c.acronym}
-                  name={c.name}
-                  selected={form.certifications_required.includes(c.acronym)}
-                  onToggle={() => toggleArrayItem("certifications_required", c.acronym)}
-                />
-              ))}
-            </div>
-          </div>
-        ))}
+        <MultiSelect
+          placeholder="Ajouter une certification…"
+          groups={Object.entries(groupedCertifs).map(([key, items]) => ({
+            label: CERTIF_GROUP_LABELS[key] ?? key,
+            items: items.map((c) => ({ value: c.acronym, name: c.name })),
+          }))}
+          selected={form.certifications_required}
+          onChange={(v) => update("certifications_required", v)}
+        />
       </div>
 
       {/* ── Cartes CNAPS requises ─────────────────────────────────────── */}
       <div className="flex flex-col gap-4">
         <SectionTitle>Cartes CNAPS requises</SectionTitle>
-        <div className="flex flex-wrap gap-1.5">
-          {Object.entries(CNAPS_CARDS).map(([key, card]) => (
-            <TagChip
-              key={key}
-              acronym={card.acronym}
-              name={card.name}
-              selected={form.cnaps_required.includes(card.acronym)}
-              onToggle={() => toggleArrayItem("cnaps_required", card.acronym)}
-            />
-          ))}
-        </div>
+        <MultiSelect
+          placeholder="Ajouter une carte CNAPS…"
+          flatOptions={Object.values(CNAPS_CARDS).map((card) => ({ value: card.acronym, name: card.name }))}
+          selected={form.cnaps_required}
+          onChange={(v) => update("cnaps_required", v)}
+        />
       </div>
 
       {/* ── Localisation ──────────────────────────────────────────────── */}
@@ -986,40 +1025,26 @@ export function JobForm({ companyId, initialData, onSaved, onCancel }) {
       {/* ── Permis de conduire ────────────────────────────────────────── */}
       <div className="flex flex-col gap-4">
         <SectionTitle>Permis de conduire</SectionTitle>
-        {Object.entries(groupedDL).map(([groupKey, items]) => (
-          <div key={groupKey} className="flex flex-col gap-1.5">
-            <p className="font-bold text-[11px] text-muted-foreground uppercase tracking-wide">
-              {DL_GROUP_LABELS[groupKey] ?? groupKey}
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {items.map((dl) => (
-                <TagChip
-                  key={dl.key}
-                  acronym={dl.acronym}
-                  name={dl.name}
-                  selected={form.driving_licenses.includes(dl.acronym)}
-                  onToggle={() => toggleArrayItem("driving_licenses", dl.acronym)}
-                />
-              ))}
-            </div>
-          </div>
-        ))}
+        <MultiSelect
+          placeholder="Ajouter un permis…"
+          groups={Object.entries(groupedDL).map(([key, items]) => ({
+            label: DL_GROUP_LABELS[key] ?? key,
+            items: items.map((dl) => ({ value: dl.acronym, name: dl.name })),
+          }))}
+          selected={form.driving_licenses}
+          onChange={(v) => update("driving_licenses", v)}
+        />
       </div>
 
       {/* ── Langues demandées ─────────────────────────────────────────── */}
       <div className="flex flex-col gap-4">
         <SectionTitle>Langues demandées</SectionTitle>
-        <div className="flex flex-wrap gap-1.5">
-          {LANGUAGES.map((lang) => (
-            <TagChip
-              key={lang.code}
-              acronym={lang.code}
-              name={lang.name}
-              selected={form.languages.includes(lang.code)}
-              onToggle={() => toggleArrayItem("languages", lang.code)}
-            />
-          ))}
-        </div>
+        <MultiSelect
+          placeholder="Ajouter une langue…"
+          flatOptions={LANGUAGES.map((lang) => ({ value: lang.code, name: lang.name }))}
+          selected={form.languages}
+          onChange={(v) => update("languages", v)}
+        />
       </div>
 
       {/* ── Remboursements & Avantages ────────────────────────────────── */}
