@@ -573,7 +573,7 @@ export default function CompanyJobsPage() {
 
       {/* Create / Edit Sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-2xl">
+        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-2xl p-4">
           <SheetHeader className="pb-4">
             <SheetTitle>{editingJob ? "Modifier l'offre" : "Nouvelle offre d'emploi"}</SheetTitle>
             <SheetDescription>
