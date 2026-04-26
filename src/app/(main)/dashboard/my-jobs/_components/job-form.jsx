@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { Plus, Trash2, X } from "lucide-react";
+import { Loader2, Plus, Sparkles, Trash2, X, Zap } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -274,10 +274,18 @@ function ArrayInput({ placeholder, items, onAdd, onRemove }) {
 
 // ─── Main Form ─────────────────────────────────────────────────────────────────
 
-export function JobForm({ companyId, initialData, onSaved, onCancel }) {
+const SPONSORSHIP_PRICES = {
+  "1w": { amount: 9.99, label: "1 semaine" },
+  "2w": { amount: 17.99, label: "2 semaines" },
+  "1m": { amount: 29.99, label: "1 mois" },
+};
+
+export function JobForm({ companyId, initialData, lastMinuteCredits = 0, onCreditsUsed, onSaved, onCancel }) {
   const isEdit = !!initialData;
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
+  const [isSponsored, setIsSponsored] = useState(false);
+  const [sponsorshipDuration, setSponsorshipDuration] = useState(null);
 
   const [form, setForm] = useState({
     title: initialData?.title ?? "",
@@ -425,7 +433,7 @@ export function JobForm({ companyId, initialData, onSaved, onCancel }) {
       title: form.title,
       category: form.category,
       description: form.description || null,
-      isLastMinute: form.isLastMinute,
+      isLastMinute: form.isLastMinute && lastMinuteCredits > 0,
       city: form.city,
       postcode: form.postcode || null,
       department_code: form.department_code,
@@ -482,9 +490,50 @@ export function JobForm({ companyId, initialData, onSaved, onCancel }) {
     }
 
     setSaving(false);
-    if (!result.error && result.data) {
-      onSaved(result.data, !isEdit);
+    if (result.error || !result.data) return;
+
+    const savedJob = result.data;
+    const isNew = !isEdit;
+
+    // Last Minute: use a credit if available
+    if (form.isLastMinute && lastMinuteCredits > 0) {
+      await fetch("/api/jobs/use-credit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ companyId, jobTitle: form.title }),
+      });
+      onCreditsUsed?.();
     }
+
+    // Last Minute one-shot: redirect to Stripe (job created with isLastMinute: false initially)
+    if (isNew && form.isLastMinute && lastMinuteCredits === 0) {
+      const res = await fetch("/api/stripe/create-lastminute-oneshot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ companyId, jobId: savedJob.id }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+    }
+
+    // Sponsorship: redirect to Stripe after job creation
+    if (isNew && isSponsored && sponsorshipDuration) {
+      const res = await fetch("/api/stripe/create-sponsorship-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ companyId, jobId: savedJob.id, duration: sponsorshipDuration }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+    }
+
+    onSaved(savedJob, isNew);
   }
 
   // Grouped data
@@ -517,13 +566,96 @@ export function JobForm({ companyId, initialData, onSaved, onCancel }) {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6 pb-8">
       {/* ── Dernière minute ───────────────────────────────────────────── */}
-      <div className="flex items-center justify-between rounded-md border px-4 py-3">
-        <div>
-          <p className="font-semibold text-sm">Offre dernière minute</p>
-          <p className="text-muted-foreground text-xs">Visible avec un badge urgence</p>
+      <div className="flex flex-col gap-2 rounded-md border px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Zap className="size-4 text-amber-500" />
+            <div>
+              <p className="font-semibold text-sm">Offre dernière minute</p>
+              <p className="text-muted-foreground text-xs">Visible avec un badge urgence</p>
+            </div>
+          </div>
+          <Switch
+            checked={form.isLastMinute}
+            onCheckedChange={(v) => {
+              update("isLastMinute", v);
+              if (v) {
+                setIsSponsored(false);
+                setSponsorshipDuration(null);
+              }
+            }}
+          />
         </div>
-        <Switch checked={form.isLastMinute} onCheckedChange={(v) => update("isLastMinute", v)} />
+        {form.isLastMinute && (
+          <div
+            className={`rounded-md px-3 py-2 text-xs ${
+              lastMinuteCredits > 0
+                ? "bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
+                : "bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300"
+            }`}
+          >
+            {lastMinuteCredits > 0 ? (
+              <span>
+                <strong>1 crédit sera utilisé</strong> — Solde actuel : {lastMinuteCredits} crédit
+                {lastMinuteCredits > 1 ? "s" : ""}
+              </span>
+            ) : (
+              <span>
+                <strong>Aucun crédit disponible</strong> — Un paiement de <strong>6€</strong> sera requis après
+                publication.
+              </span>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* ── Sponsoring ────────────────────────────────────────────────── */}
+      {!isEdit && (
+        <div className="flex flex-col gap-2 rounded-md border px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="size-4 text-purple-500" />
+              <div>
+                <p className="font-semibold text-sm">Sponsoriser cette offre</p>
+                <p className="text-muted-foreground text-xs">Mise en avant en tête de liste</p>
+              </div>
+            </div>
+            <Switch
+              checked={isSponsored}
+              onCheckedChange={(v) => {
+                setIsSponsored(v);
+                if (v) update("isLastMinute", false);
+                if (!v) setSponsorshipDuration(null);
+              }}
+            />
+          </div>
+          {isSponsored && (
+            <div className="flex flex-col gap-2 pt-1">
+              <p className="text-muted-foreground text-xs">Choisissez une durée de sponsoring :</p>
+              <div className="grid grid-cols-3 gap-2">
+                {Object.entries(SPONSORSHIP_PRICES).map(([key, { amount, label }]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setSponsorshipDuration(key)}
+                    className={`flex flex-col items-center rounded-md border-2 px-2 py-2 text-center transition-colors ${
+                      sponsorshipDuration === key
+                        ? "border-purple-500 bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300"
+                        : "border-border text-muted-foreground hover:border-muted-foreground"
+                    }`}
+                  >
+                    <span className="font-bold text-sm">{label}</span>
+                    <span className="font-semibold text-xs">{amount}€</span>
+                  </button>
+                ))}
+              </div>
+              {isSponsored && !sponsorshipDuration && (
+                <p className="text-destructive text-xs">Sélectionnez une durée pour continuer.</p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Informations principales ──────────────────────────────────── */}
       <div className="flex flex-col gap-4">
@@ -1093,8 +1225,29 @@ export function JobForm({ companyId, initialData, onSaved, onCancel }) {
         <Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>
           Annuler
         </Button>
-        <Button type="submit" disabled={saving}>
-          {saving ? "Enregistrement..." : isEdit ? "Sauvegarder" : "Publier l'offre"}
+        <Button type="submit" disabled={saving || (isSponsored && !sponsorshipDuration)}>
+          {saving ? (
+            <>
+              <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+              {isSponsored || (form.isLastMinute && lastMinuteCredits === 0)
+                ? "Redirection vers le paiement..."
+                : "Enregistrement..."}
+            </>
+          ) : isEdit ? (
+            "Sauvegarder"
+          ) : isSponsored && sponsorshipDuration ? (
+            <>
+              <Sparkles className="mr-1.5 size-3.5" />
+              Publier et sponsoriser ({SPONSORSHIP_PRICES[sponsorshipDuration]?.amount}€)
+            </>
+          ) : form.isLastMinute && lastMinuteCredits === 0 ? (
+            <>
+              <Zap className="mr-1.5 size-3.5" />
+              Publier et payer (6€)
+            </>
+          ) : (
+            "Publier l'offre"
+          )}
         </Button>
       </div>
     </form>
