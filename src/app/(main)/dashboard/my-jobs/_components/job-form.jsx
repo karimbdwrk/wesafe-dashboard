@@ -615,7 +615,9 @@ export function JobForm({ companyId, initialData, lastMinuteCredits = 0, onCredi
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6 pb-8">
       {/* ── Dernière minute ───────────────────────────────────────────── */}
-      <div className="flex flex-col gap-2 rounded-md border px-4 py-3">
+      <div
+        className={`flex flex-col gap-2 rounded-md border px-4 py-3 transition-opacity ${isSponsored ? "opacity-40" : ""}`}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Zap className="size-4 text-amber-500" />
@@ -626,6 +628,7 @@ export function JobForm({ companyId, initialData, lastMinuteCredits = 0, onCredi
           </div>
           <Switch
             checked={form.isLastMinute}
+            disabled={isSponsored}
             onCheckedChange={(v) => {
               update("isLastMinute", v);
               if (v) {
@@ -660,7 +663,9 @@ export function JobForm({ companyId, initialData, lastMinuteCredits = 0, onCredi
 
       {/* ── Sponsoring ────────────────────────────────────────────────── */}
       {!isEdit && (
-        <div className="flex flex-col gap-2 rounded-md border px-4 py-3">
+        <div
+          className={`flex flex-col gap-2 rounded-md border px-4 py-3 transition-opacity ${form.isLastMinute ? "opacity-40" : ""}`}
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkles className="size-4 text-purple-500" />
@@ -671,6 +676,7 @@ export function JobForm({ companyId, initialData, lastMinuteCredits = 0, onCredi
             </div>
             <Switch
               checked={isSponsored}
+              disabled={form.isLastMinute}
               onCheckedChange={(v) => {
                 setIsSponsored(v);
                 if (v) update("isLastMinute", false);
