@@ -76,7 +76,8 @@
         "useButtonType": "warn",
         "noSvgWithoutTitle": "warn",
         "noStaticElementInteractions": "warn",
-        "useSemanticElements": "warn"
+        "useSemanticElements": "warn",
+        "useValidAnchor": "warn"
       },
       "suspicious": {
         "noArrayIndexKey": "warn",
