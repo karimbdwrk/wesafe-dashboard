@@ -10,38 +10,63 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/lib/supabase/supabaseClient";
 
 const PLANS = {
   standard: {
     label: "Standard",
-    price: 49,
+    free: true,
     color: "border-border",
     badgeClass: "bg-muted text-muted-foreground",
-    features: ["Jusqu'à 5 offres actives", "Accès aux candidatures", "Support email"],
+    features: ["3 offres publiées par mois", "Suivi des candidatures", "Support par email"],
   },
   standard_plus: {
-    label: "Standard Plus",
-    price: 99,
+    label: "Standard+",
+    monthly: 19,
+    yearly: 199,
     color: "border-blue-400 dark:border-blue-600",
     badgeClass: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
-    features: ["Jusqu'à 20 offres actives", "5 crédits Last Minute / mois", "Support prioritaire"],
+    features: [
+      "10 offres publiées par mois",
+      "Annonces prioritaires",
+      "Suivi des candidatures",
+      "Messagerie interne candidatures",
+      "Messagerie de support prioritaire",
+      "Badge entreprise vérifiée",
+    ],
     highlight: true,
   },
   premium: {
     label: "Premium",
-    price: 199,
+    monthly: 25,
+    yearly: 249,
     color: "border-amber-400 dark:border-amber-600",
     badgeClass: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
-    features: ["Offres illimitées", "Crédits Last Minute illimités", "Account manager dédié", "Accès API"],
+    features: [
+      "Annonces illimitées",
+      "Annonces prioritaires",
+      "Suivi des candidatures",
+      "Messagerie interne candidatures",
+      "Génération de contrats",
+      "Répertoire candidats",
+      "Messagerie de support prioritaire",
+      "Badge entreprise vérifiée",
+    ],
   },
 };
+
+function savings(plan) {
+  const fullYear = plan.monthly * 12;
+  return Math.round(((fullYear - plan.yearly) / fullYear) * 100);
+}
 
 export default function BillingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [company, setCompany] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [yearly, setYearly] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(null);
   const [portalLoading, setPortalLoading] = useState(false);
   const [creditsLoading, setCreditsLoading] = useState(false);
@@ -84,7 +109,11 @@ export default function BillingPage() {
     const res = await fetch("/api/stripe/create-checkout-session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ companyId: company.id, planKey }),
+      body: JSON.stringify({
+        companyId: company.id,
+        planKey,
+        cycle: yearly ? "yearly" : "monthly",
+      }),
     });
     const data = await res.json();
     if (data.url) {
@@ -160,7 +189,7 @@ export default function BillingPage() {
             ) : (
               <ExternalLink className="mr-1.5 size-3.5" />
             )}
-            Gérer l'abonnement
+            Gérer l&apos;abonnement
           </Button>
         )}
       </div>
@@ -188,12 +217,35 @@ export default function BillingPage() {
 
       {/* Plans */}
       <section className="flex flex-col gap-4">
-        <h2 className="font-semibold text-lg">Choisir un plan</h2>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="font-semibold text-lg">Choisir un plan</h2>
+
+          {/* Cycle toggle */}
+          <div className="flex items-center gap-3 rounded-xl border bg-card px-4 py-2.5">
+            <span
+              className={`text-sm font-medium transition-colors ${!yearly ? "text-foreground" : "text-muted-foreground"}`}
+            >
+              Mensuel
+            </span>
+            <Switch checked={yearly} onCheckedChange={setYearly} />
+            <span
+              className={`text-sm font-medium transition-colors ${yearly ? "text-foreground" : "text-muted-foreground"}`}
+            >
+              Annuel
+            </span>
+            {yearly && (
+              <Badge className="bg-green-100 font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-300">
+                2 mois offerts
+              </Badge>
+            )}
+          </div>
+        </div>
 
         <div className="grid gap-4 md:grid-cols-3">
           {Object.entries(PLANS).map(([key, plan]) => {
             const isCurrent = key === currentPlan;
             const isLoading = checkoutLoading === key;
+            const isFree = !!plan.free;
 
             return (
               <div
@@ -211,9 +263,23 @@ export default function BillingPage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="font-bold text-base">{plan.label}</p>
-                    <p className="text-muted-foreground text-sm">
-                      <span className="font-bold text-foreground text-xl">{plan.price}€</span> / mois
-                    </p>
+                    {isFree ? (
+                      <p className="font-bold text-foreground text-xl">Gratuit</p>
+                    ) : yearly ? (
+                      <div className="flex flex-col gap-0.5">
+                        <p className="text-muted-foreground text-sm">
+                          <span className="font-bold text-foreground text-xl">{plan.yearly}€</span> / an
+                        </p>
+                        <p className="text-muted-foreground text-xs">
+                          soit {Math.round(plan.yearly / 12)}
+                          €/mois · économisez {savings(plan)}%
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-sm">
+                        <span className="font-bold text-foreground text-xl">{plan.monthly}€</span> / mois
+                      </p>
+                    )}
                   </div>
                   {isCurrent && (
                     <Badge variant="outline" className={plan.badgeClass}>
@@ -236,6 +302,16 @@ export default function BillingPage() {
                     <Button variant="outline" className="w-full" disabled>
                       Plan actuel
                     </Button>
+                  ) : isFree ? (
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      disabled={!!checkoutLoading}
+                      onClick={() => handleCheckout(key)}
+                    >
+                      <CreditCard className="mr-1.5 size-3.5" />
+                      Rétrograder
+                    </Button>
                   ) : (
                     <Button
                       className="w-full"
@@ -248,7 +324,7 @@ export default function BillingPage() {
                       ) : (
                         <CreditCard className="mr-1.5 size-3.5" />
                       )}
-                      {key === "standard" ? "Rétrograder" : "Souscrire"}
+                      Souscrire
                     </Button>
                   )}
                 </div>
@@ -262,7 +338,6 @@ export default function BillingPage() {
       <section className="flex flex-col gap-4">
         <h2 className="font-semibold text-lg">Crédits Last Minute</h2>
         <div className="rounded-xl border bg-card p-5">
-          {/* Balance */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex size-10 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30">
@@ -278,14 +353,14 @@ export default function BillingPage() {
             <div className="text-right">
               <p className="font-bold text-2xl tabular-nums">{company?.last_minute_credits ?? 0}</p>
               <p className="text-muted-foreground text-xs">
-                crédit{(company?.last_minute_credits ?? 0) !== 1 ? "s" : ""}
+                crédit
+                {(company?.last_minute_credits ?? 0) !== 1 ? "s" : ""}
               </p>
             </div>
           </div>
 
           <Separator className="my-4" />
 
-          {/* Pack purchase */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
