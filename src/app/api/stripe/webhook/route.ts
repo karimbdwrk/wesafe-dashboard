@@ -51,6 +51,17 @@ export async function POST(req: Request) {
             .from("companies")
             .update({ last_minute_credits: current + creditsToAdd })
             .eq("id", companyId);
+          await supabaseAdmin.from("transactions").insert({
+            company_id: companyId,
+            amount: (session.amount_total ?? 0) / 100,
+            currency: "EUR",
+            transaction_type: "payment",
+            credits_added: creditsToAdd,
+            credits_deducted: 0,
+            description: `Achat pack Last Minute (${creditsToAdd} crédit${creditsToAdd > 1 ? "s" : ""})`,
+            event_type: "lastminute_credits_purchase",
+            stripe_customer_id: session.customer as string | null,
+          });
         }
       } else if (session.mode === "payment" && paymentType === "lastminute_oneshot") {
         const jobId = session.metadata?.job_id;
@@ -99,6 +110,21 @@ export async function POST(req: Request) {
           .from("companies")
           .update({ subscription_status: resolveSubscriptionStatus("active", planKey) })
           .eq("id", companyId);
+        const planLabels: Record<string, string> = {
+          premium: "Abonnement Premium",
+          standard_plus: "Abonnement Standard+",
+        };
+        await supabaseAdmin.from("transactions").insert({
+          company_id: companyId,
+          amount: (session.amount_total ?? 0) / 100,
+          currency: "EUR",
+          transaction_type: "subscription",
+          credits_added: 0,
+          credits_deducted: 0,
+          description: planLabels[planKey ?? ""] ?? "Abonnement Standard",
+          event_type: "subscription_payment",
+          stripe_customer_id: session.customer as string | null,
+        });
       }
       break;
     }
