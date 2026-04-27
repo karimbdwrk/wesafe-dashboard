@@ -1,18 +1,24 @@
 import { NextResponse } from "next/server";
 
-import type { PlanKey } from "@/lib/stripe/stripe";
+import type { BillingCycle, PlanKey } from "@/lib/stripe/stripe";
 import { PLANS, stripe } from "@/lib/stripe/stripe";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 
 export async function POST(req: Request) {
-  const { companyId, planKey } = await req.json();
+  const { companyId, planKey, cycle = "monthly" } = await req.json();
 
   if (!companyId || !planKey || !(planKey in PLANS)) {
     return NextResponse.json({ error: "Paramètres invalides." }, { status: 400 });
   }
 
   const plan = PLANS[planKey as PlanKey];
-  if (!plan.priceId) {
+
+  if ("free" in plan && plan.free) {
+    return NextResponse.json({ error: "Ce plan est gratuit." }, { status: 400 });
+  }
+
+  const priceId = plan.priceId[(cycle as BillingCycle) ?? "monthly"];
+  if (!priceId) {
     return NextResponse.json({ error: "Price ID non configuré pour ce plan." }, { status: 500 });
   }
 
@@ -43,12 +49,12 @@ export async function POST(req: Request) {
   const session = await stripe.checkout.sessions.create({
     customer: customerId,
     mode: "subscription",
-    line_items: [{ price: plan.priceId, quantity: 1 }],
+    line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${appUrl}/dashboard/billing?success=true&plan=${planKey}`,
     cancel_url: `${appUrl}/dashboard/billing?cancelled=true`,
-    metadata: { company_id: companyId, plan_key: planKey },
+    metadata: { company_id: companyId, plan_key: planKey, cycle },
     subscription_data: {
-      metadata: { company_id: companyId, plan_key: planKey },
+      metadata: { company_id: companyId, plan_key: planKey, cycle },
     },
   });
 
