@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  turbopack: {
+    root: process.env.VERCEL_BUILD_WORKER_DIR ?? new URL(".", import.meta.url).pathname,
+  },
   reactCompiler: true,
   compiler: {
     removeConsole: process.env.NODE_ENV === "production",
