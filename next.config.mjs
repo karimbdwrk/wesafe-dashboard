@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: false,
   turbopack: {
-    root: process.env.VERCEL ? "/vercel/path0" : new URL(".", import.meta.url).pathname,
+    root: process.env.VERCEL ? "/vercel/path0" : process.cwd(),
   },
   reactCompiler: true,
   compiler: {
