@@ -1,8 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  turbopack: {
-    root: new URL(".", import.meta.url).pathname,
-  },
   reactCompiler: true,
   compiler: {
     removeConsole: process.env.NODE_ENV === "production",
