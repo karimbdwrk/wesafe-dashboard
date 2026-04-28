@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: false,
   turbopack: {
     root: process.env.VERCEL_BUILD_WORKER_DIR ?? new URL(".", import.meta.url).pathname,
   },
