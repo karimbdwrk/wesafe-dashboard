@@ -40,28 +40,35 @@ export async function POST(req: Request) {
 
       if (session.mode === "payment" && paymentType === "lastminute_credits") {
         const creditsToAdd = Number(session.metadata?.credits_amount ?? 0);
+        console.log("[webhook] lastminute_credits — companyId:", companyId, "creditsToAdd:", creditsToAdd);
         if (creditsToAdd > 0) {
-          const { data: company } = await supabaseAdmin
+          const { data: company, error: companyError } = await supabaseAdmin
             .from("companies")
             .select("last_minute_credits")
             .eq("id", companyId)
             .single();
+          if (companyError) console.error("[webhook] company fetch error:", companyError);
           const current = company?.last_minute_credits ?? 0;
-          await supabaseAdmin
+          const { error: updateError } = await supabaseAdmin
             .from("companies")
             .update({ last_minute_credits: current + creditsToAdd })
             .eq("id", companyId);
-          await supabaseAdmin.from("transactions").insert({
+          if (updateError) console.error("[webhook] company update error:", updateError);
+          else console.log("[webhook] credits updated:", current, "→", current + creditsToAdd);
+          const paymentIntentId = typeof session.payment_intent === "string" ? session.payment_intent : null;
+          const { error: txError } = await supabaseAdmin.from("transactions").insert({
             company_id: companyId,
             amount: (session.amount_total ?? 0) / 100,
             currency: "EUR",
-            transaction_type: "payment",
+            transaction_type: "credit_purchase",
             credits_added: creditsToAdd,
             credits_deducted: 0,
-            description: `Achat pack Last Minute (${creditsToAdd} crédit${creditsToAdd > 1 ? "s" : ""})`,
-            event_type: "lastminute_credits_purchase",
+            description: `Achat pack ${creditsToAdd} crédits Last Minute${paymentIntentId ? ` (Stripe PI ID: ${paymentIntentId})` : ""}`,
+            event_type: "payment_intent.succeeded",
             stripe_customer_id: session.customer as string | null,
           });
+          if (txError) console.error("[webhook] transaction insert error:", txError);
+          else console.log("[webhook] transaction inserted OK");
         }
       } else if (session.mode === "payment" && paymentType === "lastminute_oneshot") {
         const jobId = session.metadata?.job_id;
