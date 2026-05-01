@@ -2284,8 +2284,8 @@ export default function MyApplicationsPage() {
                       type="button"
                       key={app.id}
                       onClick={() => handleSelectApp(app)}
-                      className={`group w-full rounded-xl border bg-card p-4 text-left transition-all hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                        isActive ? "border-primary ring-1 ring-primary" : ""
+                      className={`group w-full rounded-xl border bg-card p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                        isActive ? "border-primary shadow-sm bg-primary/3" : "hover:shadow-sm"
                       }`}
                     >
                       <div className="flex items-start gap-3">
