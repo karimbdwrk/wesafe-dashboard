@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 import { ArrowRight, Zap } from "lucide-react";
 
@@ -33,9 +34,11 @@ export function HeroSection() {
             </p>
 
             <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row lg:justify-start">
-              <Button size="lg" className="gap-2 bg-primary px-8 text-primary-foreground hover:bg-primary/90">
-                Commencer gratuitement
-                <ArrowRight className="h-4 w-4" />
+              <Button asChild size="lg" className="gap-2 bg-primary px-8 text-primary-foreground hover:bg-primary/90">
+                <Link href="/auth/register">
+                  Commencer gratuitement
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
               </Button>
               {/* <Button
 								variant='outline'
