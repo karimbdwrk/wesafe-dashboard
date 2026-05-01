@@ -426,8 +426,16 @@ export default function CompanyJobsPage() {
 
   const published = jobs.filter((j) => j.status === "published").length;
   const draft = jobs.filter((j) => j.status === "draft").length;
-  const totalPages = Math.max(1, Math.ceil(jobs.length / JOBS_PER_PAGE));
-  const paginatedJobs = jobs.slice((page - 1) * JOBS_PER_PAGE, page * JOBS_PER_PAGE);
+
+  const STATUS_ORDER = { published: 0, draft: 1, archived: 2 };
+  const sortedJobs = [...jobs].sort((a, b) => {
+    const statusDiff = (STATUS_ORDER[a.status] ?? 1) - (STATUS_ORDER[b.status] ?? 1);
+    if (statusDiff !== 0) return statusDiff;
+    return new Date(b.created_at) - new Date(a.created_at);
+  });
+
+  const totalPages = Math.max(1, Math.ceil(sortedJobs.length / JOBS_PER_PAGE));
+  const paginatedJobs = sortedJobs.slice((page - 1) * JOBS_PER_PAGE, page * JOBS_PER_PAGE);
 
   return (
     <div className="flex flex-col gap-6" style={{ height: "calc(100dvh - 96px)" }}>
