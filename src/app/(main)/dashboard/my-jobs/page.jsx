@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { Briefcase, CalendarDays, ChevronLeft, ChevronRight, MapPin, Pencil, Plus, Trash2 } from "lucide-react";
+import { Briefcase, CalendarDays, ChevronLeft, ChevronRight, MapPin, Pencil, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -194,17 +194,8 @@ function JobDetail({ job, onEdit, onToggleStatus, onDelete }) {
             <Pencil className="mr-1.5 size-3.5" />
             Modifier
           </Button>
-          <Button size="sm" variant="outline" onClick={() => onToggleStatus(job)}>
-            {job.status === "published" ? "Archiver" : "Publier"}
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="text-destructive hover:text-destructive"
-            onClick={() => onDelete(job)}
-          >
-            <Trash2 className="mr-1.5 size-3.5" />
-            Supprimer
+          <Button size="sm" variant="outline" disabled={job.status === "archived"} onClick={() => onToggleStatus(job)}>
+            {job.status === "published" ? "Archiver" : "Archivée"}
           </Button>
         </div>
       </div>
@@ -391,25 +382,34 @@ export default function CompanyJobsPage() {
 
   async function handleDelete() {
     if (!deleteTarget) return;
-    await supabase.from("jobs").delete().eq("id", deleteTarget.id);
+    const target = deleteTarget;
+    setDeleteTarget(null);
+    const { error } = await supabase.from("jobs").delete().eq("id", target.id);
+    if (error) {
+      toast.error("Impossible de supprimer cette offre. Elle est peut-être liée à des candidatures.");
+      return;
+    }
     setJobs((prev) => {
-      const next = prev.filter((j) => j.id !== deleteTarget.id);
+      const next = prev.filter((j) => j.id !== target.id);
       const maxPage = Math.max(1, Math.ceil(next.length / JOBS_PER_PAGE));
       if (page > maxPage) setPage(maxPage);
-      if (selectedJob?.id === deleteTarget.id) setSelectedJob(next[0] ?? null);
+      if (selectedJob?.id === target.id) setSelectedJob(next[0] ?? null);
       return next;
     });
-    setDeleteTarget(null);
+    toast.success("Offre supprimée.");
   }
 
   async function handleToggleStatus(job) {
     const newStatus = job.status === "published" ? "archived" : "published";
     const updated = { ...job, status: newStatus };
     const { error } = await supabase.from("jobs").update({ status: newStatus }).eq("id", job.id);
-    if (!error) {
-      setJobs((prev) => prev.map((j) => (j.id === job.id ? updated : j)));
-      if (selectedJob?.id === job.id) setSelectedJob(updated);
+    if (error) {
+      toast.error("Impossible de modifier le statut de cette offre.");
+      return;
     }
+    setJobs((prev) => prev.map((j) => (j.id === job.id ? updated : j)));
+    if (selectedJob?.id === job.id) setSelectedJob(updated);
+    toast.success(newStatus === "published" ? "Offre publiée." : "Offre archivée.");
   }
 
   function handleSaved(saved, isNew) {
