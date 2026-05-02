@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { ChevronRight, PlusCircleIcon } from "lucide-react";
+import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -31,6 +32,7 @@ import { useNotifications } from "../notification-context";
 
 interface NavMainProps {
   readonly items: readonly NavGroup[];
+  readonly isCompanyActive?: boolean;
 }
 
 const IsComingSoon = () => (
@@ -146,10 +148,22 @@ const NavItemCollapsed = ({
   );
 };
 
-export function NavMain({ items }: NavMainProps) {
+export function NavMain({ items, isCompanyActive = true }: NavMainProps) {
   const path = usePathname();
+  const router = useRouter();
   const { state, isMobile } = useSidebar();
   const { unreadMessages } = useNotifications();
+
+  function handleNewOffer() {
+    if (!isCompanyActive) {
+      toast.error("Compte en attente de validation", {
+        description:
+          "Votre compte est en cours de vérification par notre équipe. Vous pourrez publier des offres dès son activation.",
+      });
+      return;
+    }
+    router.push("/dashboard/my-jobs?new=true");
+  }
 
   const isItemActive = (url: string, subItems?: NavMainItem["subItems"]) => {
     if (subItems?.length) {
@@ -169,14 +183,12 @@ export function NavMain({ items }: NavMainProps) {
           <SidebarMenu>
             <SidebarMenuItem className="flex items-center gap-2">
               <SidebarMenuButton
-                asChild
                 tooltip="Nouvelle offre"
-                className="min-w-8 bg-primary text-primary-foreground duration-200 ease-linear hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground justify-center"
+                onClick={handleNewOffer}
+                className={`min-w-8 bg-primary text-primary-foreground duration-200 ease-linear hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground justify-center${!isCompanyActive ? " opacity-60" : ""}`}
               >
-                <Link prefetch={false} href="/dashboard/my-jobs?new=true">
-                  <PlusCircleIcon />
-                  <span>Nouvelle offre</span>
-                </Link>
+                <PlusCircleIcon />
+                <span>Nouvelle offre</span>
               </SidebarMenuButton>
               {/* <Button
                 size="icon"

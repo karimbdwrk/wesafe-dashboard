@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import {
   ArrowRight,
@@ -17,6 +18,7 @@ import {
   UserCircle,
   Users,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -158,8 +160,10 @@ function QuickLinkCard({ label, description, href, icon: Icon, color }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DefaultPage() {
+  const router = useRouter();
   const [role, setRole] = useState(null); // "company" | "admin" | "super_admin" | "candidate"
   const [userName, setUserName] = useState(null);
+  const [companyStatus, setCompanyStatus] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -172,10 +176,15 @@ export default function DefaultPage() {
       }
 
       // Detect role by table lookup
-      const { data: company } = await supabase.from("companies").select("id, name").eq("id", user.id).maybeSingle();
+      const { data: company } = await supabase
+        .from("companies")
+        .select("id, name, company_status")
+        .eq("id", user.id)
+        .maybeSingle();
 
       if (company) {
         setUserName(company.name || null);
+        setCompanyStatus(company.company_status ?? null);
         setRole("company");
         setLoading(false);
         return;
@@ -297,11 +306,21 @@ export default function DefaultPage() {
                     Publiez une offre en quelques minutes et trouvez le bon profil.
                   </p>
                 </div>
-                <Button asChild className="shrink-0">
-                  <Link href="/dashboard/my-jobs?new=true">
-                    <Plus className="mr-2 size-4" />
-                    Nouvelle offre
-                  </Link>
+                <Button
+                  className={`shrink-0${companyStatus !== "active" ? " opacity-60" : ""}`}
+                  onClick={() => {
+                    if (companyStatus !== "active") {
+                      toast.error("Compte en attente de validation", {
+                        description:
+                          "Votre compte est en cours de vérification par notre équipe. Vous pourrez publier des offres dès son activation.",
+                      });
+                      return;
+                    }
+                    router.push("/dashboard/my-jobs?new=true");
+                  }}
+                >
+                  <Plus className="mr-2 size-4" />
+                  Nouvelle offre
                 </Button>
               </CardContent>
             </Card>

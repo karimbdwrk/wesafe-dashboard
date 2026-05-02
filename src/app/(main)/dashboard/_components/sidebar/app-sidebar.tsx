@@ -27,6 +27,7 @@ import { NavUser } from "./nav-user";
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [role, setRole] = useState<"company" | "candidate" | "admin" | "super_admin" | null>(null);
   const [navUser, setNavUser] = useState({ name: "", email: "", avatar: "" });
+  const [isCompanyActive, setIsCompanyActive] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
@@ -35,11 +36,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
       const { data: company } = await supabase
         .from("companies")
-        .select("id, name, email, logo_url")
+        .select("id, name, email, logo_url, company_status")
         .eq("id", userId)
         .maybeSingle();
 
       if (company) {
+        setIsCompanyActive(company.company_status === "active");
         setRole("company");
         setNavUser({
           name: company.name ?? "",
@@ -113,6 +115,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     ? sidebarItems
                     : []
             }
+            isCompanyActive={role === "company" ? isCompanyActive : true}
           />
         )}
         {/* <NavDocuments items={data.documents} /> */}

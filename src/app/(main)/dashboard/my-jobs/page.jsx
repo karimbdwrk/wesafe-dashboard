@@ -309,6 +309,7 @@ export default function CompanyJobsPage() {
   const [loading, setLoading] = useState(true);
   const [companyId, setCompanyId] = useState(null);
   const [companyName, setCompanyName] = useState("");
+  const [companyActive, setCompanyActive] = useState(false);
 
   const [lastMinuteCredits, setLastMinuteCredits] = useState(0);
   const [selectedJob, setSelectedJob] = useState(null);
@@ -348,12 +349,13 @@ export default function CompanyJobsPage() {
 
       const { data: company } = await supabase
         .from("companies")
-        .select("name, last_minute_credits")
+        .select("name, last_minute_credits, company_status")
         .eq("id", user.id)
         .maybeSingle();
       if (company) {
         setCompanyName(company.name);
         setLastMinuteCredits(company.last_minute_credits ?? 0);
+        setCompanyActive(company.company_status === "active");
       }
 
       fetchJobs(user.id);
@@ -376,6 +378,13 @@ export default function CompanyJobsPage() {
   }
 
   function handleNew() {
+    if (!companyActive) {
+      toast.error("Compte en attente de validation", {
+        description:
+          "Votre compte est en cours de vérification par notre équipe. Vous pourrez publier des offres dès son activation.",
+      });
+      return;
+    }
     setEditingJob(null);
     setSheetOpen(true);
   }
@@ -443,7 +452,7 @@ export default function CompanyJobsPage() {
           <h1 className="font-bold text-2xl tracking-tight">Mes offres d'emploi</h1>
           {companyName && <p className="text-muted-foreground text-sm">{companyName}</p>}
         </div>
-        <Button onClick={handleNew} className="w-full sm:w-auto">
+        <Button onClick={handleNew} className={`w-full sm:w-auto${!companyActive ? " opacity-60" : ""}`}>
           <Plus className="mr-2 size-4" />
           Nouvelle offre
         </Button>
@@ -480,7 +489,7 @@ export default function CompanyJobsPage() {
             <p className="text-muted-foreground text-sm">
               Créez votre première offre d'emploi pour attirer des candidats.
             </p>
-            <Button onClick={handleNew} variant="outline" size="sm">
+            <Button onClick={handleNew} variant="outline" size="sm" className={!companyActive ? "opacity-60" : ""}>
               <Plus className="mr-2 size-4" />
               Créer une offre
             </Button>
