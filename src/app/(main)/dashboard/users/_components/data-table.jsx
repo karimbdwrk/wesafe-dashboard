@@ -978,9 +978,8 @@ export function DataTable({ data: initialData, companies: initialCompaniesData }
   }
 
   useEffect(() => {
-    console.log("Profils companies reçus dans DataTable:", companiesData);
     setCompaniesData(initialCompaniesData);
-  }, [initialCompaniesData, companiesData]);
+  }, [initialCompaniesData]);
 
   useEffect(() => {
     supabase
@@ -2028,26 +2027,25 @@ export function DataTable({ data: initialData, companies: initialCompaniesData }
                 className="w-full rounded border px-2 py-1"
               />
             </div>
-            <div className="flex justify-center gap-2">
-              <Button
-                variant={newKbisStatus === "verified" ? "default" : "outline"}
-                onClick={() => setNewKbisStatus("verified")}
-              >
-                Vérifié
-              </Button>
-              <Button
-                variant={newKbisStatus === "pending" ? "default" : "outline"}
-                onClick={() => setNewKbisStatus("pending")}
-              >
-                En attente
-              </Button>
-              <Button
-                variant={newKbisStatus === "rejected" ? "default" : "outline"}
-                onClick={() => setNewKbisStatus("rejected")}
-              >
-                Refusé
-              </Button>
-            </div>
+            <Select value={newKbisStatus} onValueChange={setNewKbisStatus}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[
+                  { value: "verified", dot: "bg-green-500", label: "Vérifié" },
+                  { value: "pending", dot: "bg-yellow-400", label: "En attente" },
+                  { value: "rejected", dot: "bg-red-500", label: "Refusé" },
+                ].map(({ value, dot, label }) => (
+                  <SelectItem key={value} value={value}>
+                    <span className="flex items-center gap-2">
+                      <span className={`inline-block h-2 w-2 rounded-full ${dot}`} />
+                      {label}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button
               onClick={handleUpdateKbisStatus}
               disabled={
