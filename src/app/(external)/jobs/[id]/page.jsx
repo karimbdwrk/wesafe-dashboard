@@ -122,7 +122,7 @@ export default function JobPage() {
   const location = getLocation(job);
 
   return (
-    <div className="min-h-dvh bg-background">
+    <div className="min-h-dvh bg-background pt-12">
       <div className="mx-auto max-w-2xl px-4 py-10">
         {/* Header entreprise */}
         <div className="mb-6 flex items-center gap-4">
