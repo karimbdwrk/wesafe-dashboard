@@ -318,6 +318,11 @@ export default function CompanyJobsPage() {
   const [page, setPage] = useState(1);
 
   useEffect(() => {
+    if (searchParams.get("new") === "true") {
+      setEditingJob(null);
+      setSheetOpen(true);
+      router.replace("/dashboard/my-jobs");
+    }
     if (searchParams.get("lastminute_success") === "true") {
       toast.success("Offre Last Minute activée !");
       router.replace("/dashboard/my-jobs");
