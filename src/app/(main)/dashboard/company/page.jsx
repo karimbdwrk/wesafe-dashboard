@@ -325,22 +325,46 @@ export default function CompanyPage() {
       return;
     }
     setLogoUploading(true);
-    const ext = file.name.split(".").pop();
-    const path = `${company.id}/logo-${Date.now()}.${ext}`;
-    const { error: uploadError } = await supabase.storage.from("logos").upload(path, file, { upsert: true });
-    if (uploadError) {
-      toast.error("Erreur upload logo", { description: uploadError.message });
-      setLogoUploading(false);
-      return;
-    }
-    const { data: urlData } = supabase.storage.from("logos").getPublicUrl(path);
-    const logoUrl = urlData.publicUrl;
-    const { error: updateError } = await supabase.from("companies").update({ logo_url: logoUrl }).eq("id", company.id);
-    if (updateError) {
-      toast.error("Erreur mise à jour logo", { description: updateError.message });
-    } else {
-      toast.success("Logo mis à jour.");
-      setCompany((prev) => ({ ...prev, logo_url: logoUrl }));
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (!token) throw new Error("Session expirée, reconnectez-vous.");
+
+      const ext = file.name.split(".").pop();
+      const filename = `logo-${Date.now()}.${ext}`;
+      const path = `${company.id}/${filename}`;
+
+      const formData = new FormData();
+      formData.append("file", file, filename);
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/logos/${path}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+          "x-upsert": "true",
+        },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || `Erreur ${res.status}`);
+      }
+
+      const logoUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/${path}`;
+      const { error: updateError } = await supabase
+        .from("companies")
+        .update({ logo_url: logoUrl })
+        .eq("id", company.id);
+      if (updateError) {
+        toast.error("Erreur mise à jour logo", { description: updateError.message });
+      } else {
+        toast.success("Logo mis à jour.");
+        setCompany((prev) => ({ ...prev, logo_url: logoUrl }));
+      }
+    } catch (err) {
+      toast.error("Erreur upload logo", { description: err.message });
     }
     setLogoUploading(false);
   }
