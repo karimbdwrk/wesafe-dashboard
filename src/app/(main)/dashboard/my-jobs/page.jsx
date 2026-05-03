@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { Briefcase, CalendarDays, ChevronLeft, ChevronRight, MapPin, Pencil, Plus } from "lucide-react";
+import { Briefcase, CalendarDays, ChevronLeft, ChevronRight, MapPin, Pencil, Plus, Zap } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -170,6 +170,15 @@ function JobDetail({ job, onEdit, onToggleStatus, onDelete }) {
           <Badge variant="secondary" className={`h-5 px-1.5 font-medium text-[11px] ${statusCfg.className}`}>
             {statusCfg.label}
           </Badge>
+          {job.isLastMinute && (
+            <Badge
+              variant="secondary"
+              className="h-5 gap-1 px-1.5 font-medium text-[11px] bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+            >
+              <Zap className="size-2.5" />
+              Last Minute
+            </Badge>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-2 text-muted-foreground text-sm">
           {job.category && (
@@ -333,7 +342,25 @@ export default function CompanyJobsPage() {
       router.replace("/dashboard/my-jobs");
     }
     if (searchParams.get("cancelled") === "true") {
-      toast.info("Paiement annulé.");
+      const jobId = searchParams.get("job_id");
+      if (jobId) {
+        supabase
+          .from("jobs")
+          .select("*")
+          .eq("id", jobId)
+          .maybeSingle()
+          .then(({ data }) => {
+            if (data) {
+              setEditingJob(data);
+              setSheetOpen(true);
+            }
+          });
+        toast.info("Paiement annulé", {
+          description: "Votre offre a été sauvegardée en brouillon. Modifiez-la et republiez quand vous êtes prêt.",
+        });
+      } else {
+        toast.info("Paiement annulé.");
+      }
       router.replace("/dashboard/my-jobs");
     }
   }, [searchParams, router]);
@@ -459,7 +486,7 @@ export default function CompanyJobsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-xl border bg-card p-4">
           <p className="text-muted-foreground text-sm">Total</p>
           <p className="font-bold text-2xl">{jobs.length}</p>
@@ -468,9 +495,16 @@ export default function CompanyJobsPage() {
           <p className="text-muted-foreground text-sm">Publiées</p>
           <p className="font-bold text-2xl text-green-600 dark:text-green-400">{published}</p>
         </div>
-        <div className="col-span-2 rounded-xl border bg-card p-4 sm:col-span-1">
+        <div className="rounded-xl border bg-card p-4">
           <p className="text-muted-foreground text-sm">Brouillons</p>
           <p className="font-bold text-2xl text-yellow-600 dark:text-yellow-400">{draft}</p>
+        </div>
+        <div className="rounded-xl border bg-card p-4">
+          <div className="mb-1 flex items-center gap-1">
+            <Zap size={16} color="orange" />
+            <p className="text-muted-foreground text-sm">Crédits Last Minute</p>
+          </div>
+          <p className="font-bold text-2xl text-amber-500">{lastMinuteCredits}</p>
         </div>
       </div>
 
@@ -519,6 +553,15 @@ export default function CompanyJobsPage() {
                         >
                           {statusCfg.label}
                         </Badge>
+                        {job.isLastMinute && (
+                          <Badge
+                            variant="secondary"
+                            className="h-5 gap-1 px-1.5 font-medium text-[11px] bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+                          >
+                            <Zap className="size-2.5" />
+                            Last Minute
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex flex-wrap items-center gap-2 text-muted-foreground text-sm">
                         {job.category && (
