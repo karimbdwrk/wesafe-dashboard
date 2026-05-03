@@ -197,7 +197,7 @@ function JobDetail({ job, onEdit, onToggleStatus, onDelete, onSponsor }) {
               className="h-5 gap-1 px-1.5 font-medium text-[11px] bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300"
             >
               <Sparkles className="size-2.5" />
-              Sponsorisée
+              Sponsorisée jusqu'au {formatDate(job.sponsorship_date)}
             </Badge>
           )}
         </div>
@@ -635,7 +635,7 @@ export default function CompanyJobsPage() {
                             className="h-5 gap-1 px-1.5 font-medium text-[11px] bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300"
                           >
                             <Sparkles className="size-2.5" />
-                            Sponsorisée
+                            Sponsorisée jusqu'au {formatDate(job.sponsorship_date)}
                           </Badge>
                         )}
                       </div>
