@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -361,6 +361,7 @@ export default function CompanyJobsPage() {
   const [selectedJob, setSelectedJob] = useState(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
+  const pendingJobIdRef = useRef(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [sponsoringJob, setSponsoringJob] = useState(null);
   const [sponsorDuration, setSponsorDuration] = useState(null);
@@ -377,12 +378,20 @@ export default function CompanyJobsPage() {
       router.replace("/dashboard/my-jobs");
     }
     if (searchParams.get("sponsorship_success") === "true") {
+      const jobId = searchParams.get("job_id");
+      if (jobId) pendingJobIdRef.current = jobId;
       toast.success("Offre sponsorisée avec succès !");
       router.replace("/dashboard/my-jobs");
     }
     if (searchParams.get("cancelled") === "true") {
       const jobId = searchParams.get("job_id");
-      if (jobId) {
+      const source = searchParams.get("source");
+      if (source === "sponsoring" && jobId) {
+        pendingJobIdRef.current = jobId;
+        toast.info("Paiement annulé", {
+          description: "Le sponsoring n'a pas été activé.",
+        });
+      } else if (jobId) {
         supabase
           .from("jobs")
           .select("*")
@@ -438,7 +447,10 @@ export default function CompanyJobsPage() {
       .order("created_at", { ascending: false });
     if (!error) {
       setJobs(data ?? []);
-      setSelectedJob(data?.[0] ?? null);
+      const pendingId = pendingJobIdRef.current;
+      const target = pendingId ? (data ?? []).find((j) => j.id === pendingId) : null;
+      setSelectedJob(target ?? data?.[0] ?? null);
+      pendingJobIdRef.current = null;
     }
     setLoading(false);
   }

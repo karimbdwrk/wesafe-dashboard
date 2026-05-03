@@ -59,8 +59,8 @@ export async function POST(req: Request) {
         quantity: 1,
       },
     ],
-    success_url: `${appUrl}/dashboard/my-jobs?sponsorship_success=true`,
-    cancel_url: `${appUrl}/dashboard/my-jobs?cancelled=true`,
+    success_url: `${appUrl}/dashboard/my-jobs?sponsorship_success=true&job_id=${jobId}`,
+    cancel_url: `${appUrl}/dashboard/my-jobs?cancelled=true&job_id=${jobId}&source=sponsoring`,
     metadata: {
       company_id: companyId,
       job_id: jobId,
