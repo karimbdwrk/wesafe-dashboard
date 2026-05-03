@@ -41,14 +41,14 @@ export async function POST(req: Request) {
       {
         price_data: {
           currency: "eur",
-          unit_amount: 600,
+          unit_amount: 500,
           product_data: { name: "Offre Last Minute (one-shot)" },
         },
         quantity: 1,
       },
     ],
     success_url: `${appUrl}/dashboard/my-jobs?lastminute_success=true`,
-    cancel_url: `${appUrl}/dashboard/my-jobs?cancelled=true`,
+    cancel_url: `${appUrl}/dashboard/my-jobs?cancelled=true&job_id=${jobId}`,
     metadata: {
       company_id: companyId,
       job_id: jobId,

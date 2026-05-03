@@ -75,15 +75,15 @@ export async function POST(req: Request) {
       } else if (session.mode === "payment" && paymentType === "lastminute_oneshot") {
         const jobId = session.metadata?.job_id;
         if (jobId) {
-          await supabaseAdmin.from("jobs").update({ isLastMinute: true }).eq("id", jobId);
+          await supabaseAdmin.from("jobs").update({ isLastMinute: true, status: "published" }).eq("id", jobId);
           await supabaseAdmin.from("transactions").insert({
             company_id: companyId,
-            amount: 6.0,
+            amount: 5.0,
             currency: "EUR",
             transaction_type: "payment",
             credits_added: 0,
             credits_deducted: 0,
-            description: "Paiement one-shot Last Minute (6€)",
+            description: "Paiement one-shot Last Minute (5€)",
             event_type: "last_minute_oneshot_payment",
             stripe_customer_id: session.customer as string | null,
           });
