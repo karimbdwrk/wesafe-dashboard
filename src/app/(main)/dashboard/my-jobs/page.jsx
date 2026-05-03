@@ -546,8 +546,8 @@ export default function CompanyJobsPage() {
           <h1 className="font-bold text-2xl tracking-tight">Mes offres d'emploi</h1>
           {companyName && <p className="text-muted-foreground text-sm">{companyName}</p>}
         </div>
-        <Button onClick={handleNew} className={`w-full sm:w-auto${!companyActive ? " opacity-60" : ""}`}>
-          <Plus className="mr-2 size-4" />
+        <Button onClick={handleNew} size="sm" className={!companyActive ? "opacity-60" : ""}>
+          <Plus className="mr-1.5 size-3.5" />
           Nouvelle offre
         </Button>
       </div>
