@@ -521,7 +521,7 @@ export function JobForm({ companyId, initialData, lastMinuteCredits = 0, onCredi
       packed_lunch: form.packed_lunch,
       accommodations: form.accommodations,
       company_id: companyId,
-      status: form.status,
+      status: form.isLastMinute && lastMinuteCredits === 0 ? "draft" : form.status,
     };
 
     let result;
@@ -653,7 +653,7 @@ export function JobForm({ companyId, initialData, lastMinuteCredits = 0, onCredi
               </span>
             ) : (
               <span>
-                <strong>Aucun crédit disponible</strong> — Un paiement de <strong>6€</strong> sera requis après
+                <strong>Aucun crédit disponible</strong> — Un paiement de <strong>5€</strong> sera requis après
                 publication.
               </span>
             )}
@@ -1331,7 +1331,7 @@ export function JobForm({ companyId, initialData, lastMinuteCredits = 0, onCredi
           ) : form.isLastMinute && lastMinuteCredits === 0 ? (
             <>
               <Zap className="mr-1.5 size-3.5" />
-              Publier et payer (6€)
+              Publier et payer (5€)
             </>
           ) : (
             "Publier l'offre"
