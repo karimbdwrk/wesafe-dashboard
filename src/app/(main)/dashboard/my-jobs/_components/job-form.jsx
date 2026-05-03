@@ -482,7 +482,7 @@ export function JobForm({ companyId, initialData, lastMinuteCredits = 0, onCredi
       title: form.title,
       category: form.category,
       description: form.description || null,
-      isLastMinute: form.isLastMinute && lastMinuteCredits > 0,
+      isLastMinute: isEdit ? !!initialData?.isLastMinute : form.isLastMinute && lastMinuteCredits > 0,
       city: form.city,
       postcode: form.postcode || null,
       department_code: form.department_code,
@@ -521,7 +521,7 @@ export function JobForm({ companyId, initialData, lastMinuteCredits = 0, onCredi
       packed_lunch: form.packed_lunch,
       accommodations: form.accommodations,
       company_id: companyId,
-      status: form.isLastMinute && lastMinuteCredits === 0 ? "draft" : form.status,
+      status: !isEdit && form.isLastMinute && lastMinuteCredits === 0 ? "draft" : form.status,
     };
 
     let result;
@@ -545,7 +545,7 @@ export function JobForm({ companyId, initialData, lastMinuteCredits = 0, onCredi
     const isNew = !isEdit;
 
     // Last Minute: use a credit if available
-    if (form.isLastMinute && lastMinuteCredits > 0) {
+    if (!isEdit && form.isLastMinute && lastMinuteCredits > 0) {
       await fetch("/api/jobs/use-credit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -554,8 +554,8 @@ export function JobForm({ companyId, initialData, lastMinuteCredits = 0, onCredi
       onCreditsUsed?.();
     }
 
-    // Last Minute one-shot: redirect to Stripe (job created with isLastMinute: false initially)
-    if (isNew && form.isLastMinute && lastMinuteCredits === 0) {
+    // Last Minute one-shot: redirect to Stripe
+    if (!isEdit && form.isLastMinute && lastMinuteCredits === 0) {
       const res = await fetch("/api/stripe/create-lastminute-oneshot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -568,8 +568,8 @@ export function JobForm({ companyId, initialData, lastMinuteCredits = 0, onCredi
       }
     }
 
-    // Sponsorship: redirect to Stripe after job creation
-    if (isNew && isSponsored && sponsorshipDuration) {
+    // Sponsorship: redirect to Stripe (new or edit)
+    if (isSponsored && sponsorshipDuration) {
       const res = await fetch("/api/stripe/create-sponsorship-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -614,55 +614,57 @@ export function JobForm({ companyId, initialData, lastMinuteCredits = 0, onCredi
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6 pb-8">
-      {/* ── Dernière minute ───────────────────────────────────────────── */}
-      <div
-        className={`flex flex-col gap-2 rounded-md border px-4 py-3 transition-opacity ${isSponsored ? "opacity-40" : ""}`}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Zap className="size-4 text-amber-500" />
-            <div>
-              <p className="font-semibold text-sm">Offre dernière minute</p>
-              <p className="text-muted-foreground text-xs">Visible avec un badge urgence</p>
-            </div>
-          </div>
-          <Switch
-            checked={form.isLastMinute}
-            disabled={isSponsored}
-            onCheckedChange={(v) => {
-              update("isLastMinute", v);
-              if (v) {
-                setIsSponsored(false);
-                setSponsorshipDuration(null);
-              }
-            }}
-          />
-        </div>
-        {form.isLastMinute && (
-          <div
-            className={`rounded-md px-3 py-2 text-xs ${
-              lastMinuteCredits > 0
-                ? "bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
-                : "bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300"
-            }`}
-          >
-            {lastMinuteCredits > 0 ? (
-              <span>
-                <strong>1 crédit sera utilisé</strong> — Solde actuel : {lastMinuteCredits} crédit
-                {lastMinuteCredits > 1 ? "s" : ""}
-              </span>
-            ) : (
-              <span>
-                <strong>Aucun crédit disponible</strong> — Un paiement de <strong>5€</strong> sera requis après
-                publication.
-              </span>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* ── Sponsoring ────────────────────────────────────────────────── */}
+      {/* ── Dernière minute (création uniquement) ─────────────────────── */}
       {!isEdit && (
+        <div
+          className={`flex flex-col gap-2 rounded-md border px-4 py-3 transition-opacity ${isSponsored ? "opacity-40" : ""}`}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Zap className="size-4 text-amber-500" />
+              <div>
+                <p className="font-semibold text-sm">Offre dernière minute</p>
+                <p className="text-muted-foreground text-xs">Visible avec un badge urgence</p>
+              </div>
+            </div>
+            <Switch
+              checked={form.isLastMinute}
+              disabled={isSponsored}
+              onCheckedChange={(v) => {
+                update("isLastMinute", v);
+                if (v) {
+                  setIsSponsored(false);
+                  setSponsorshipDuration(null);
+                }
+              }}
+            />
+          </div>
+          {form.isLastMinute && (
+            <div
+              className={`rounded-md px-3 py-2 text-xs ${
+                lastMinuteCredits > 0
+                  ? "bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
+                  : "bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300"
+              }`}
+            >
+              {lastMinuteCredits > 0 ? (
+                <span>
+                  <strong>1 crédit sera utilisé</strong> — Solde actuel : {lastMinuteCredits} crédit
+                  {lastMinuteCredits > 1 ? "s" : ""}
+                </span>
+              ) : (
+                <span>
+                  <strong>Aucun crédit disponible</strong> — Un paiement de <strong>5€</strong> sera requis après
+                  publication.
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Sponsoring (masqué pour les offres Last Minute en modification) ── */}
+      {(!isEdit || !initialData?.isLastMinute) && (
         <div
           className={`flex flex-col gap-2 rounded-md border px-4 py-3 transition-opacity ${form.isLastMinute ? "opacity-40" : ""}`}
         >
@@ -1321,13 +1323,13 @@ export function JobForm({ companyId, initialData, lastMinuteCredits = 0, onCredi
                 ? "Redirection vers le paiement..."
                 : "Enregistrement..."}
             </>
-          ) : isEdit ? (
-            "Sauvegarder"
           ) : isSponsored && sponsorshipDuration ? (
             <>
               <Sparkles className="mr-1.5 size-3.5" />
-              Publier et sponsoriser ({SPONSORSHIP_PRICES[sponsorshipDuration]?.amount}€)
+              {isEdit ? "Sauvegarder" : "Publier"} et sponsoriser ({SPONSORSHIP_PRICES[sponsorshipDuration]?.amount}€)
             </>
+          ) : isEdit ? (
+            "Sauvegarder"
           ) : form.isLastMinute && lastMinuteCredits === 0 ? (
             <>
               <Zap className="mr-1.5 size-3.5" />
