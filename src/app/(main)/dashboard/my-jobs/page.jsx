@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { Briefcase, CalendarDays, ChevronLeft, ChevronRight, MapPin, Pencil, Plus, Zap } from "lucide-react";
+import { Briefcase, CalendarDays, ChevronLeft, ChevronRight, MapPin, Pencil, Plus, Sparkles, Zap } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -27,6 +27,11 @@ import { JobForm } from "./_components/job-form";
 
 const JOBS_PER_PAGE = 20;
 const CONTRACT_LABEL = { cdi: "CDI", cdd: "CDD" };
+const SPONSORSHIP_PRICES = {
+  "1w": { amount: 9.99, label: "1 semaine" },
+  "2w": { amount: 17.99, label: "2 semaines" },
+  "1m": { amount: 29.99, label: "1 mois" },
+};
 const STATUS_CONFIG = {
   published: {
     label: "Publiée",
@@ -41,6 +46,12 @@ const STATUS_CONFIG = {
     className: "bg-muted text-muted-foreground",
   },
 };
+
+function isSponsorshipActive(job) {
+  if (!job.sponsorship_date) return false;
+  const today = new Date().toISOString().split("T")[0];
+  return job.sponsorship_date >= today;
+}
 
 function getCatLabel(id) {
   const cat = CATEGORY.find((c) => c.id === id);
@@ -143,8 +154,9 @@ function BulletList({ items }) {
   );
 }
 
-function JobDetail({ job, onEdit, onToggleStatus, onDelete }) {
+function JobDetail({ job, onEdit, onToggleStatus, onDelete, onSponsor }) {
   const statusCfg = STATUS_CONFIG[job.status] ?? STATUS_CONFIG.draft;
+  const sponsorActive = isSponsorshipActive(job);
   const salary = getSalaryDisplay(job);
   const missions = parseList(job.missions);
   const searchedProfile = parseList(job.searched_profile);
@@ -179,6 +191,15 @@ function JobDetail({ job, onEdit, onToggleStatus, onDelete }) {
               Last Minute
             </Badge>
           )}
+          {sponsorActive && (
+            <Badge
+              variant="secondary"
+              className="h-5 gap-1 px-1.5 font-medium text-[11px] bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300"
+            >
+              <Sparkles className="size-2.5" />
+              Sponsorisée
+            </Badge>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-2 text-muted-foreground text-sm">
           {job.category && (
@@ -199,13 +220,29 @@ function JobDetail({ job, onEdit, onToggleStatus, onDelete }) {
           )}
         </div>
         <div className="flex flex-wrap gap-2 pt-1">
-          <Button size="sm" variant="outline" onClick={() => onEdit(job)}>
+          <Button size="sm" variant="outline" disabled={job.status === "archived"} onClick={() => onEdit(job)}>
             <Pencil className="mr-1.5 size-3.5" />
             Modifier
           </Button>
           <Button size="sm" variant="outline" disabled={job.status === "archived"} onClick={() => onToggleStatus(job)}>
             {job.status === "published" ? "Archiver" : "Archivée"}
           </Button>
+          {!job.isLastMinute && (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={sponsorActive || job.status === "archived"}
+              onClick={() => onSponsor(job)}
+              className={
+                sponsorActive
+                  ? ""
+                  : "border-purple-300 text-purple-600 hover:bg-purple-50 hover:text-purple-700 dark:border-purple-700 dark:text-purple-400 dark:hover:bg-purple-900/20"
+              }
+            >
+              <Sparkles className="mr-1.5 size-3.5" />
+              {sponsorActive ? "Sponsorisée" : "Sponsoriser"}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -325,6 +362,8 @@ export default function CompanyJobsPage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [sponsoringJob, setSponsoringJob] = useState(null);
+  const [sponsorDuration, setSponsorDuration] = useState(null);
   const [page, setPage] = useState(1);
 
   useEffect(() => {
@@ -453,6 +492,22 @@ export default function CompanyJobsPage() {
     toast.success(newStatus === "published" ? "Offre publiée." : "Offre archivée.");
   }
 
+  function handleSponsor(job) {
+    setSponsoringJob(job);
+    setSponsorDuration(null);
+  }
+
+  async function handleSponsorConfirm() {
+    if (!sponsoringJob || !sponsorDuration) return;
+    const res = await fetch("/api/stripe/create-sponsorship-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ companyId, jobId: sponsoringJob.id, duration: sponsorDuration }),
+    });
+    const data = await res.json();
+    if (data.url) window.location.href = data.url;
+  }
+
   function handleSaved(saved, isNew) {
     if (isNew) {
       setJobs((prev) => [saved, ...prev]);
@@ -535,12 +590,12 @@ export default function CompanyJobsPage() {
               {paginatedJobs.map((job) => {
                 const statusCfg = STATUS_CONFIG[job.status] ?? STATUS_CONFIG.draft;
                 const isSelected = selectedJob?.id === job.id;
+                const sponsorActive = isSponsorshipActive(job);
                 return (
-                  <button
-                    type="button"
+                  <div
                     key={job.id}
                     onClick={() => setSelectedJob(job)}
-                    className={`group w-full rounded-xl border bg-card p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                    className={`group w-full cursor-pointer rounded-xl border bg-card p-4 text-left transition-all ${
                       isSelected ? "border-primary shadow-sm bg-primary/3" : "hover:shadow-sm"
                     }`}
                   >
@@ -560,6 +615,15 @@ export default function CompanyJobsPage() {
                           >
                             <Zap className="size-2.5" />
                             Last Minute
+                          </Badge>
+                        )}
+                        {sponsorActive && (
+                          <Badge
+                            variant="secondary"
+                            className="h-5 gap-1 px-1.5 font-medium text-[11px] bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300"
+                          >
+                            <Sparkles className="size-2.5" />
+                            Sponsorisée
                           </Badge>
                         )}
                       </div>
@@ -590,7 +654,7 @@ export default function CompanyJobsPage() {
                       </div>
                       <p className="text-muted-foreground text-xs">Créée le {formatDate(job.created_at)}</p>
                     </div>
-                  </button>
+                  </div>
                 );
               })}
 
@@ -645,6 +709,7 @@ export default function CompanyJobsPage() {
                     onEdit={handleEdit}
                     onToggleStatus={handleToggleStatus}
                     onDelete={(job) => setDeleteTarget(job)}
+                    onSponsor={handleSponsor}
                   />
                 </div>
               ) : (
@@ -678,6 +743,51 @@ export default function CompanyJobsPage() {
           />
         </SheetContent>
       </Sheet>
+
+      {/* Sponsoring Dialog */}
+      <AlertDialog open={!!sponsoringJob} onOpenChange={(open) => !open && setSponsoringJob(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Sparkles className="size-4 text-purple-500" />
+              Sponsoriser l'offre
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong className="text-foreground">{sponsoringJob?.title}</strong>
+              <br />
+              Choisissez une durée de mise en avant en tête de liste.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="grid grid-cols-3 gap-2 py-2">
+            {Object.entries(SPONSORSHIP_PRICES).map(([key, { amount, label }]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setSponsorDuration(key)}
+                className={`flex flex-col items-center rounded-md border-2 px-2 py-3 text-center transition-colors ${
+                  sponsorDuration === key
+                    ? "border-purple-500 bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300"
+                    : "border-border text-muted-foreground hover:border-muted-foreground"
+                }`}
+              >
+                <span className="font-bold text-sm">{label}</span>
+                <span className="font-semibold text-xs">{amount}€</span>
+              </button>
+            ))}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setSponsoringJob(null)}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={!sponsorDuration}
+              onClick={handleSponsorConfirm}
+              className="bg-purple-600 text-white hover:bg-purple-700"
+            >
+              <Sparkles className="mr-1.5 size-3.5" />
+              Payer et sponsoriser
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete Confirm */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
