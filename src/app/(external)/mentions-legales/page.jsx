@@ -68,13 +68,6 @@ export default function MentionsLegalesPage() {
 
         {/* Contenu principal */}
         <main className="min-w-0 space-y-2 rounded-xl border border-border bg-card p-8">
-          {/* Note de configuration */}
-          <div className="mb-8 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800 text-sm">
-            <strong>⚠️ Note :</strong> Les éléments{" "}
-            <mark className="rounded bg-amber-100 px-1 font-semibold text-amber-800">surlignés</mark> doivent être
-            complétés avant toute publication.
-          </div>
-
           {/* ── 1. Éditeur ── */}
           <section id="editeur" className="scroll-mt-20">
             <h2 className="mt-8 mb-4 border-border border-b pb-2 font-semibold text-foreground text-xl">1. Éditeur</h2>
@@ -87,20 +80,24 @@ export default function MentionsLegalesPage() {
               <table className="w-full border-collapse text-sm">
                 <tbody>
                   {[
-                    ["Raison sociale", <Placeholder key="rs">[NOM DE LA SOCIÉTÉ]</Placeholder>],
-                    ["Forme juridique", <Placeholder key="fj">[SAS / SASU / SARL / EURL]</Placeholder>],
+                    ["Raison sociale", "AIZEN SECURITY"],
+                    ["Forme juridique", "SAS (Société par Actions Simplifiée)"],
+                    ["Capital social", "10 €"],
+                    ["Siège social", "94 Avenue Paul Vaillant Couturier, 94400 Vitry-sur-Seine"],
+                    ["SIRET", "984 566 083 00015"],
+                    ["RCS", "Créteil B 984 566 083"],
+                    ["N° TVA intracommunautaire", "FR52984566083"],
+                    ["Téléphone", <Placeholder key="tel">[À compléter]</Placeholder>],
                     [
-                      "Capital social",
-                      <>
-                        <Placeholder key="cs">[MONTANT]</Placeholder> €
-                      </>,
+                      "Adresse e-mail",
+                      <a
+                        key="em"
+                        href="mailto:contact@wesafeapp.fr"
+                        className="text-primary underline-offset-2 hover:underline"
+                      >
+                        contact@wesafeapp.fr
+                      </a>,
                     ],
-                    ["Siège social", <Placeholder key="ss">[ADRESSE COMPLÈTE, CODE POSTAL, VILLE]</Placeholder>],
-                    ["SIRET", <Placeholder key="si">[14 CHIFFRES]</Placeholder>],
-                    ["RCS", <Placeholder key="rc">[VILLE + NUMÉRO]</Placeholder>],
-                    ["N° TVA intracommunautaire", <Placeholder key="tv">[FR + 11 CHIFFRES]</Placeholder>],
-                    ["Téléphone", <Placeholder key="tel">[+33 X XX XX XX XX]</Placeholder>],
-                    ["Adresse e-mail", <Placeholder key="em">[contact@wesafe.fr]</Placeholder>],
                   ].map(([label, value]) => (
                     <tr key={label} className="border-border border-b last:border-0">
                       <td className="w-56 py-2.5 pr-4 align-top font-medium text-foreground">{label}</td>
@@ -189,14 +186,13 @@ export default function MentionsLegalesPage() {
               <strong>
                 <Placeholder>[NOM ET PRÉNOM DU DIRIGEANT]</Placeholder>
               </strong>
-              , en qualité de <Placeholder>[Gérant / Président / Directeur général]</Placeholder> de la société{" "}
-              <Placeholder>[NOM DE LA SOCIÉTÉ]</Placeholder>.
+              , en qualité de Président de la société AIZEN SECURITY.
             </p>
             <p className="mb-4 text-muted-foreground leading-7">
               Pour toute question ou réclamation concernant le contenu éditorial, vous pouvez le contacter à
               l&apos;adresse :{" "}
-              <a href="mailto:contact@wesafe.fr" className="text-primary underline-offset-2 hover:underline">
-                <Placeholder>[contact@wesafe.fr]</Placeholder>
+              <a href="mailto:contact@wesafeapp.fr" className="text-primary underline-offset-2 hover:underline">
+                contact@wesafeapp.fr
               </a>
             </p>
           </section>
@@ -209,8 +205,8 @@ export default function MentionsLegalesPage() {
             <p className="mb-4 text-muted-foreground leading-7">
               L&apos;ensemble des éléments constitutifs du site internet et de l&apos;application mobile WeSafe (marque,
               logo, textes, graphismes, interfaces, icônes, sons, vidéos, logiciels, base de données, code source) sont
-              la propriété exclusive de <Placeholder>[NOM DE LA SOCIÉTÉ]</Placeholder> ou font l&apos;objet d&apos;une
-              autorisation expresse de leurs auteurs ou ayants droit.
+              la propriété exclusive de AIZEN SECURITY ou font l&apos;objet d&apos;une autorisation expresse de leurs
+              auteurs ou ayants droit.
             </p>
             <p className="mb-4 text-muted-foreground leading-7">
               Ces éléments sont protégés par les lois françaises et internationales relatives à la propriété
@@ -219,15 +215,14 @@ export default function MentionsLegalesPage() {
             <p className="mb-4 text-muted-foreground leading-7">
               Toute reproduction, représentation, modification, publication, transmission, dénaturation, adaptation ou
               exploitation, totale ou partielle, de ces éléments, par quelque procédé et sur quelque support que ce
-              soit, sans l&apos;autorisation écrite préalable de <Placeholder>[NOM DE LA SOCIÉTÉ]</Placeholder>, est
-              strictement interdite et constitue une contrefaçon sanctionnée par les articles L. 335-2 et suivants du
-              CPI.
+              soit, sans l&apos;autorisation écrite préalable de AIZEN SECURITY, est strictement interdite et constitue
+              une contrefaçon sanctionnée par les articles L. 335-2 et suivants du CPI.
             </p>
             <p className="mb-4 text-muted-foreground leading-7">
               Les contenus (textes, photos, CV, documents professionnels) déposés par les utilisateurs sur la plateforme
               restent la propriété exclusive de leurs auteurs. En les publiant sur WeSafe, l&apos;utilisateur accorde à{" "}
-              <Placeholder>[NOM DE LA SOCIÉTÉ]</Placeholder> une licence non exclusive, mondiale et gratuite aux seules
-              fins du fonctionnement du service.
+              AIZEN SECURITY une licence non exclusive, mondiale et gratuite aux seules fins du fonctionnement du
+              service.
             </p>
           </section>
 
@@ -237,10 +232,10 @@ export default function MentionsLegalesPage() {
               5. Protection des données personnelles
             </h2>
             <p className="mb-4 text-muted-foreground leading-7">
-              <Placeholder>[NOM DE LA SOCIÉTÉ]</Placeholder> attache la plus grande importance à la protection des
-              données personnelles de ses utilisateurs. Le traitement des données collectées via l&apos;application et
-              le site WeSafe est régi par le Règlement (UE) 2016/679 du 27 avril 2016 (RGPD) ainsi que par la loi n°
-              78-17 du 6 janvier 1978 modifiée (loi Informatique et Libertés).
+              AIZEN SECURITY attache la plus grande importance à la protection des données personnelles de ses
+              utilisateurs. Le traitement des données collectées via l&apos;application et le site WeSafe est régi par
+              le Règlement (UE) 2016/679 du 27 avril 2016 (RGPD) ainsi que par la loi n° 78-17 du 6 janvier 1978
+              modifiée (loi Informatique et Libertés).
             </p>
             <p className="mb-4 text-muted-foreground leading-7">
               Les informations détaillées relatives aux traitements, aux bases légales, aux durées de conservation, aux
@@ -260,13 +255,11 @@ export default function MentionsLegalesPage() {
               </li>
               <li>
                 Email :{" "}
-                <a href="mailto:dpo@wesafe.fr" className="text-primary underline-offset-2 hover:underline">
-                  <Placeholder>[dpo@wesafe.fr]</Placeholder>
+                <a href="mailto:dpo@wesafeapp.fr" className="text-primary underline-offset-2 hover:underline">
+                  dpo@wesafeapp.fr
                 </a>
               </li>
-              <li>
-                Adresse : <Placeholder>[ADRESSE POSTALE]</Placeholder>
-              </li>
+              <li>Adresse : 94 Avenue Paul Vaillant Couturier, 94400 Vitry-sur-Seine</li>
             </ul>
             <p className="mb-4 text-muted-foreground leading-7">
               Vous pouvez exercer vos droits (accès, rectification, effacement, opposition, portabilité, limitation) en
@@ -311,13 +304,12 @@ export default function MentionsLegalesPage() {
             <p className="mb-4 text-muted-foreground leading-7">
               L&apos;application et le site WeSafe peuvent contenir des liens vers des sites tiers (notamment{" "}
               <em>restcountries.com</em>, <em>geo.api.gouv.fr</em>
-              ). Ces liens sont fournis à titre informatif uniquement. <Placeholder>[NOM DE LA SOCIÉTÉ]</Placeholder>{" "}
-              n&apos;assume aucune responsabilité quant au contenu ou aux pratiques en matière de données personnelles
-              de ces sites tiers.
+              ). Ces liens sont fournis à titre informatif uniquement. AIZEN SECURITY n&apos;assume aucune
+              responsabilité quant au contenu ou aux pratiques en matière de données personnelles de ces sites tiers.
             </p>
             <p className="mb-4 text-muted-foreground leading-7">
               Tout lien hypertexte pointant vers le site WeSafe doit faire l&apos;objet d&apos;une autorisation
-              préalable écrite de <Placeholder>[NOM DE LA SOCIÉTÉ]</Placeholder>.
+              préalable écrite de AIZEN SECURITY.
             </p>
           </section>
 
@@ -357,9 +349,8 @@ export default function MentionsLegalesPage() {
               9. Limitation de responsabilité
             </h2>
             <p className="mb-4 text-muted-foreground leading-7">
-              <Placeholder>[NOM DE LA SOCIÉTÉ]</Placeholder> s&apos;efforce de maintenir l&apos;application WeSafe
-              accessible et fonctionnelle. Toutefois, la responsabilité de l&apos;éditeur ne saurait être engagée en cas
-              de :
+              AIZEN SECURITY s&apos;efforce de maintenir l&apos;application WeSafe accessible et fonctionnelle.
+              Toutefois, la responsabilité de l&apos;éditeur ne saurait être engagée en cas de :
             </p>
             <ul className="mb-4 ml-4 list-inside list-disc space-y-1 text-muted-foreground">
               <li>Interruption ou indisponibilité du service pour maintenance ou cas de force majeure ;</li>
@@ -382,11 +373,7 @@ export default function MentionsLegalesPage() {
             <p className="mb-4 text-muted-foreground leading-7">
               Les présentes mentions légales sont régies par le droit français. En cas de litige relatif à
               l&apos;interprétation ou à l&apos;exécution des présentes, et à défaut de résolution amiable, les parties
-              se soumettent à la compétence exclusive des tribunaux de{" "}
-              <strong>
-                <Placeholder>[VILLE DU SIÈGE SOCIAL]</Placeholder>
-              </strong>
-              .
+              se soumettent à la compétence exclusive des tribunaux de <strong>Créteil</strong>.
             </p>
             <p className="mb-4 text-muted-foreground leading-7">
               Pour les litiges avec des consommateurs (particuliers), la juridiction compétente sera déterminée

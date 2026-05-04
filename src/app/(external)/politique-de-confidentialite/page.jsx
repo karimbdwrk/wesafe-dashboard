@@ -137,12 +137,6 @@ export default function PolitiqueConfidentialitePage() {
 
         {/* Contenu principal */}
         <main className="min-w-0 space-y-2 rounded-xl border border-border bg-card p-8">
-          <CardWarn>
-            <strong>⚠️ À compléter :</strong> Les éléments{" "}
-            <mark className="rounded bg-amber-100 px-1 font-semibold text-amber-800">surlignés en jaune</mark> doivent
-            être remplacés par les informations exactes de la société avant publication.
-          </CardWarn>
-
           <CardRgpd>
             <strong>Résumé accessible :</strong> WeSafe collecte vos données uniquement pour faire fonctionner la
             plateforme de mise en relation dans le secteur de la sécurité privée. Certaines données sont sensibles
@@ -162,20 +156,28 @@ export default function PolitiqueConfidentialitePage() {
               <table className="w-full border-collapse text-sm">
                 <tbody>
                   {[
-                    ["Société", <Placeholder key="soc">[NOM DE LA SOCIÉTÉ]</Placeholder>],
-                    ["Forme juridique", <Placeholder key="fj">[SAS / SASU / SARL]</Placeholder>],
-                    ["Siège social", <Placeholder key="siege">[ADRESSE COMPLÈTE]</Placeholder>],
-                    ["SIRET", <Placeholder key="siret">[14 CHIFFRES]</Placeholder>],
+                    ["Société", "AIZEN SECURITY"],
+                    ["Forme juridique", "SAS (Société par Actions Simplifiée)"],
+                    ["Siège social", "94 Avenue Paul Vaillant Couturier, 94400 Vitry-sur-Seine"],
+                    ["SIRET", "984 566 083 00015"],
                     [
                       "Email général",
-                      <a key="email" href="mailto:" className="text-primary underline-offset-2 hover:underline">
-                        <Placeholder>[contact@wesafe.fr]</Placeholder>
+                      <a
+                        key="email"
+                        href="mailto:contact@wesafeapp.fr"
+                        className="text-primary underline-offset-2 hover:underline"
+                      >
+                        contact@wesafeapp.fr
                       </a>,
                     ],
                     [
                       "Email DPO",
-                      <a key="dpo" href="mailto:" className="text-primary underline-offset-2 hover:underline">
-                        <Placeholder>[dpo@wesafe.fr]</Placeholder>
+                      <a
+                        key="dpo"
+                        href="mailto:dpo@wesafeapp.fr"
+                        className="text-primary underline-offset-2 hover:underline"
+                      >
+                        dpo@wesafeapp.fr
                       </a>,
                     ],
                   ].map(([label, value]) => (
@@ -188,9 +190,9 @@ export default function PolitiqueConfidentialitePage() {
               </table>
             </div>
             <p className="mb-4 text-muted-foreground leading-7">
-              En tant que <strong>responsable du traitement</strong> au sens de l&apos;article 4 du RGPD,{" "}
-              <Placeholder>[NOM DE LA SOCIÉTÉ]</Placeholder> détermine les finalités et les moyens des traitements de
-              données personnelles décrits dans la présente politique.
+              En tant que <strong>responsable du traitement</strong> au sens de l&apos;article 4 du RGPD, AIZEN SECURITY
+              détermine les finalités et les moyens des traitements de données personnelles décrits dans la présente
+              politique.
             </p>
           </section>
 
@@ -841,8 +843,8 @@ export default function PolitiqueConfidentialitePage() {
             </ul>
             <p className="mb-4 text-muted-foreground leading-7">
               Vous pouvez obtenir une copie des garanties mises en place en contactant :{" "}
-              <a href="mailto:dpo@wesafe.fr" className="text-primary underline-offset-2 hover:underline">
-                <Placeholder>[dpo@wesafe.fr]</Placeholder>
+              <a href="mailto:dpo@wesafeapp.fr" className="text-primary underline-offset-2 hover:underline">
+                dpo@wesafeapp.fr
               </a>
             </p>
           </section>
@@ -976,14 +978,14 @@ export default function PolitiqueConfidentialitePage() {
               </li>
               <li>
                 <strong>Par email :</strong>{" "}
-                <a href="mailto:dpo@wesafe.fr" className="text-primary underline-offset-2 hover:underline">
-                  <Placeholder>[dpo@wesafe.fr]</Placeholder>
+                <a href="mailto:dpo@wesafeapp.fr" className="text-primary underline-offset-2 hover:underline">
+                  dpo@wesafeapp.fr
                 </a>{" "}
                 — en précisant votre demande et en joignant une copie de votre pièce d&apos;identité.
               </li>
               <li>
-                <strong>Par courrier :</strong> <Placeholder>[NOM DE LA SOCIÉTÉ] — [ADRESSE POSTALE]</Placeholder> —
-                courrier recommandé avec accusé de réception.
+                <strong>Par courrier :</strong> AIZEN SECURITY — 94 Avenue Paul Vaillant Couturier, 94400
+                Vitry-sur-Seine — courrier recommandé avec accusé de réception.
               </li>
             </ol>
             <p className="mb-3 text-muted-foreground leading-7">
@@ -1082,8 +1084,8 @@ export default function PolitiqueConfidentialitePage() {
             <p className="mb-4 text-muted-foreground leading-7">
               Si vous êtes parent ou tuteur et pensez qu&apos;un mineur a créé un compte sur la Plateforme,
               contactez-nous immédiatement à{" "}
-              <a href="mailto:dpo@wesafe.fr" className="text-primary underline-offset-2 hover:underline">
-                <Placeholder>[dpo@wesafe.fr]</Placeholder>
+              <a href="mailto:dpo@wesafeapp.fr" className="text-primary underline-offset-2 hover:underline">
+                dpo@wesafeapp.fr
               </a>{" "}
               afin que nous procédions à la suppression du compte et des données associées.
             </p>
@@ -1131,8 +1133,8 @@ export default function PolitiqueConfidentialitePage() {
             <p className="mb-4 text-muted-foreground leading-7">
               Nous vous encourageons à consulter régulièrement cette page. La version précédente de la politique est
               disponible sur demande à{" "}
-              <a href="mailto:dpo@wesafe.fr" className="text-primary underline-offset-2 hover:underline">
-                <Placeholder>[dpo@wesafe.fr]</Placeholder>
+              <a href="mailto:dpo@wesafeapp.fr" className="text-primary underline-offset-2 hover:underline">
+                dpo@wesafeapp.fr
               </a>
               .
             </p>
@@ -1154,16 +1156,13 @@ export default function PolitiqueConfidentialitePage() {
                       "Email",
                       <a
                         key="email"
-                        href="mailto:dpo@wesafe.fr"
+                        href="mailto:dpo@wesafeapp.fr"
                         className="text-primary underline-offset-2 hover:underline"
                       >
-                        <Placeholder>[dpo@wesafe.fr]</Placeholder>
+                        dpo@wesafeapp.fr
                       </a>,
                     ],
-                    [
-                      "Adresse postale",
-                      <Placeholder key="adresse">[NOM DE LA SOCIÉTÉ] — [ADRESSE COMPLÈTE]</Placeholder>,
-                    ],
+                    ["Adresse postale", "AIZEN SECURITY — 94 Avenue Paul Vaillant Couturier, 94400 Vitry-sur-Seine"],
                   ].map(([label, value]) => (
                     <tr key={label} className="border-border border-b last:border-0">
                       <td className="w-40 px-3 py-2.5 align-top font-medium text-foreground">{label}</td>

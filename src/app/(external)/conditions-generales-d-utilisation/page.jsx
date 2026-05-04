@@ -21,7 +21,7 @@ const SECTIONS = [
   { id: "art16", label: "16. Droit applicable" },
 ];
 
-function Placeholder({ children }) {
+function _Placeholder({ children }) {
   return <mark className="rounded bg-amber-100 px-1 font-semibold text-amber-800 not-italic">{children}</mark>;
 }
 
@@ -123,12 +123,6 @@ export default function CGUPage() {
 
         {/* Contenu principal */}
         <main className="min-w-0 space-y-2 rounded-xl border border-border bg-card p-8">
-          <CardWarn>
-            <strong>⚠️ À compléter :</strong> Les éléments{" "}
-            <mark className="rounded bg-amber-100 px-1 font-semibold text-amber-800">surlignés en jaune</mark> doivent
-            être remplacés par les informations exactes de la société avant publication.
-          </CardWarn>
-
           {/* ── Art. 1 ── */}
           <section id="art1">
             <SectionTitle id="art1">Article 1 – Objet et champ d&apos;application</SectionTitle>
@@ -136,14 +130,9 @@ export default function CGUPage() {
               Les présentes Conditions Générales d&apos;Utilisation (ci-après « CGU ») ont pour objet de définir les
               modalités et conditions d&apos;accès et d&apos;utilisation de la plateforme numérique{" "}
               <strong>WeSafe</strong>, accessible via l&apos;application mobile (iOS et Android) et le site internet{" "}
-              <Placeholder>[URL DU SITE]</Placeholder> (ci-après « la Plateforme »), éditée par{" "}
-              <strong>
-                <Placeholder>[NOM DE LA SOCIÉTÉ]</Placeholder>
-              </strong>
-              , <Placeholder>[FORME JURIDIQUE]</Placeholder> au capital de <Placeholder>[MONTANT]</Placeholder> €,
-              immatriculée au RCS de <Placeholder>[VILLE]</Placeholder> sous le numéro{" "}
-              <Placeholder>[SIRET]</Placeholder>, dont le siège social est situé <Placeholder>[ADRESSE]</Placeholder>{" "}
-              (ci-après « l&apos;Éditeur »).
+              wesafe.fr (ci-après « la Plateforme »), éditée par <strong>AIZEN SECURITY</strong>, SAS au capital de 10
+              €, immatriculée au RCS de Créteil sous le numéro 984 566 083 00015, dont le siège social est situé 94
+              Avenue Paul Vaillant Couturier, 94400 Vitry-sur-Seine (ci-après « l&apos;Éditeur »).
             </p>
             <p className="mb-4 text-muted-foreground leading-7">
               WeSafe est une plateforme de{" "}
@@ -286,8 +275,8 @@ export default function CGUPage() {
               Chaque Utilisateur est responsable de la confidentialité de ses identifiants de connexion. En cas de
               suspicion de compromission, il doit immédiatement modifier son mot de passe et notifier l&apos;Éditeur à
               l&apos;adresse{" "}
-              <a href="mailto:security@wesafe.fr" className="text-primary underline-offset-2 hover:underline">
-                <Placeholder>[security@wesafe.fr]</Placeholder>
+              <a href="mailto:security@wesafeapp.fr" className="text-primary underline-offset-2 hover:underline">
+                security@wesafeapp.fr
               </a>
               . L&apos;Éditeur ne pourra être tenu responsable des conséquences découlant d&apos;une utilisation non
               autorisée du compte d&apos;un Utilisateur.
@@ -507,13 +496,10 @@ export default function CGUPage() {
 
             <SubTitle>9.1 Responsable du traitement</SubTitle>
             <p className="mb-4 text-muted-foreground leading-7">
-              Le responsable du traitement des données personnelles est :{" "}
-              <strong>
-                <Placeholder>[NOM DE LA SOCIÉTÉ]</Placeholder>
-              </strong>
-              , <Placeholder>[ADRESSE COMPLÈTE]</Placeholder> — Email DPO :{" "}
-              <a href="mailto:dpo@wesafe.fr" className="text-primary underline-offset-2 hover:underline">
-                <Placeholder>[dpo@wesafe.fr]</Placeholder>
+              Le responsable du traitement des données personnelles est : <strong>AIZEN SECURITY</strong>, 94 Avenue
+              Paul Vaillant Couturier, 94400 Vitry-sur-Seine — Email DPO :{" "}
+              <a href="mailto:dpo@wesafeapp.fr" className="text-primary underline-offset-2 hover:underline">
+                dpo@wesafeapp.fr
               </a>
             </p>
 
@@ -654,9 +640,9 @@ export default function CGUPage() {
                 <li>
                   <strong>Numéro de sécurité sociale (NIR) :</strong> traité sur le fondement de l&apos;article 87 de la
                   loi Informatique et Libertés modifiée, dans le cadre strictement nécessaire à l&apos;établissement de
-                  contrats de travail. <Placeholder>[NOM DE LA SOCIÉTÉ]</Placeholder> s&apos;engage à recueillir le
-                  consentement explicite de l&apos;Utilisateur et à mettre en œuvre les mesures techniques appropriées
-                  (chiffrement, accès restreint).
+                  contrats de travail. AIZEN SECURITY s&apos;engage à recueillir le consentement explicite de
+                  l&apos;Utilisateur et à mettre en œuvre les mesures techniques appropriées (chiffrement, accès
+                  restreint).
                 </li>
                 <li>
                   <strong>Documents d&apos;identité :</strong> traités sur le fondement d&apos;une obligation légale
@@ -731,9 +717,9 @@ export default function CGUPage() {
               </table>
             </div>
             <p className="mb-4 text-muted-foreground leading-7">
-              <Placeholder>[NOM DE LA SOCIÉTÉ]</Placeholder> s&apos;assure que tout transfert de données hors de
-              l&apos;Espace Économique Européen est encadré par des garanties appropriées conformément au chapitre V du
-              RGPD (clauses contractuelles types de la Commission européenne ou décisions d&apos;adéquation).
+              AIZEN SECURITY s&apos;assure que tout transfert de données hors de l&apos;Espace Économique Européen est
+              encadré par des garanties appropriées conformément au chapitre V du RGPD (clauses contractuelles types de
+              la Commission européenne ou décisions d&apos;adéquation).
             </p>
 
             <SubTitle>9.5 Durées de conservation</SubTitle>
@@ -815,11 +801,11 @@ export default function CGUPage() {
             </ul>
             <p className="mb-4 text-muted-foreground leading-7">
               Pour exercer ces droits, contacter :{" "}
-              <a href="mailto:dpo@wesafe.fr" className="text-primary underline-offset-2 hover:underline">
-                <Placeholder>[dpo@wesafe.fr]</Placeholder>
+              <a href="mailto:dpo@wesafeapp.fr" className="text-primary underline-offset-2 hover:underline">
+                dpo@wesafeapp.fr
               </a>{" "}
-              ou <Placeholder>[NOM DE LA SOCIÉTÉ] — [ADRESSE POSTALE]</Placeholder> en joignant une copie d&apos;une
-              pièce d&apos;identité. WeSafe s&apos;engage à répondre dans un délai maximum d&apos;
+              ou AIZEN SECURITY — 94 Avenue Paul Vaillant Couturier, 94400 Vitry-sur-Seine en joignant une copie
+              d&apos;une pièce d&apos;identité. WeSafe s&apos;engage à répondre dans un délai maximum d&apos;
               <strong>un mois</strong> à compter de la réception de la demande.
             </p>
             <p className="mb-4 text-muted-foreground leading-7">
@@ -837,9 +823,9 @@ export default function CGUPage() {
 
             <SubTitle>9.7 Sécurité des données</SubTitle>
             <p className="mb-3 text-muted-foreground leading-7">
-              <Placeholder>[NOM DE LA SOCIÉTÉ]</Placeholder> met en œuvre les mesures techniques et organisationnelles
-              appropriées pour protéger les données personnelles contre tout accès non autorisé, perte accidentelle,
-              altération ou divulgation, notamment :
+              AIZEN SECURITY met en œuvre les mesures techniques et organisationnelles appropriées pour protéger les
+              données personnelles contre tout accès non autorisé, perte accidentelle, altération ou divulgation,
+              notamment :
             </p>
             <ul className="mb-4 ml-4 list-inside list-disc space-y-1 text-muted-foreground">
               <li>Chiffrement des données en transit (TLS 1.3) et au repos (AES-256)</li>
@@ -872,8 +858,8 @@ export default function CGUPage() {
               </li>
               <li>
                 Signaler tout dysfonctionnement ou comportement frauduleux à l&apos;adresse{" "}
-                <a href="mailto:support@wesafe.fr" className="text-primary underline-offset-2 hover:underline">
-                  <Placeholder>[support@wesafe.fr]</Placeholder>
+                <a href="mailto:support@wesafeapp.fr" className="text-primary underline-offset-2 hover:underline">
+                  support@wesafeapp.fr
                 </a>
                 .
               </li>
@@ -907,9 +893,8 @@ export default function CGUPage() {
             <SectionTitle id="art11">Article 11 – Propriété intellectuelle</SectionTitle>
             <p className="mb-4 text-muted-foreground leading-7">
               Tous les éléments de la Plateforme (logiciel, code, interfaces, logos, marque « WeSafe ») sont la
-              propriété exclusive de <Placeholder>[NOM DE LA SOCIÉTÉ]</Placeholder> et protégés par le Code de la
-              propriété intellectuelle. Toute reproduction ou exploitation sans autorisation écrite préalable est
-              interdite.
+              propriété exclusive de AIZEN SECURITY et protégés par le Code de la propriété intellectuelle. Toute
+              reproduction ou exploitation sans autorisation écrite préalable est interdite.
             </p>
             <p className="mb-4 text-muted-foreground leading-7">
               Les contenus générés par les Utilisateurs (profils, CV, photos) restent leur propriété. En les déposant
@@ -965,8 +950,8 @@ export default function CGUPage() {
             <p className="mb-4 text-muted-foreground leading-7">
               Tout Utilisateur peut clôturer son compte à tout moment depuis les paramètres de l&apos;application ou en
               envoyant une demande écrite à{" "}
-              <a href="mailto:support@wesafe.fr" className="text-primary underline-offset-2 hover:underline">
-                <Placeholder>[support@wesafe.fr]</Placeholder>
+              <a href="mailto:support@wesafeapp.fr" className="text-primary underline-offset-2 hover:underline">
+                support@wesafeapp.fr
               </a>
               . La clôture entraîne la suppression du profil public. Les données sont conservées selon les durées
               légales définies à l&apos;Article 9.5.
@@ -1005,18 +990,20 @@ export default function CGUPage() {
             <p className="mb-4 text-muted-foreground leading-7">
               Les présentes CGU sont soumises au droit français. En cas de litige, les parties s&apos;engagent à
               rechercher une solution amiable. À défaut d&apos;accord dans un délai de 30 jours, le litige sera soumis à
-              la compétence des tribunaux de{" "}
-              <strong>
-                <Placeholder>[VILLE DU SIÈGE]</Placeholder>
-              </strong>
-              .
+              la compétence des tribunaux de <strong>Créteil</strong>.
             </p>
             <p className="mb-4 text-muted-foreground leading-7">
               Conformément aux articles L. 611-1 et suivants du Code de la consommation, les consommateurs (personnes
               physiques) ont la faculté de recourir à un médiateur de la consommation. L&apos;entité de médiation
-              compétente est :{" "}
-              <Placeholder>[NOM DU MÉDIATEUR CHOISI, ex : Médiateur du e-commerce de la FEVAD]</Placeholder> —{" "}
-              <Placeholder>[URL]</Placeholder>.
+              compétente est : Médiateur du e-commerce de la FEVAD —{" "}
+              <a
+                href="https://www.mediateurfevad.fr"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline-offset-2 hover:underline"
+              >
+                www.mediateurfevad.fr
+              </a>
             </p>
             <p className="mb-4 text-muted-foreground leading-7">
               La Commission Européenne met à disposition une plateforme de règlement en ligne des litiges :{" "}

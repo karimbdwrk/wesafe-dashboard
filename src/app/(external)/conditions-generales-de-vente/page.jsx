@@ -19,7 +19,7 @@ const SECTIONS = [
   { id: "art14", label: "14. Droit applicable" },
 ];
 
-function Placeholder({ children }) {
+function _Placeholder({ children }) {
   return <mark className="rounded bg-amber-100 px-1 font-semibold text-amber-800 not-italic">{children}</mark>;
 }
 
@@ -41,7 +41,7 @@ function CardInfo({ children }) {
   );
 }
 
-function CardWarn({ children }) {
+function _CardWarn({ children }) {
   return (
     <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800 text-sm">
       {children}
@@ -105,26 +105,15 @@ export default function CGVPage() {
 
         {/* Contenu principal */}
         <main className="min-w-0 space-y-2 rounded-xl border border-border bg-card p-8">
-          <CardWarn>
-            <strong>⚠️ À compléter :</strong> Les éléments{" "}
-            <mark className="rounded bg-amber-100 px-1 font-semibold text-amber-800">surlignés en jaune</mark> doivent
-            être remplacés par les informations exactes avant publication. Les tarifs indiqués sont susceptibles
-            d&apos;évoluer conformément à l&apos;Article 11.
-          </CardWarn>
-
           {/* ── Art. 1 ── */}
           <section id="art1">
             <SectionTitle id="art1">Article 1 – Objet et champ d&apos;application</SectionTitle>
             <p className="mb-4 text-muted-foreground leading-7">
               Les présentes Conditions Générales de Vente (ci-après « CGV ») régissent exclusivement les relations
-              commerciales entre{" "}
-              <strong>
-                <Placeholder>[NOM DE LA SOCIÉTÉ]</Placeholder>
-              </strong>{" "}
-              (ci-après « WeSafe » ou « l&apos;Éditeur »), <Placeholder>[FORME JURIDIQUE]</Placeholder> au capital de{" "}
-              <Placeholder>[MONTANT]</Placeholder> €, immatriculée sous le SIRET <Placeholder>[SIRET]</Placeholder>,
-              siège social : <Placeholder>[ADRESSE]</Placeholder>, et toute personne morale ou physique (ci-après « le
-              Client ») souscrivant à un ou plusieurs des services payants proposés via la Plateforme WeSafe.
+              commerciales entre <strong>AIZEN SECURITY</strong> (ci-après « WeSafe » ou « l&apos;Éditeur »), SAS au
+              capital de 10 €, immatriculée sous le SIRET 984 566 083 00015, siège social : 94 Avenue Paul Vaillant
+              Couturier, 94400 Vitry-sur-Seine, et toute personne morale ou physique (ci-après « le Client »)
+              souscrivant à un ou plusieurs des services payants proposés via la Plateforme WeSafe.
             </p>
             <CardInfo>
               <strong>Public cible des CGV :</strong> Les produits commerciaux de WeSafe (abonnements, crédits,
@@ -435,8 +424,8 @@ export default function CGVPage() {
             </ul>
             <p className="mb-4 text-muted-foreground leading-7">
               En cas de délai d&apos;activation supérieur, le Client peut contacter le support WeSafe à{" "}
-              <a href="mailto:support@wesafe.fr" className="text-primary underline-offset-2 hover:underline">
-                <Placeholder>[support@wesafe.fr]</Placeholder>
+              <a href="mailto:support@wesafeapp.fr" className="text-primary underline-offset-2 hover:underline">
+                support@wesafeapp.fr
               </a>
               .
             </p>
@@ -469,8 +458,8 @@ export default function CGVPage() {
             <SubTitle>8.3 Formulaire de rétractation</SubTitle>
             <p className="mb-3 text-muted-foreground leading-7">
               Pour les cas où le droit de rétractation serait applicable, le Client peut notifier sa décision à{" "}
-              <a href="mailto:retractation@wesafe.fr" className="text-primary underline-offset-2 hover:underline">
-                <Placeholder>[retractation@wesafe.fr]</Placeholder>
+              <a href="mailto:retractation@wesafeapp.fr" className="text-primary underline-offset-2 hover:underline">
+                retractation@wesafeapp.fr
               </a>{" "}
               :
             </p>
@@ -572,8 +561,8 @@ Date : ___________
             </div>
             <p className="mb-4 text-muted-foreground leading-7">
               Pour toute demande de remboursement, contacter :{" "}
-              <a href="mailto:facturation@wesafe.fr" className="text-primary underline-offset-2 hover:underline">
-                <Placeholder>[facturation@wesafe.fr]</Placeholder>
+              <a href="mailto:facturation@wesafeapp.fr" className="text-primary underline-offset-2 hover:underline">
+                facturation@wesafeapp.fr
               </a>{" "}
               avec la référence de commande (numéro de facture Stripe).
             </p>
@@ -654,15 +643,20 @@ Date : ___________
             <p className="mb-4 text-muted-foreground leading-7">
               Les présentes Conditions Générales de Vente sont soumises au droit français. Tout litige relatif à leur
               interprétation ou à leur exécution relève, à défaut d&apos;accord amiable, de la compétence exclusive du{" "}
-              <strong>
-                Tribunal de Commerce de <Placeholder>[VILLE DU SIÈGE]</Placeholder>
-              </strong>{" "}
-              (pour les litiges entre professionnels).
+              <strong>Tribunal de Commerce de Créteil</strong> (pour les litiges entre professionnels).
             </p>
             <p className="mb-4 text-muted-foreground leading-7">
               Pour les litiges avec des consommateurs, et conformément aux articles L. 611-1 et suivants du Code de la
-              consommation, le Client peut recourir à la médiation de la consommation auprès de :{" "}
-              <Placeholder>[NOM DU MÉDIATEUR — ex. : Médiateur du e-commerce FEVAD]</Placeholder>.
+              consommation, le Client peut recourir à la médiation de la consommation auprès de : Médiateur du
+              e-commerce de la FEVAD —{" "}
+              <a
+                href="https://www.mediateurfevad.fr"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline-offset-2 hover:underline"
+              >
+                www.mediateurfevad.fr
+              </a>
             </p>
             <p className="mb-4 text-muted-foreground leading-7">
               Plateforme européenne de règlement en ligne des litiges :{" "}
