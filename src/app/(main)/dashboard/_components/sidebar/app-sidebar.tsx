@@ -116,6 +116,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     : []
             }
             isCompanyActive={role === "company" ? isCompanyActive : true}
+            role={role}
           />
         )}
         {/* <NavDocuments items={data.documents} /> */}
