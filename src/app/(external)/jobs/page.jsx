@@ -17,7 +17,9 @@ import {
   MapPin,
   Moon,
   Search,
+  ShieldCheck,
   SlidersHorizontal,
+  Sparkles,
   Sun,
   Timer,
   X,
@@ -35,6 +37,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CATEGORY } from "@/constants/categories";
 import { regions } from "@/constants/regions";
 import { supabase } from "@/lib/supabase/supabaseClient";
@@ -83,6 +86,11 @@ function getCatLabel(id) {
 }
 
 // ─── Utilitaires locaux ────────────────────────────────────────────────────────
+
+function isSponsorshipActive(job) {
+  if (!job.sponsorship_date) return false;
+  return job.sponsorship_date >= new Date().toISOString().split("T")[0];
+}
 
 function formatDate(dateStr) {
   if (!dateStr) return null;
@@ -145,7 +153,21 @@ function JobDetail({ job, onClose }) {
             </div>
           )}
           <div>
-            <p className="font-medium text-muted-foreground text-sm">{company?.name || "Entreprise"}</p>
+            <p className="flex items-center gap-1 font-medium text-muted-foreground text-sm">
+              {company?.name || "Entreprise"}
+              {(company?.subscription_status === "standard_plus" || company?.subscription_status === "premium") && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button type="button" className="shrink-0 focus-visible:outline-none">
+                      <ShieldCheck className="h-3.5 w-3.5 text-green-500" aria-label="Entreprise vérifiée" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent side="top" className="w-auto px-3 py-1.5 text-xs">
+                    Entreprise vérifiée
+                  </PopoverContent>
+                </Popover>
+              )}
+            </p>
             <h1 className="flex flex-wrap items-center gap-2 font-bold text-xl leading-tight">
               {job.title}
               {job.isLastMinute && (
@@ -160,6 +182,12 @@ function JobDetail({ job, onClose }) {
 
         {/* Badges */}
         <div className="mb-6 flex flex-wrap gap-2">
+          {isSponsorshipActive(job) && (
+            <Badge className="h-5 gap-1 px-1.5 bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-100">
+              <Sparkles className="h-3 w-3" aria-hidden="true" />
+              Sponsorisé
+            </Badge>
+          )}
           {location && (
             <Badge variant="outline" className="flex items-center gap-1.5">
               <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
@@ -372,7 +400,7 @@ export default function JobsPage() {
   useEffect(() => {
     supabase
       .from("jobs")
-      .select("*, companies(name, logo_url)")
+      .select("*, companies(name, logo_url, subscription_status)")
       .eq("status", "published")
       .neq("isLastMinute", true)
       .order("sponsorship_date", { ascending: false, nullsFirst: false })
