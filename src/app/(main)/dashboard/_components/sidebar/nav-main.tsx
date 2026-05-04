@@ -33,6 +33,7 @@ import { useNotifications } from "../notification-context";
 interface NavMainProps {
   readonly items: readonly NavGroup[];
   readonly isCompanyActive?: boolean;
+  readonly role?: "company" | "candidate" | "admin" | "super_admin" | null;
 }
 
 const IsComingSoon = () => (
@@ -148,7 +149,7 @@ const NavItemCollapsed = ({
   );
 };
 
-export function NavMain({ items, isCompanyActive = true }: NavMainProps) {
+export function NavMain({ items, isCompanyActive = true, role }: NavMainProps) {
   const path = usePathname();
   const router = useRouter();
   const { state, isMobile } = useSidebar();
@@ -178,30 +179,24 @@ export function NavMain({ items, isCompanyActive = true }: NavMainProps) {
 
   return (
     <>
-      <SidebarGroup>
-        <SidebarGroupContent className="flex flex-col gap-2">
-          <SidebarMenu>
-            <SidebarMenuItem className="flex items-center gap-2">
-              <SidebarMenuButton
-                tooltip="Nouvelle offre"
-                onClick={handleNewOffer}
-                className={`min-w-8 bg-primary text-primary-foreground duration-200 ease-linear hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground justify-center${!isCompanyActive ? " opacity-60" : ""}`}
-              >
-                <PlusCircleIcon />
-                <span>Nouvelle offre</span>
-              </SidebarMenuButton>
-              {/* <Button
-                size="icon"
-                className="h-9 w-9 shrink-0 group-data-[collapsible=icon]:opacity-0"
-                variant="outline"
-              >
-                <MailIcon />
-                <span className="sr-only">Inbox</span>
-              </Button> */}
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </SidebarGroup>
+      {role === "company" && (
+        <SidebarGroup>
+          <SidebarGroupContent className="flex flex-col gap-2">
+            <SidebarMenu>
+              <SidebarMenuItem className="flex items-center gap-2">
+                <SidebarMenuButton
+                  tooltip="Nouvelle offre"
+                  onClick={handleNewOffer}
+                  className={`min-w-8 bg-primary text-primary-foreground duration-200 ease-linear hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground justify-center${!isCompanyActive ? " opacity-60" : ""}`}
+                >
+                  <PlusCircleIcon />
+                  <span>Nouvelle offre</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      )}
       {items.map((group) => (
         <SidebarGroup key={group.id}>
           {group.label && <SidebarGroupLabel>{group.label}</SidebarGroupLabel>}
