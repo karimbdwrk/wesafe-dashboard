@@ -5,7 +5,21 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 
-import { Briefcase, Building2, Calendar, Clock, Euro, MapPin, Moon, Sun, Timer, X, Zap } from "lucide-react";
+import {
+  Briefcase,
+  Building2,
+  Calendar,
+  Clock,
+  Euro,
+  MapPin,
+  Moon,
+  ShieldCheck,
+  Sparkles,
+  Sun,
+  Timer,
+  X,
+  Zap,
+} from "lucide-react";
 
 import { getLocation, getSalaryDisplay } from "@/components/job-card";
 import {
@@ -18,6 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CATEGORY } from "@/constants/categories";
 import { supabase } from "@/lib/supabase/supabaseClient";
 
@@ -51,6 +66,11 @@ const workTimeLabel = { fulltime: "Temps plein", parttime: "Temps partiel" };
 function getCatLabel(id) {
   const cat = CATEGORY.find((c) => c.id === id);
   return cat ? `${cat.acronym} — ${cat.name}` : (id ?? "");
+}
+
+function isSponsorshipActive(job) {
+  if (!job.sponsorship_date) return false;
+  return job.sponsorship_date >= new Date().toISOString().split("T")[0];
 }
 
 function formatDate(dateStr) {
@@ -87,7 +107,7 @@ export default function JobPage() {
     if (!id) return;
     supabase
       .from("jobs")
-      .select("*, companies(name, logo_url)")
+      .select("*, companies(name, logo_url, subscription_status)")
       .eq("id", id)
       .single()
       .then(({ data, error }) => {
@@ -139,7 +159,21 @@ export default function JobPage() {
             </div>
           )}
           <div>
-            <p className="font-medium text-muted-foreground text-sm">{company?.name || "Entreprise"}</p>
+            <p className="flex items-center gap-1 font-medium text-muted-foreground text-sm">
+              {company?.name || "Entreprise"}
+              {(company?.subscription_status === "standard_plus" || company?.subscription_status === "premium") && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button type="button" className="shrink-0 focus-visible:outline-none">
+                      <ShieldCheck className="h-3.5 w-3.5 text-green-500" aria-label="Entreprise vérifiée" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent side="top" className="w-auto px-3 py-1.5 text-xs">
+                    Entreprise vérifiée
+                  </PopoverContent>
+                </Popover>
+              )}
+            </p>
             <h1 className="flex flex-wrap items-center gap-2 font-bold text-xl leading-tight">
               {job.title}
               {job.isLastMinute && (
@@ -154,6 +188,12 @@ export default function JobPage() {
 
         {/* Badges rapides */}
         <div className="mb-6 flex flex-wrap gap-2">
+          {isSponsorshipActive(job) && (
+            <Badge className="h-5 gap-1 px-1.5 bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-100">
+              <Sparkles className="h-3 w-3" aria-hidden="true" />
+              Sponsorisée
+            </Badge>
+          )}
           {location && (
             <Badge variant="outline" className="flex items-center gap-1.5">
               <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
