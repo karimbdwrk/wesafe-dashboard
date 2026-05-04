@@ -1,8 +1,9 @@
 import Link from "next/link";
 
-import { Banknote, Building2, Clock, MapPin, Star, Zap } from "lucide-react";
+import { Banknote, Building2, Clock, MapPin, ShieldCheck, Sparkles, Zap } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CATEGORY } from "@/constants/categories";
 
 // ─── Constantes partagées ──────────────────────────────────────────────────────
@@ -92,8 +93,8 @@ function JobCardContent({ job, salary, location, relativeDate }) {
       {hasBadge && (
         <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
           {isSponsored && (
-            <div className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 font-medium text-[10px] text-muted-foreground">
-              <Star className="h-2.5 w-2.5" aria-hidden="true" />
+            <div className="flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 font-medium text-[10px] text-purple-700">
+              <Sparkles className="h-2.5 w-2.5" aria-hidden="true" />
               Sponsorisé
             </div>
           )}
@@ -125,7 +126,25 @@ function JobCardContent({ job, salary, location, relativeDate }) {
 
         {/* Métadonnées */}
         <div className={`min-w-0 flex-1 ${hasBadge ? "pr-16" : ""}`}>
-          <p className="truncate font-medium text-muted-foreground text-xs">{company?.name ?? "Entreprise"}</p>
+          <p className="flex items-center gap-1 truncate font-medium text-muted-foreground text-xs">
+            {company?.name ?? "Entreprise"}
+            {(company?.subscription_status === "standard_plus" || company?.subscription_status === "premium") && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={(e) => e.stopPropagation()}
+                    className="shrink-0 focus-visible:outline-none"
+                  >
+                    <ShieldCheck className="h-3 w-3 text-green-500" aria-label="Entreprise vérifiée" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent side="top" className="w-auto px-3 py-1.5 text-xs">
+                  Entreprise vérifiée
+                </PopoverContent>
+              </Popover>
+            )}
+          </p>
           <p className="mt-0.5 line-clamp-2 font-semibold text-foreground text-sm leading-snug">{job.title}</p>
 
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
