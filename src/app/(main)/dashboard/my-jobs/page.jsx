@@ -356,6 +356,7 @@ export default function CompanyJobsPage() {
   const [companyId, setCompanyId] = useState(null);
   const [companyName, setCompanyName] = useState("");
   const [companyActive, setCompanyActive] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = useState(null);
 
   const [lastMinuteCredits, setLastMinuteCredits] = useState(0);
   const [selectedJob, setSelectedJob] = useState(null);
@@ -424,13 +425,14 @@ export default function CompanyJobsPage() {
 
       const { data: company } = await supabase
         .from("companies")
-        .select("name, last_minute_credits, company_status")
+        .select("name, last_minute_credits, company_status, subscription_status")
         .eq("id", user.id)
         .maybeSingle();
       if (company) {
         setCompanyName(company.name);
         setLastMinuteCredits(company.last_minute_credits ?? 0);
         setCompanyActive(company.company_status === "active");
+        setSubscriptionStatus(company.subscription_status ?? "standard");
       }
 
       fetchJobs(user.id);
@@ -460,6 +462,12 @@ export default function CompanyJobsPage() {
       toast.error("Compte en attente de validation", {
         description:
           "Votre compte est en cours de vérification par notre équipe. Vous pourrez publier des offres dès son activation.",
+      });
+      return;
+    }
+    if (isJobLimitReached) {
+      toast.error("Quota d'offres atteint", {
+        description: `Vous avez atteint la limite de ${jobLimit} offre${jobLimit > 1 ? "s" : ""} sur 30 jours. Passez à un abonnement supérieur pour en publier davantage.`,
       });
       return;
     }
@@ -535,6 +543,20 @@ export default function CompanyJobsPage() {
   const published = jobs.filter((j) => j.status === "published").length;
   const draft = jobs.filter((j) => j.status === "draft").length;
 
+  const JOB_LIMITS = { standard: 3, standard_plus: 10, premium: Infinity };
+  const jobLimit = JOB_LIMITS[subscriptionStatus] ?? 3;
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const recentJobs = jobs.filter((j) => j.created_at >= thirtyDaysAgo);
+  const recentJobsCount = recentJobs.length;
+  const isJobLimitReached = jobLimit !== Infinity && recentJobsCount >= jobLimit;
+
+  const daysUntilSlot = (() => {
+    if (!isJobLimitReached) return null;
+    const oldest = recentJobs.reduce((min, j) => (j.created_at < min ? j.created_at : min), recentJobs[0].created_at);
+    const freeAt = new Date(oldest).getTime() + 30 * 24 * 60 * 60 * 1000;
+    return Math.max(1, Math.ceil((freeAt - Date.now()) / (24 * 60 * 60 * 1000)));
+  })();
+
   const totalPages = Math.max(1, Math.ceil(jobs.length / JOBS_PER_PAGE));
   const paginatedJobs = jobs.slice((page - 1) * JOBS_PER_PAGE, page * JOBS_PER_PAGE);
 
@@ -546,10 +568,19 @@ export default function CompanyJobsPage() {
           <h1 className="font-bold text-2xl tracking-tight">Mes offres d'emploi</h1>
           {companyName && <p className="text-muted-foreground text-sm">{companyName}</p>}
         </div>
-        <Button onClick={handleNew} size="sm" className={!companyActive ? "opacity-60" : ""}>
-          <Plus className="mr-1.5 size-3.5" />
-          Nouvelle offre
-        </Button>
+        <div className="flex flex-col items-end gap-1">
+          <Button onClick={handleNew} size="sm" className={!companyActive || isJobLimitReached ? "opacity-60" : ""}>
+            <Plus className="mr-1.5 size-3.5" />
+            Nouvelle offre
+          </Button>
+          {jobLimit !== Infinity && (
+            <p className={`text-xs ${isJobLimitReached ? "text-destructive" : "text-muted-foreground"}`}>
+              {isJobLimitReached
+                ? `Prochaine annonce disponible dans ${daysUntilSlot} jour${daysUntilSlot > 1 ? "s" : ""}`
+                : `${recentJobsCount}/${jobLimit} offres sur 30 jours`}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Stats */}
@@ -590,7 +621,12 @@ export default function CompanyJobsPage() {
             <p className="text-muted-foreground text-sm">
               Créez votre première offre d'emploi pour attirer des candidats.
             </p>
-            <Button onClick={handleNew} variant="outline" size="sm" className={!companyActive ? "opacity-60" : ""}>
+            <Button
+              onClick={handleNew}
+              variant="outline"
+              size="sm"
+              className={!companyActive || isJobLimitReached ? "opacity-60" : ""}
+            >
               <Plus className="mr-2 size-4" />
               Créer une offre
             </Button>
