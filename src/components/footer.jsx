@@ -1,6 +1,5 @@
+import Image from "next/image";
 import Link from "next/link";
-
-import { Shield } from "lucide-react";
 
 export function Footer() {
   return (
@@ -8,11 +7,14 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="grid gap-10 md:grid-cols-4">
           <div className="md:col-span-1">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-                <Shield className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <span className="font-[family-name:var(--font-heading)] font-bold text-foreground text-xl">WeSafe</span>
+            <Link href="/" className="flex items-center">
+              <Image
+                src="/wesafe-recruitment-logo.svg"
+                alt="WeSafe Recruitment"
+                width={140}
+                height={39}
+                className="h-9 w-auto dark:invert"
+              />
             </Link>
             <p className="mt-4 text-muted-foreground text-sm leading-relaxed">
               La plateforme de recrutement dédiée aux professionnels de la sécurité privée.

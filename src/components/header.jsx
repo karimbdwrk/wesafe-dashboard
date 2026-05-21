@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 
+import Image from "next/image";
 import Link from "next/link";
 
-import { Menu, Moon, Shield, Sun, X } from "lucide-react";
+import { Menu, Moon, Sun, X } from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { Button } from "@/components/ui/button";
@@ -43,11 +44,15 @@ export function Header() {
   return (
     <header className="fixed top-0 right-0 left-0 z-50 border-border/50 border-b bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <Shield className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <span className="font-[family-name:var(--font-heading)] font-bold text-foreground text-xl">WeSafe</span>
+        <Link href="/" className="flex items-center">
+          <Image
+            src="/wesafe-recruitment-logo.svg"
+            alt="WeSafe Recruitment"
+            width={140}
+            height={39}
+            className="h-9 w-auto dark:invert"
+            priority
+          />
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">
