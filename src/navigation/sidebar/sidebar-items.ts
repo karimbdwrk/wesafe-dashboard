@@ -1,5 +1,6 @@
 import {
   Banknote,
+  BarChart2,
   Briefcase,
   Building2,
   ClipboardList,
@@ -56,6 +57,11 @@ export const companySidebarItems: NavGroup[] = [
         title: "Candidatures",
         url: "/dashboard/my-applications",
         icon: ClipboardList,
+      },
+      {
+        title: "Statistiques",
+        url: "/dashboard/statistiques",
+        icon: BarChart2,
       },
       {
         title: "Facturation",
