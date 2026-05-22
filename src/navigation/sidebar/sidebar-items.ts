@@ -1,8 +1,8 @@
 import {
   Banknote,
-  BarChart2,
   Briefcase,
   Building2,
+  ChartColumn,
   ClipboardList,
   CreditCard,
   type LucideIcon,
@@ -60,8 +60,8 @@ export const companySidebarItems: NavGroup[] = [
       },
       {
         title: "Statistiques",
-        url: "/dashboard/statistiques",
-        icon: BarChart2,
+        url: "/dashboard/analytics",
+        icon: ChartColumn,
       },
       {
         title: "Facturation",
