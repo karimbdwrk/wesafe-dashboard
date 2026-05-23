@@ -201,11 +201,18 @@ function Timeline({ events }) {
 // ─── Contract Sheet ───────────────────────────────────────────────────────────
 
 const CONTRACT_STEPS = ["Informations", "Poste & Lieu", "Rémunération", "Clauses", "Récapitulatif"];
-const CONTRACT_TYPES = ["CDD", "CDI"];
+const CONTRACT_TYPES = ["CDI", "CDD", "CDD Vacations"];
 const WEEK_DAYS_LIST = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+const CDD_REASON_CODES = [
+  { value: "remplacement", label: "Remplacement d'un salarié" },
+  { value: "accroissement_temporaire", label: "Accroissement temporaire d'activité" },
+  { value: "evenementiel", label: "Événementiel" },
+  { value: "saisonnier", label: "Emploi saisonnier" },
+];
 
 const INITIAL_CONTRACT_FORM = {
   contract_type: "",
+  cdd_reason_code: "",
   contract_reason: "",
   start_date: null,
   end_date: null,
@@ -312,6 +319,7 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
         setForm((prev) => ({
           ...prev,
           contract_type: c.contract_type || "",
+          cdd_reason_code: c.cdd_reason_code || "",
           contract_reason: c.contract_reason || "",
           start_date: isoToDate(c.start_date),
           end_date: isoToDate(c.end_date),
@@ -354,21 +362,23 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
         setForm(INITIAL_CONTRACT_FORM);
         return;
       }
+      const vacations = parseVacations(job.vacations);
+      const isVacationsMode = job.date_mode === "vacations" && vacations.length > 0;
       const contractType = (() => {
+        if (isVacationsMode) return "CDD Vacations";
         if (!job.contract_type) return "";
         const u = job.contract_type.toUpperCase();
         return u === "CDI" || u === "CDD" ? u : "";
       })();
-      const vacations = parseVacations(job.vacations);
       setForm({
         ...INITIAL_CONTRACT_FORM,
         contract_type: contractType,
-        start_date: isoToDate(job.start_date),
-        end_date: isoToDate(job.end_date),
+        start_date: isVacationsMode ? null : isoToDate(job.start_date),
+        end_date: isVacationsMode ? null : isoToDate(job.end_date),
         job_title: job.title || "",
         hourly_rate: job.salary_hourly ? String(job.salary_hourly) : "",
         vacations,
-        schedule_known: vacations.length > 0,
+        schedule_known: isVacationsMode || vacations.length > 0,
       });
     }
     load();
@@ -442,9 +452,9 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
   function validateStep() {
     if (step === 1) {
       if (!form.contract_type) return "Choisissez un type de contrat.";
-      if (!form.start_date) return "La date de début est obligatoire.";
+      if (form.contract_type !== "CDD Vacations" && !form.start_date) return "La date de début est obligatoire.";
       if (form.contract_type === "CDD" && !form.end_date) return "La date de fin est obligatoire pour un CDD.";
-      if (form.contract_type === "CDD" && !form.contract_reason?.trim())
+      if (["CDD", "CDD Vacations"].includes(form.contract_type) && !form.cdd_reason_code)
         return "Le motif de recours est obligatoire pour un CDD.";
       if (!form.total_hours?.trim()) return "Le nombre d'heures est obligatoire.";
     }
@@ -490,6 +500,7 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
       const formatDateISO = (d) => (d ? d.toISOString().split("T")[0] : null);
       const payload = {
         contract_type: form.contract_type,
+        cdd_reason_code: form.cdd_reason_code || null,
         contract_reason: form.contract_reason || null,
         start_date: formatDateISO(form.start_date),
         end_date: formatDateISO(form.end_date),
@@ -596,8 +607,52 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
   }
 
   function renderStep1() {
+    const isCddVacations = form.contract_type === "CDD Vacations";
+    const isCdd = form.contract_type === "CDD" || isCddVacations;
+
+    const vacationsList = (
+      <div className="flex flex-col gap-3">
+        {form.vacations.map((vac, i) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: vacation list has no stable id
+          <div key={i} className="flex flex-col gap-2 rounded-lg border p-3">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-muted-foreground text-xs">Vacation {i + 1}</span>
+              <button type="button" onClick={() => removeVacation(i)} className="text-destructive hover:opacity-70">
+                <Trash2 className="size-4" />
+              </button>
+            </div>
+            <DatePicker value={vac.date} onChange={(d) => updateVacation(i, "date", d)} />
+            <div className="flex items-center gap-2">
+              <Input
+                type="time"
+                value={vac.start_time}
+                onChange={(e) => updateVacation(i, "start_time", e.target.value)}
+                className="flex-1"
+              />
+              <span className="shrink-0 text-muted-foreground text-sm">→</span>
+              <Input
+                type="time"
+                value={vac.end_time}
+                onChange={(e) => updateVacation(i, "end_time", e.target.value)}
+                className="flex-1"
+              />
+            </div>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={addVacation}
+          className="flex items-center justify-center gap-2 rounded-lg border-2 border-dashed py-2.5 text-muted-foreground text-sm transition-colors hover:bg-muted/50"
+        >
+          <Plus className="size-4" />
+          Ajouter une vacation
+        </button>
+      </div>
+    );
+
     return (
       <>
+        {/* Contract type */}
         <div className="flex flex-col gap-2">
           <p className="font-medium text-sm">Type de contrat *</p>
           <div className="flex flex-wrap gap-2">
@@ -605,7 +660,10 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
               <button
                 key={type}
                 type="button"
-                onClick={() => update("contract_type", type)}
+                onClick={() => {
+                  update("contract_type", type);
+                  if (type === "CDD Vacations") update("schedule_known", true);
+                }}
                 className={`rounded-full border-2 px-5 py-2 font-semibold text-sm transition-colors ${
                   form.contract_type === type
                     ? "border-primary bg-primary text-primary-foreground"
@@ -618,33 +676,65 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
           </div>
         </div>
 
-        {form.contract_type === "CDD" && (
+        {/* Reason code for CDD / CDD Vacations */}
+        {isCdd && (
           <div className="flex flex-col gap-2">
             <p className="font-medium text-sm">Motif de recours *</p>
+            <div className="flex flex-col gap-1.5 overflow-hidden rounded-lg border">
+              {CDD_REASON_CODES.map(({ value, label }) => {
+                const selected = form.cdd_reason_code === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => update("cdd_reason_code", value)}
+                    className={`flex items-center justify-between border-b px-4 py-3 text-left text-sm transition-colors last:border-0 ${
+                      selected ? "bg-primary/10 font-semibold text-primary" : "hover:bg-muted"
+                    }`}
+                  >
+                    <span>{label}</span>
+                    {selected && <CheckCircle className="size-4 shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
             <Textarea
-              placeholder="Ex : Remplacement d'un salarié absent, accroissement temporaire d'activité..."
+              placeholder="Précisions optionnelles (ex : remplacement de M. Dupont en congé maladie…)"
               value={form.contract_reason}
               onChange={(e) => update("contract_reason", e.target.value)}
-              rows={3}
+              rows={2}
             />
           </div>
         )}
 
-        <div className="flex flex-col gap-2">
-          <p className="font-medium text-sm">Date de début *</p>
-          <DatePicker value={form.start_date} onChange={(d) => update("start_date", d)} />
-        </div>
+        {/* Info banner for CDD classique */}
+        {form.contract_type === "CDD" && (
+          <div className="flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-primary text-sm">
+            <span className="mt-0.5 shrink-0">ℹ️</span>
+            <span>
+              Le CDD classique est réservé aux missions d'au moins 1 mois. Pour une mission courte ou ponctuelle,
+              utilisez le <strong>CDD Vacations</strong>.
+            </span>
+          </div>
+        )}
 
-        {form.contract_type !== "CDI" && (
+        {/* Start date (hidden for CDD Vacations) */}
+        {!isCddVacations && (
           <div className="flex flex-col gap-2">
-            <p className="font-medium text-sm">
-              Date de fin
-              {form.contract_type === "CDD" ? " *" : ""}
-            </p>
+            <p className="font-medium text-sm">Date de début *</p>
+            <DatePicker value={form.start_date} onChange={(d) => update("start_date", d)} />
+          </div>
+        )}
+
+        {/* End date (CDD only) */}
+        {form.contract_type === "CDD" && (
+          <div className="flex flex-col gap-2">
+            <p className="font-medium text-sm">Date de fin *</p>
             <DatePicker value={form.end_date} onChange={(d) => update("end_date", d)} />
           </div>
         )}
 
+        {/* Hours */}
         <div className="flex flex-col gap-2">
           <p className="font-medium text-sm">
             {form.contract_type === "CDI" ? "Heures mensuelles *" : "Heures totales *"}
@@ -658,89 +748,55 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
           />
         </div>
 
-        <div className="flex flex-col gap-3 rounded-lg border p-4">
-          <div className="flex items-center justify-between">
-            <p className="font-medium text-sm">Planning connu ?</p>
-            <Switch checked={form.schedule_known} onCheckedChange={(v) => update("schedule_known", v)} />
+        {/* Schedule / Vacations */}
+        {isCddVacations ? (
+          <div className="flex flex-col gap-3 rounded-lg border p-4">
+            <p className="font-semibold text-sm">Vacations</p>
+            {vacationsList}
           </div>
+        ) : (
+          <div className="flex flex-col gap-3 rounded-lg border p-4">
+            <div className="flex items-center justify-between">
+              <p className="font-medium text-sm">Planning connu ?</p>
+              <Switch checked={form.schedule_known} onCheckedChange={(v) => update("schedule_known", v)} />
+            </div>
 
-          {form.schedule_known && form.contract_type === "CDI" && (
-            <div className="mt-1 flex flex-col gap-3">
-              {WEEK_DAYS_LIST.map((day) => (
-                <div key={day} className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    <span className="w-24 font-medium text-sm">{day}</span>
-                    <Switch
-                      checked={form.week_schedule[day].enabled}
-                      onCheckedChange={(v) => updateWeekDay(day, "enabled", v)}
-                    />
-                  </div>
-                  {form.week_schedule[day].enabled && (
-                    <div className="ml-4 flex items-center gap-2">
-                      <Input
-                        type="time"
-                        value={form.week_schedule[day].start}
-                        onChange={(e) => updateWeekDay(day, "start", e.target.value)}
-                        className="flex-1"
-                      />
-                      <span className="shrink-0 text-muted-foreground text-sm">→</span>
-                      <Input
-                        type="time"
-                        value={form.week_schedule[day].end}
-                        onChange={(e) => updateWeekDay(day, "end", e.target.value)}
-                        className="flex-1"
+            {form.schedule_known && form.contract_type === "CDI" && (
+              <div className="mt-1 flex flex-col gap-3">
+                {WEEK_DAYS_LIST.map((day) => (
+                  <div key={day} className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="w-24 font-medium text-sm">{day}</span>
+                      <Switch
+                        checked={form.week_schedule[day].enabled}
+                        onCheckedChange={(v) => updateWeekDay(day, "enabled", v)}
                       />
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+                    {form.week_schedule[day].enabled && (
+                      <div className="ml-4 flex items-center gap-2">
+                        <Input
+                          type="time"
+                          value={form.week_schedule[day].start}
+                          onChange={(e) => updateWeekDay(day, "start", e.target.value)}
+                          className="flex-1"
+                        />
+                        <span className="shrink-0 text-muted-foreground text-sm">→</span>
+                        <Input
+                          type="time"
+                          value={form.week_schedule[day].end}
+                          onChange={(e) => updateWeekDay(day, "end", e.target.value)}
+                          className="flex-1"
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
 
-          {form.schedule_known && form.contract_type !== "CDI" && (
-            <div className="mt-1 flex flex-col gap-3">
-              {form.vacations.map((vac, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: vacation list has no stable id
-                <div key={i} className="flex flex-col gap-2 rounded-lg border p-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-muted-foreground text-xs">Vacation {i + 1}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeVacation(i)}
-                      className="text-destructive hover:opacity-70"
-                    >
-                      <Trash2 className="size-4" />
-                    </button>
-                  </div>
-                  <DatePicker value={vac.date} onChange={(d) => updateVacation(i, "date", d)} />
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="time"
-                      value={vac.start_time}
-                      onChange={(e) => updateVacation(i, "start_time", e.target.value)}
-                      className="flex-1"
-                    />
-                    <span className="shrink-0 text-muted-foreground text-sm">→</span>
-                    <Input
-                      type="time"
-                      value={vac.end_time}
-                      onChange={(e) => updateVacation(i, "end_time", e.target.value)}
-                      className="flex-1"
-                    />
-                  </div>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={addVacation}
-                className="flex items-center justify-center gap-2 rounded-lg border-2 border-dashed py-2.5 text-muted-foreground text-sm transition-colors hover:bg-muted/50"
-              >
-                <Plus className="size-4" />
-                Ajouter une vacation
-              </button>
-            </div>
-          )}
-        </div>
+            {form.schedule_known && form.contract_type === "CDD" && <div className="mt-1">{vacationsList}</div>}
+          </div>
+        )}
       </>
     );
   }
@@ -1165,10 +1221,19 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
 
         <SummarySection title="Contrat">
           <SummaryRow label="Type" value={form.contract_type} />
-          {form.contract_reason && <SummaryRow label="Motif" value={form.contract_reason} />}
-          <SummaryRow label="Début" value={fmtDate(form.start_date)} />
-          {form.contract_type !== "CDI" && <SummaryRow label="Fin" value={fmtDate(form.end_date)} />}
+          {form.cdd_reason_code && (
+            <SummaryRow
+              label="Motif"
+              value={CDD_REASON_CODES.find((r) => r.value === form.cdd_reason_code)?.label ?? form.cdd_reason_code}
+            />
+          )}
+          {form.contract_reason && <SummaryRow label="Précisions" value={form.contract_reason} />}
+          {form.contract_type !== "CDD Vacations" && <SummaryRow label="Début" value={fmtDate(form.start_date)} />}
+          {form.contract_type === "CDD" && <SummaryRow label="Fin" value={fmtDate(form.end_date)} />}
           <SummaryRow label="Heures" value={form.total_hours ? `${form.total_hours}h` : null} />
+          {form.contract_type === "CDD Vacations" && form.vacations.length > 0 && (
+            <SummaryRow label="Vacations" value={`${form.vacations.length} vacation(s)`} />
+          )}
         </SummarySection>
 
         <SummarySection title="Poste & Lieu">
@@ -2162,12 +2227,38 @@ export default function MyApplicationsPage() {
   async function confirmSelect() {
     if (!selectTarget) return;
     await updateStatus(selectTarget.id, "selected");
+    const candidateId = selectTarget.profiles?.id;
+    if (candidateId && companyId) {
+      await supabase.from("notifications").insert({
+        actor_id: companyId,
+        recipient_id: candidateId,
+        type: "application_selected",
+        title: selectTarget.jobs?.title ?? "Candidature",
+        entity_type: "application",
+        entity_id: selectTarget.id,
+        body: "Le recruteur souhaite poursuivre avec vous.",
+        is_read: false,
+      });
+    }
     setSelectTarget(null);
   }
 
   async function confirmReject() {
     if (!rejectTarget) return;
     await updateStatus(rejectTarget.id, "rejected");
+    const candidateId = rejectTarget.profiles?.id;
+    if (candidateId && companyId) {
+      await supabase.from("notifications").insert({
+        actor_id: companyId,
+        recipient_id: candidateId,
+        type: "application_rejected",
+        title: "Profil refusé",
+        entity_type: "application",
+        entity_id: rejectTarget.id,
+        body: "Le recruteur a refusé votre candidature.",
+        is_read: false,
+      });
+    }
     setRejectTarget(null);
   }
 
