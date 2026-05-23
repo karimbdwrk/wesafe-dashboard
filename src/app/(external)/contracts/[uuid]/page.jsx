@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 
+import Image from "next/image";
 import { useParams } from "next/navigation";
 
-import { Check, CheckCircle2, Eye, EyeOff, FileText, Lock } from "lucide-react";
+import { CheckCircle2, Eye, EyeOff, FileText, Lock, ShieldCheck } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -36,6 +36,24 @@ function fmt2(n) {
   return n.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function fmtH(n) {
+  if (n == null) return "—";
+  return n.toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+
+function calcAmplitude(start, end) {
+  try {
+    const [sh, sm] = start.split(":").map(Number);
+    const [eh, em] = end.split(":").map(Number);
+    const diff = eh * 60 + em - (sh * 60 + sm);
+    if (!Number.isNaN(diff) && diff > 0)
+      return `${Math.floor(diff / 60)}h${diff % 60 > 0 ? String(diff % 60).padStart(2, "0") : ""}`;
+  } catch {
+    /* invalid time format — fall through */
+  }
+  return "—";
+}
+
 const DAY_FR = {
   Lundi: "Lundi",
   Mardi: "Mardi",
@@ -52,18 +70,18 @@ function Section({ number, title, children }) {
   return (
     <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
       <div className="flex items-center gap-3 border-b bg-muted/50 px-5 py-3">
-        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground text-xs">
+        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#1B3A6B] font-bold text-white text-xs">
           {number}
         </div>
         <p className="font-bold text-foreground text-xs uppercase tracking-widest">{title}</p>
       </div>
-      <div className="space-y-2.5 px-5 py-4">{children}</div>
+      <div className="space-y-3 px-5 py-4">{children}</div>
     </div>
   );
 }
 
 function DataRow({ label, value }) {
-  if (!value && value !== 0) return null;
+  if (value == null || value === "") return null;
   return (
     <div className="flex gap-4 border-border/50 border-b py-1.5 last:border-0">
       <span className="w-2/5 shrink-0 text-muted-foreground text-xs leading-snug">{label}</span>
@@ -78,13 +96,72 @@ function LegalText({ children }) {
 
 function InfoBox({ children, variant }) {
   const base = "rounded-lg border px-4 py-3 text-sm leading-relaxed";
-  if (variant === "danger") return <div className={`${base} border-destructive/20 bg-destructive/5`}>{children}</div>;
-  return <div className={`${base} bg-muted/50`}>{children}</div>;
+  if (variant === "danger")
+    return <div className={`${base} border-destructive/20 bg-destructive/5 text-destructive/80`}>{children}</div>;
+  if (variant === "warning")
+    return (
+      <div
+        className={`${base} border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/20 dark:text-amber-300`}
+      >
+        {children}
+      </div>
+    );
+  return <div className={`${base} border-border bg-muted/50`}>{children}</div>;
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+function PartyCard({ role, name, rows, accent }) {
+  return (
+    <div
+      className={`rounded-xl border bg-card p-4 ${accent ? "border-t-[3px] border-t-[#1B3A6B]" : "border-t-[3px] border-t-amber-500"}`}
+    >
+      <p className="mb-3 font-semibold text-muted-foreground text-[10px] uppercase tracking-widest">{role}</p>
+      <p className="mb-3 font-bold text-base">{name}</p>
+      <div className="space-y-0">{rows}</div>
+    </div>
+  );
+}
 
-// ─── Helpers auth ─────────────────────────────────────────────────────────────
+function SigBlock({ role, name, sub, signed, signedAt, sigUrl, stampUrl, mention }) {
+  return (
+    <div className="rounded-xl border bg-card p-4 space-y-3">
+      <p className="font-semibold text-muted-foreground text-[10px] uppercase tracking-widest">{role}</p>
+      <p className="font-bold text-sm">{name}</p>
+      {sub && <p className="text-muted-foreground text-xs">{sub}</p>}
+      <div className="relative flex min-h-[72px] items-center justify-center overflow-hidden rounded-lg border border-dashed bg-muted/20">
+        {stampUrl && (
+          <Image
+            src={stampUrl}
+            alt="Tampon"
+            width={64}
+            height={64}
+            className="absolute inset-0 m-auto h-16 w-16 object-contain opacity-20 pointer-events-none"
+          />
+        )}
+        {sigUrl ? (
+          <Image
+            src={sigUrl}
+            alt="Signature"
+            width={160}
+            height={56}
+            className="relative z-10 max-h-14 max-w-40 object-contain"
+          />
+        ) : signed ? (
+          <div className="space-y-1 text-center">
+            <CheckCircle2 className="mx-auto h-6 w-6 text-green-500" />
+            <p className="font-medium text-green-600 text-xs">Signé numériquement</p>
+          </div>
+        ) : (
+          <p className="text-muted-foreground text-xs italic">Signature à apposer</p>
+        )}
+      </div>
+      {signed && signedAt && <p className="text-green-600 text-xs">✓ Signé le {fr(signedAt)}</p>}
+      {!signed && <p className="text-muted-foreground text-xs italic">Date et lieu : ________________________</p>}
+      {mention && <p className="text-muted-foreground text-[10px] italic">{mention}</p>}
+    </div>
+  );
+}
+
+// ─── Auth helpers ─────────────────────────────────────────────────────────────
 
 async function isSuperAdmin(uid) {
   const { data } = await supabase.from("admins").select("role").eq("id", uid).maybeSingle();
@@ -132,8 +209,8 @@ function LoginDialog({ open, contractData, onSuccess }) {
     <Dialog open={open}>
       <DialogContent className="sm:max-w-sm" onPointerDownOutside={(e) => e.preventDefault()}>
         <DialogHeader>
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-            <Lock className="h-5 w-5 text-primary" />
+          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-[#1B3A6B]/10">
+            <Lock className="h-5 w-5 text-[#1B3A6B]" />
           </div>
           <DialogTitle className="text-center">Accès restreint</DialogTitle>
           <DialogDescription className="text-center">
@@ -180,7 +257,7 @@ function LoginDialog({ open, contractData, onSuccess }) {
             </div>
           </div>
           {error && <p className="text-destructive text-xs">{error}</p>}
-          <Button type="submit" className="w-full" disabled={submitting}>
+          <Button type="submit" className="w-full bg-[#1B3A6B] hover:bg-[#1B3A6B]/90" disabled={submitting}>
             {submitting ? "Connexion…" : "Se connecter"}
           </Button>
         </form>
@@ -191,37 +268,31 @@ function LoginDialog({ open, contractData, onSuccess }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-// authState: "loading" | "unauthenticated" | "unauthorized" | "authorized"
-
 export default function ContractPage() {
   const { uuid } = useParams();
   const [contract, setContract] = useState(null);
   const [notFound, setNotFound] = useState(false);
   const [authState, setAuthState] = useState("loading");
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: uuid is the only meaningful dependency here
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional — only re-run when uuid changes
   useEffect(() => {
     if (!uuid) return;
-
     (async () => {
       const [{ data: contractData, error: contractError }, { data: authData }] = await Promise.all([
         supabase.from("contracts").select("*, companies(*), profiles(*)").eq("id", uuid).single(),
         supabase.auth.getUser(),
       ]);
-
       if (contractError || !contractData) {
         setNotFound(true);
         setAuthState("authorized");
         return;
       }
       setContract(contractData);
-
       const user = authData?.user;
       if (!user) {
         setAuthState("unauthenticated");
         return;
       }
-
       const allowed = isContractParty(user.id, contractData) || (await isSuperAdmin(user.id));
       setAuthState(allowed ? "authorized" : "unauthorized");
     })();
@@ -230,7 +301,7 @@ export default function ContractPage() {
   if (authState === "loading") {
     return (
       <div className="flex min-h-dvh items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#1B3A6B] border-t-transparent" />
       </div>
     );
   }
@@ -238,7 +309,7 @@ export default function ContractPage() {
   if (notFound) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-3 px-4 text-center">
-        <p className="text-4xl">📄</p>
+        <FileText className="h-12 w-12 text-muted-foreground/30" />
         <h1 className="font-semibold text-xl">Contrat introuvable</h1>
         <p className="text-muted-foreground text-sm">Ce contrat n&apos;existe pas ou a été supprimé.</p>
       </div>
@@ -269,16 +340,50 @@ export default function ContractPage() {
   const vacs = sched.vacations || [];
   const schedKnown = sched.schedule_known || false;
   const isCDD = contract.contract_type === "CDD";
+  const isVacations = isCDD && vacs.length > 0;
   const wLocType = contract.work_location_type || "single";
 
+  // Identité des parties
+  const legalRepName =
+    [dc?.legal_representative_firstname, dc?.legal_representative_lastname].filter(Boolean).join(" ") ||
+    dc?.legal_representative ||
+    "—";
+  const legalRepRole = dc?.legal_representative_role || "Dirigeant";
+  const compAddr =
+    [dc?.street, [dc?.postcode, dc?.city].filter(Boolean).join(" ")].filter(Boolean).join(", ") || dc?.address || "—";
+  const candAddr =
+    [dd?.street, [dd?.postcode, dd?.city].filter(Boolean).join(" ")].filter(Boolean).join(", ") || dd?.address || "—";
+  const candidateName = `${dd?.firstname || ""} ${dd?.lastname || ""}`.trim() || "—";
+  const candidateBirthday = dd?.birthday || dd?.birth_date;
+
+  // Rémunération
   const monthlyHours = contract.total_hours ? parseFloat(contract.total_hours) : 151.67;
   const hourlyRate = contract.hourly_rate ? parseFloat(contract.hourly_rate) : null;
   const monthlySalary = hourlyRate != null ? Math.round(monthlyHours * hourlyRate * 100) / 100 : null;
+
+  // Vacations totals
+  const vacTotals = (() => {
+    let totalMin = 0;
+    for (const v of vacs) {
+      try {
+        const [sh, sm] = v.start_time.split(":").map(Number);
+        const [eh, em] = v.end_time.split(":").map(Number);
+        const diff = eh * 60 + em - (sh * 60 + sm);
+        if (!Number.isNaN(diff) && diff > 0) totalMin += diff;
+      } catch {
+        /* invalid time format — skip vacation */
+      }
+    }
+    const h = Math.floor(totalMin / 60);
+    const m = totalMin % 60;
+    return { label: `${h}h${m > 0 ? String(m).padStart(2, "0") : ""}`, hours: h + m / 60 };
+  })();
+
+  // Contrat
+  const collective = contract.collective_agreement || "CCN Sécurité privée — IDCC 1351";
   const ref = (contract.apply_id || contract.id || "").substring(0, 8).toUpperCase() || "—";
-  const candidateName = `${dd?.firstname || ""} ${dd?.lastname || ""}`.trim() || "—";
 
-  const enabledDays = Object.entries(ws).filter(([, v]) => v?.enabled);
-
+  // Signature status
   const sigStatus =
     contract.isSigned && contract.isProSigned
       ? "Signé par les deux parties"
@@ -288,9 +393,27 @@ export default function ContractPage() {
           ? "Signé par l'entreprise"
           : "En attente de signature";
 
-  // Dynamic article counter — incremented only when a section is rendered
+  // Signature images — live records (not snapshot)
+  const companySigUrl = contract.companies?.signature_url || dc?.signature_url;
+  const companyStampUrl = contract.companies?.stamp_url || dc?.stamp_url;
+  const candidateSigUrl = contract.profiles?.signature_url || dd?.signature_url;
+
+  // Horaires
+  const enabledDays = Object.entries(ws).filter(([, v]) => v?.enabled);
+
+  // Majorations
+  const hasBonuses = contract.is_night || contract.is_sunday || contract.is_holiday;
+
+  // Article counter
   let n = 0;
   const nn = () => ++n;
+
+  // Contract subtitle
+  const contractSubtitle = isVacations
+    ? "CDD Vacations – Contrat à durée déterminée"
+    : isCDD
+      ? "CDD – Contrat à durée déterminée"
+      : "CDI – Contrat à durée indéterminée";
 
   return (
     <>
@@ -300,105 +423,108 @@ export default function ContractPage() {
         onSuccess={() => setAuthState("authorized")}
       />
       <div
-        className={`min-h-dvh bg-muted/30 px-4 pt-24 pb-10 transition-[filter] duration-300 ${authState === "unauthenticated" ? "pointer-events-none select-none blur-sm" : ""}`}
+        className={`min-h-dvh bg-muted/30 px-4 pt-20 pb-10 transition-[filter] duration-300 ${authState === "unauthenticated" ? "pointer-events-none select-none blur-sm" : ""}`}
       >
         <div className="mx-auto max-w-2xl space-y-5">
-          {/* ── Document header ──────────────────────────────────────────── */}
+          {/* ── Header ───────────────────────────────────────────────────── */}
           <div className="overflow-hidden rounded-2xl border shadow-sm">
             <div className="bg-[#1B3A6B] p-6 text-white">
               <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="space-y-2">
-                  <p className="font-medium text-white/60 text-xs uppercase tracking-widest">
-                    {isCDD ? "CDD – Contrat à durée déterminée" : "CDI – Contrat à durée indéterminée"}
+                <div className="space-y-1.5">
+                  <p className="font-semibold text-white/60 text-[10px] uppercase tracking-widest">
+                    {contractSubtitle}
                   </p>
                   <h1 className="font-bold text-2xl tracking-tight">Contrat de travail</h1>
                   <div className="flex flex-wrap items-center gap-2 pt-1">
-                    <span className="inline-block rounded-full border border-white/25 bg-white/15 px-3 py-0.5 text-xs">
+                    <span className="inline-block rounded-full border border-white/25 bg-white/15 px-3 py-0.5 font-medium text-xs">
                       Réf. {ref}
                     </span>
-                    <Badge
-                      variant={contract.isSigned && contract.isProSigned ? "default" : "secondary"}
-                      className="text-xs"
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-3 py-0.5 font-medium text-xs ${contract.isSigned && contract.isProSigned ? "bg-green-500/20 text-green-200" : "bg-white/10 text-white/70"}`}
                     >
+                      {contract.isSigned && contract.isProSigned && <CheckCircle2 className="h-3 w-3" />}
                       {sigStatus}
-                    </Badge>
+                    </span>
                   </div>
                 </div>
-                <FileText className="h-10 w-10 shrink-0 text-white/30" />
+                <FileText className="h-10 w-10 shrink-0 text-white/25" />
               </div>
             </div>
             {/* Quick facts */}
-            <div className="grid grid-cols-2 gap-3 bg-card p-4 sm:grid-cols-4">
-              {contract.start_date && (
-                <div>
-                  <p className="text-muted-foreground text-xs">Début</p>
-                  <p className="font-semibold text-sm">{fr(contract.start_date)}</p>
-                </div>
-              )}
-              {isCDD && contract.end_date && (
-                <div>
-                  <p className="text-muted-foreground text-xs">Fin</p>
-                  <p className="font-semibold text-sm">{fr(contract.end_date)}</p>
-                </div>
-              )}
-              {contract.total_hours && (
-                <div>
-                  <p className="text-muted-foreground text-xs">Heures / mois</p>
-                  <p className="font-semibold text-sm">{fmt2(monthlyHours)} h</p>
-                </div>
-              )}
-              {contract.job_title && (
-                <div>
-                  <p className="text-muted-foreground text-xs">Poste</p>
-                  <p className="truncate font-semibold text-sm">{contract.job_title}</p>
-                </div>
-              )}
+            <div className="grid grid-cols-2 gap-px bg-border sm:grid-cols-4">
+              {[
+                contract.start_date && { label: "Début", value: fr(contract.start_date) },
+                isCDD && contract.end_date && { label: "Fin", value: fr(contract.end_date) },
+                contract.total_hours && { label: "Heures / mois", value: `${fmtH(monthlyHours)} h` },
+                contract.job_title && { label: "Poste", value: contract.job_title },
+              ]
+                .filter(Boolean)
+                .map(({ label, value }) => (
+                  <div key={label} className="bg-card px-4 py-3">
+                    <p className="text-muted-foreground text-[10px]">{label}</p>
+                    <p className="mt-0.5 truncate font-semibold text-sm">{value}</p>
+                  </div>
+                ))}
             </div>
           </div>
 
-          {/* ── Art 1 – Parties ──────────────────────────────────────────── */}
+          {/* ── Art – Parties ────────────────────────────────────────────── */}
           <Section number={nn()} title="Parties au contrat">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-1">
-                <p className="mb-2 border-b pb-1.5 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-                  L&apos;Employeur
-                </p>
-                <DataRow label="Raison sociale" value={dc?.name} />
-                <DataRow label="SIRET" value={dc?.siret ? formatSiret(dc.siret) : null} />
-                <DataRow
-                  label="Adresse"
-                  value={
-                    dc?.street || dc?.postcode || dc?.city
-                      ? [dc.street, dc.postcode, dc.city].filter(Boolean).join(", ")
-                      : dc?.address || null
-                  }
-                />
-                <DataRow label="Représentant légal" value={dc?.legal_representative} />
-                <DataRow label="Qualité" value={dc?.legal_representative_role} />
-                <DataRow label="Code NAF" value={dc?.naf_code} />
-              </div>
-              <div className="space-y-1">
-                <p className="mb-2 border-b pb-1.5 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-                  Le Salarié
-                </p>
-                <DataRow label="Nom et prénom" value={candidateName} />
-                <DataRow label="Date de naissance" value={dd?.birth_date ? fr(dd.birth_date) : null} />
-                <DataRow label="Lieu de naissance" value={dd?.birth_place} />
-                <DataRow label="Nationalité" value={dd?.nationality} />
-                <DataRow label="N° Sécurité sociale" value={dd?.social_security_number} />
-                <DataRow label="Adresse" value={dd?.address} />
-              </div>
+              <PartyCard
+                name={dc?.name || "—"}
+                accent
+                rows={
+                  <>
+                    <DataRow label="Forme juridique" value={dc?.legal_form} />
+                    <DataRow label="SIRET" value={dc?.siret ? formatSiret(dc.siret) : null} />
+                    <DataRow label="Code NAF / APE" value={dc?.naf_code} />
+                    <DataRow label="Siège social" value={compAddr} />
+                    <DataRow label="Représentant légal" value={legalRepName} />
+                    <DataRow label="Qualité" value={legalRepRole} />
+                  </>
+                }
+              />
+              <PartyCard
+                name={candidateName}
+                rows={
+                  <>
+                    <DataRow label="Date de naissance" value={candidateBirthday ? fr(candidateBirthday) : null} />
+                    <DataRow label="Lieu de naissance" value={dd?.birth_place} />
+                    <DataRow label="Nationalité" value={dd?.nationality} />
+                    <DataRow label="N° Sécurité sociale" value={dd?.social_security_number} />
+                    <DataRow label="Adresse" value={candAddr} />
+                  </>
+                }
+              />
             </div>
           </Section>
 
-          {/* ── Art 2 – Engagement ───────────────────────────────────────── */}
-          <Section number={nn()} title="Engagement et nature du poste">
+          {/* ── Art – Engagement ─────────────────────────────────────────── */}
+          <Section number={nn()} title="Engagement et nature du contrat">
             <DataRow
               label="Type de contrat"
-              value={isCDD ? "Contrat à Durée Déterminée (CDD)" : "Contrat à Durée Indéterminée (CDI)"}
+              value={
+                isVacations
+                  ? "CDD Vacations"
+                  : isCDD
+                    ? "Contrat à Durée Déterminée (CDD)"
+                    : "Contrat à Durée Indéterminée (CDI)"
+              }
             />
             <DataRow label="Intitulé du poste" value={contract.job_title} />
             <DataRow label="Classification" value={contract.category} />
+            <DataRow label="Convention collective" value={collective} />
+            <DataRow label="Code IDCC" value="1351" />
+            <DataRow label="Date de prise d'effet" value={fr(contract.start_date)} />
+            {contract.cnaps_required && (
+              <div className="flex items-center gap-2 rounded-lg border border-[#1B3A6B]/20 bg-[#1B3A6B]/5 px-3 py-2">
+                <ShieldCheck className="h-4 w-4 shrink-0 text-[#1B3A6B]" />
+                <span className="font-medium text-[#1B3A6B] text-xs">
+                  Carte professionnelle CNAPS requise pour ce poste
+                </span>
+              </div>
+            )}
             {contract.job_description && (
               <InfoBox>
                 <p className="mb-1 font-medium text-muted-foreground text-xs">Description de la mission</p>
@@ -407,29 +533,23 @@ export default function ContractPage() {
             )}
             {isCDD && contract.contract_reason && (
               <InfoBox variant="danger">
-                <p className="mb-1 font-medium text-muted-foreground text-xs">
-                  Motif de recours au CDD (art. L. 1242-2 C. trav.)
-                </p>
-                {contract.contract_reason}
+                <p className="mb-1 font-medium text-xs">Motif de recours au CDD (art. L. 1242-2 C. trav.)</p>
+                <p>{contract.contract_reason}</p>
+                {contract.cdd_reason_code && (
+                  <p className="mt-1 text-xs opacity-70">Code : {contract.cdd_reason_code}</p>
+                )}
               </InfoBox>
             )}
-          </Section>
-
-          {/* ── Art 3 – Durée ────────────────────────────────────────────── */}
-          <Section number={nn()} title="Durée et date de prise de poste">
-            <DataRow label="Date de début" value={fr(contract.start_date)} />
             {isCDD && (
-              <DataRow label="Date de fin" value={contract.end_date ? fr(contract.end_date) : "Sans terme précis"} />
+              <LegalText>
+                {isVacations
+                  ? "Le présent contrat est conclu sous la forme CDD Vacations pour l'accomplissement de missions ponctuelles. À l'issue, le salarié percevra une indemnité de fin de contrat égale à 10 % de la rémunération totale brute (art. L. 1243-8 C. trav.)."
+                  : "À l'issue du présent contrat, le salarié percevra une indemnité de fin de contrat égale à 10 % de la rémunération totale brute (art. L. 1243-8 C. trav.), sauf renouvellement ou embauche en CDI."}
+              </LegalText>
             )}
-            <DataRow label="Volume horaire mensuel" value={`${fmt2(monthlyHours)} h / mois`} />
-            <LegalText>
-              {isCDD
-                ? "À l'issue du présent contrat, le salarié percevra une indemnité de fin de contrat égale à 10 % de la rémunération totale brute (art. L. 1243-8 C. trav.), sauf renouvellement ou embauche en CDI."
-                : "Le présent contrat est conclu pour une durée indéterminée. Il pourra être rompu dans les conditions prévues par le Code du travail (démission, licenciement, rupture conventionnelle)."}
-            </LegalText>
           </Section>
 
-          {/* ── Art 4 – Période d'essai (conditional) ───────────────────── */}
+          {/* ── Art – Période d'essai (conditional) ─────────────────────── */}
           {contract.trial_period && (
             <Section number={nn()} title="Période d'essai">
               <p className="text-sm leading-relaxed">
@@ -461,16 +581,64 @@ export default function ContractPage() {
             )}
             <LegalText>
               {wLocType === "multiple"
-                ? "Le salarié est amené à intervenir sur les différents sites listés ci-dessus. Ce déplacement entre sites ne constitue pas une modification du contrat de travail."
+                ? "Le salarié est amené à intervenir sur les différents sites listés ci-dessus. Ce déplacement ne constitue pas une modification du contrat de travail."
                 : wLocType === "zone"
                   ? "Le salarié est susceptible d'exercer ses fonctions dans l'ensemble de la zone géographique définie ci-dessus."
-                  : "Le lieu de travail habituel est défini ci-dessus. Toute modification substantielle de ce lieu constituerait une modification du contrat de travail nécessitant l'accord du salarié."}
+                  : "Le lieu de travail habituel est défini ci-dessus. Toute modification substantielle nécessiterait l'accord du salarié."}
             </LegalText>
           </Section>
 
-          {/* ── Art – Horaires ───────────────────────────────────────────── */}
+          {/* ── Art – Durée du travail ───────────────────────────────────── */}
           <Section number={nn()} title="Durée du travail et horaires">
-            {schedKnown && (enabledDays.length > 0 || vacs.length > 0) ? (
+            {isVacations ? (
+              <>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: "Nb de vacations", value: String(vacs.length) },
+                    { label: "Volume horaire total", value: vacTotals.label },
+                    { label: "Première vacation", value: vacs.length > 0 ? fr(vacs[0].date) : "—" },
+                  ].map(({ label, value }) => (
+                    <div key={label} className="rounded-lg border bg-muted/30 px-3 py-2.5 text-center">
+                      <p className="font-bold text-base">{value}</p>
+                      <p className="text-muted-foreground text-[10px] mt-0.5">{label}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="overflow-hidden rounded-lg border">
+                  <table className="w-full text-sm">
+                    <thead className="bg-[#1B3A6B] text-white text-xs">
+                      <tr>
+                        <th className="px-4 py-2.5 text-left font-medium">Date</th>
+                        <th className="px-4 py-2.5 text-left font-medium">Début</th>
+                        <th className="px-4 py-2.5 text-left font-medium">Fin</th>
+                        <th className="px-4 py-2.5 text-left font-medium">Durée</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {vacs.map((v, i) => (
+                        // biome-ignore lint/suspicious/noArrayIndexKey: no stable id
+                        <tr key={i} className={i % 2 !== 0 ? "bg-muted/30" : ""}>
+                          <td className="px-4 py-2">{fr(v.date)}</td>
+                          <td className="px-4 py-2">{v.start_time}</td>
+                          <td className="px-4 py-2">{v.end_time}</td>
+                          <td className="px-4 py-2 text-muted-foreground">{calcAmplitude(v.start_time, v.end_time)}</td>
+                        </tr>
+                      ))}
+                      <tr className="bg-[#1B3A6B]/5 font-semibold text-[#1B3A6B]">
+                        <td className="px-4 py-2 text-xs uppercase tracking-wide" colSpan={3}>
+                          Total
+                        </td>
+                        <td className="px-4 py-2">{vacTotals.label}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <LegalText>
+                  L&apos;employeur se réserve le droit de modifier les horaires de chaque vacation avec un délai de
+                  prévenance raisonnable, dans le respect des dispositions légales.
+                </LegalText>
+              </>
+            ) : schedKnown && enabledDays.length > 0 ? (
               <div className="overflow-hidden rounded-lg border">
                 <table className="w-full text-sm">
                   <thead className="bg-[#1B3A6B] text-white text-xs">
@@ -481,111 +649,82 @@ export default function ContractPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {enabledDays.map(([day, h], i) => {
-                      const start = h.start || "—";
-                      const end = h.end || "—";
-                      let amplitude = "—";
-                      try {
-                        const [sh, sm] = start.split(":").map(Number);
-                        const [eh, em] = end.split(":").map(Number);
-                        const diff = eh * 60 + em - (sh * 60 + sm);
-                        if (!Number.isNaN(diff) && diff > 0) {
-                          amplitude = `${Math.floor(diff / 60)}h${diff % 60 > 0 ? String(diff % 60).padStart(2, "0") : ""}`;
-                        }
-                      } catch {
-                        // ignore
-                      }
-                      return (
-                        <tr key={day} className={i % 2 === 0 ? "" : "bg-muted/30"}>
-                          <td className="px-4 py-2">{DAY_FR[day] || day}</td>
-                          <td className="px-4 py-2">
-                            {start} – {end}
-                          </td>
-                          <td className="px-4 py-2 text-muted-foreground">{amplitude}</td>
-                        </tr>
-                      );
-                    })}
-                    {vacs.length > 0 && (
-                      <>
-                        <tr className="bg-muted/60">
-                          <td
-                            colSpan={3}
-                            className="px-4 py-2 font-semibold text-[#1B3A6B] text-xs uppercase tracking-wide"
-                          >
-                            Vacations ponctuelles
-                          </td>
-                        </tr>
-                        {vacs.map((v, i) => (
-                          // biome-ignore lint/suspicious/noArrayIndexKey: vacation list has no stable id
-                          <tr key={i} className={i % 2 === 0 ? "" : "bg-muted/30"}>
-                            <td className="px-4 py-2">{fr(v.date)}</td>
-                            <td className="px-4 py-2">
-                              {v.start_time} – {v.end_time}
-                            </td>
-                            <td className="px-4 py-2 text-muted-foreground">—</td>
-                          </tr>
-                        ))}
-                      </>
-                    )}
+                    {enabledDays.map(([day, h], i) => (
+                      <tr key={day} className={i % 2 !== 0 ? "bg-muted/30" : ""}>
+                        <td className="px-4 py-2">{DAY_FR[day] || day}</td>
+                        <td className="px-4 py-2">
+                          {h.start || "—"} – {h.end || "—"}
+                        </td>
+                        <td className="px-4 py-2 text-muted-foreground">{calcAmplitude(h.start || "", h.end || "")}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
             ) : (
               <LegalText>
-                Le volume horaire mensuel de travail est fixé à {fmt2(monthlyHours)} heures par mois, réparties selon
-                les horaires en vigueur dans l&apos;entreprise. Les horaires précis seront communiqués par
-                l&apos;employeur. Toute heure effectuée au-delà de la durée légale de 35 h/semaine constitue une heure
-                supplémentaire ouvrant droit à majoration ou compensation (art. L. 3121-28 C. trav.).
+                La durée mensuelle de travail est fixée à <strong>{fmtH(monthlyHours)} heures / mois</strong>. Les
+                horaires précis seront communiqués par l&apos;employeur. Toute heure effectuée au-delà de la durée
+                légale de 35 h/semaine constitue une heure supplémentaire ouvrant droit à majoration (art. L. 3121-28 C.
+                trav.).
               </LegalText>
             )}
-            {(contract.is_night || contract.is_sunday || contract.is_holiday) && (
+            {hasBonuses && (
               <InfoBox>
                 <p className="mb-2 font-medium text-xs">Majorations de salaire applicables</p>
-                {contract.is_night && contract.night_bonus != null && (
-                  <p>· Travail de nuit : +{contract.night_bonus} €/h</p>
-                )}
-                {contract.is_sunday && contract.sunday_bonus != null && (
-                  <p>· Travail du dimanche : +{contract.sunday_bonus} €/h</p>
-                )}
-                {contract.is_holiday && contract.holiday_bonus != null && (
-                  <p>· Jours fériés : +{contract.holiday_bonus} €/h</p>
-                )}
+                <div className="grid grid-cols-1 gap-1 sm:grid-cols-3">
+                  {contract.is_night && contract.night_bonus != null && (
+                    <div className="flex justify-between rounded bg-background px-2 py-1.5 text-xs">
+                      <span className="text-muted-foreground">Nuit</span>
+                      <span className="font-semibold">+{contract.night_bonus} €/h</span>
+                    </div>
+                  )}
+                  {contract.is_sunday && contract.sunday_bonus != null && (
+                    <div className="flex justify-between rounded bg-background px-2 py-1.5 text-xs">
+                      <span className="text-muted-foreground">Dimanche</span>
+                      <span className="font-semibold">+{contract.sunday_bonus} €/h</span>
+                    </div>
+                  )}
+                  {contract.is_holiday && contract.holiday_bonus != null && (
+                    <div className="flex justify-between rounded bg-background px-2 py-1.5 text-xs">
+                      <span className="text-muted-foreground">Jours fériés</span>
+                      <span className="font-semibold">+{contract.holiday_bonus} €/h</span>
+                    </div>
+                  )}
+                </div>
               </InfoBox>
             )}
           </Section>
 
           {/* ── Art – Rémunération ───────────────────────────────────────── */}
           <Section number={nn()} title="Rémunération">
-            <DataRow label="Taux horaire brut" value={contract.hourly_rate ? `${contract.hourly_rate} €/h` : null} />
-            <DataRow
-              label="Heures supplémentaires"
-              value={contract.overtime_rate ? `${contract.overtime_rate} €/h` : null}
-            />
-            <DataRow label="Prime de repas" value={contract.meal_bonus ? `${contract.meal_bonus} €` : null} />
-            <DataRow
-              label="Prime de transport"
-              value={contract.transport_bonus ? `${contract.transport_bonus} €` : null}
-            />
-            {monthlySalary != null && (
-              <div className="mt-1 rounded-lg border-2 border-[#1B3A6B]/20 bg-[#1B3A6B]/5 px-4 py-4">
-                <p className="mb-3 font-bold text-[#1B3A6B] text-xs uppercase tracking-widest">
-                  Salaire brut mensuel de base
-                </p>
-                <div className="space-y-1.5 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Taux horaire</span>
-                    <span className="font-medium">{fmt2(hourlyRate)} €/h</span>
+            {monthlySalary != null ? (
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: "Taux horaire brut", value: `${fmt2(hourlyRate)} €/h` },
+                  { label: "Heures mensuelles", value: `${fmtH(monthlyHours)} h` },
+                  { label: "Salaire brut / mois", value: `${fmt2(monthlySalary)} €` },
+                ].map(({ label, value }) => (
+                  <div
+                    key={label}
+                    className="rounded-xl border-2 border-[#1B3A6B]/15 bg-[#1B3A6B]/5 px-3 py-3 text-center"
+                  >
+                    <p className="font-bold text-[#1B3A6B] text-base">{value}</p>
+                    <p className="text-muted-foreground text-[10px] mt-1 leading-tight">{label}</p>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Heures mensuelles</span>
-                    <span className="font-medium">{fmt2(monthlyHours)} h</span>
-                  </div>
-                  <div className="flex justify-between border-t pt-2 font-bold text-[#1B3A6B]">
-                    <span>Salaire brut mensuel</span>
-                    <span>{fmt2(monthlySalary)} € brut</span>
-                  </div>
-                </div>
+                ))}
               </div>
+            ) : (
+              <>
+                <DataRow
+                  label="Taux horaire brut"
+                  value={contract.hourly_rate ? `${contract.hourly_rate} €/h` : null}
+                />
+                <DataRow label="Volume horaire mensuel" value={`${fmtH(monthlyHours)} h / mois`} />
+              </>
+            )}
+            {contract.overtime_rate && (
+              <DataRow label="Heures supplémentaires" value={`${contract.overtime_rate} €/h`} />
             )}
             <LegalText>
               La rémunération versée est au moins égale au SMIC en vigueur (art. L. 3231-2 C. trav.) ou au salaire
@@ -594,13 +733,33 @@ export default function ContractPage() {
             </LegalText>
           </Section>
 
+          {/* ── Art – Avantages (conditional) ───────────────────────────── */}
+          {(contract.meal_bonus || contract.transport_bonus) && (
+            <Section number={nn()} title="Avantages et primes">
+              <div className="grid grid-cols-2 gap-2">
+                {contract.meal_bonus && (
+                  <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-3 py-2.5">
+                    <span className="text-muted-foreground text-xs">Prime de repas</span>
+                    <span className="font-semibold text-sm">{contract.meal_bonus} €</span>
+                  </div>
+                )}
+                {contract.transport_bonus && (
+                  <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-3 py-2.5">
+                    <span className="text-muted-foreground text-xs">Prime de transport</span>
+                    <span className="font-semibold text-sm">{contract.transport_bonus} €</span>
+                  </div>
+                )}
+              </div>
+            </Section>
+          )}
+
           {/* ── Art – Congés payés ───────────────────────────────────────── */}
           <Section number={nn()} title="Congés payés">
             <LegalText>
               Le salarié bénéficie de 2,5 jours ouvrables de congés payés par mois de travail effectif, soit 30 jours
               ouvrables par année complète (art. L. 3141-3 C. trav.).{" "}
               {isCDD
-                ? "À l'issue du contrat, une indemnité compensatrice de congés payés égale à 10 % de la rémunération totale brute sera versée (art. L. 3141-26 C. trav.), sauf si le salarié a pu prendre ses congés."
+                ? "À l'issue du contrat, une indemnité compensatrice de congés payés égale à 10 % de la rémunération totale brute sera versée (art. L. 3141-26 C. trav.)."
                 : "Les dates de congés sont fixées par l'employeur après consultation du salarié, en respectant un délai de prévenance d'un mois."}
             </LegalText>
           </Section>
@@ -620,13 +779,12 @@ export default function ContractPage() {
             <LegalText>
               En cas d&apos;absence pour maladie ou accident dûment justifié par un certificat médical transmis dans les
               48 heures, le salarié bénéficiera du maintien de tout ou partie de sa rémunération dans les conditions
-              prévues par la convention collective et les art. L. 1226-1 et suivants du Code du travail, sous réserve
-              d&apos;ouverture des droits aux indemnités journalières de la Sécurité sociale.
+              prévues par la convention collective et les art. L. 1226-1 et suivants du Code du travail.
             </LegalText>
           </Section>
 
           {/* ── Art – Formation ──────────────────────────────────────────── */}
-          <Section number={nn()} title="Formation professionnelle et compte personnel de formation">
+          <Section number={nn()} title="Formation professionnelle et CPF">
             <LegalText>
               Le salarié bénéficie du droit à la formation professionnelle continue conformément aux art. L. 6311-1 et
               suivants du Code du travail. Il dispose d&apos;un Compte Personnel de Formation (CPF) alimenté à raison de
@@ -635,7 +793,7 @@ export default function ContractPage() {
           </Section>
 
           {/* ── Art – Obligations ────────────────────────────────────────── */}
-          <Section number={nn()} title="Obligations du salarié – Loyauté et discrétion">
+          <Section number={nn()} title="Obligations du salarié – Loyauté, discrétion et confidentialité">
             <LegalText>
               Le salarié s&apos;engage à observer une obligation de loyauté envers l&apos;employeur, à exécuter de bonne
               foi les tâches confiées et à respecter les règles internes de l&apos;entreprise. Il est tenu à une
@@ -644,15 +802,51 @@ export default function ContractPage() {
             </LegalText>
           </Section>
 
-          {/* ── Art – Rupture (CDI only) ─────────────────────────────────── */}
+          {/* ── Art – Rupture (CDI uniquement) ───────────────────────────── */}
           {!isCDD && (
             <Section number={nn()} title="Rupture du contrat de travail">
+              <div className="overflow-hidden rounded-lg border">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted/60">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Mode de rupture</th>
+                      <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Préavis</th>
+                      <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Référence</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {[
+                      ["Démission", "Selon convention collective", "Art. L. 1237-1"],
+                      ["Licenciement", "Selon ancienneté et convention", "Art. L. 1234-1"],
+                      ["Rupture conventionnelle", "15 jours (rétractation)", "Art. L. 1237-11"],
+                    ].map(([mode, preavis, ref]) => (
+                      <tr key={mode} className="odd:bg-muted/20">
+                        <td className="px-3 py-2">{mode}</td>
+                        <td className="px-3 py-2 text-muted-foreground">{preavis}</td>
+                        <td className="px-3 py-2 text-muted-foreground">{ref}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
               <LegalText>
-                Le présent contrat à durée indéterminée peut être rompu à l&apos;initiative de l&apos;une ou
-                l&apos;autre des parties dans le respect des dispositions légales et conventionnelles : démission (art.
-                L. 1237-1), licenciement (art. L. 1234-1), ou rupture conventionnelle homologuée (art. L. 1237-11 C.
-                trav.). En cas de licenciement sans faute grave, le salarié ayant au moins 8 mois d&apos;ancienneté
-                bénéficiera d&apos;une indemnité légale conformément à l&apos;art. L. 1234-9 C. trav.
+                En cas de licenciement sans faute grave, le salarié ayant au moins 8 mois d&apos;ancienneté bénéficiera
+                d&apos;une indemnité légale conformément à l&apos;art. L. 1234-9 C. trav.
+              </LegalText>
+            </Section>
+          )}
+
+          {/* ── Art – CDD rupture anticipée ──────────────────────────────── */}
+          {isCDD && (
+            <Section number={nn()} title="Rupture anticipée du contrat">
+              <InfoBox>
+                Le présent CDD ne peut être rompu avant son terme qu&apos;en cas d&apos;accord amiable écrit, faute
+                grave, force majeure, inaptitude constatée par le médecin du travail, ou embauche en CDI (art. L. 1243-1
+                C. trav.).
+              </InfoBox>
+              <LegalText>
+                Toute rupture anticipée en dehors de ces cas ouvre droit à des dommages-intérêts correspondant au
+                minimum aux salaires restant dûs jusqu&apos;au terme.
               </LegalText>
             </Section>
           )}
@@ -662,9 +856,8 @@ export default function ContractPage() {
             <Section number={nn()} title="Équipements fournis">
               <LegalText>
                 L&apos;employeur met à la disposition du salarié les équipements de protection individuelle (EPI) et les
-                équipements professionnels nécessaires à l&apos;exercice de ses fonctions, conformément aux art. L.
-                4121-1 et suivants du Code du travail. Ces équipements demeurent la propriété de l&apos;employeur et
-                devront être restitués en bon état à la fin du contrat.
+                équipements professionnels nécessaires à l&apos;exercice de ses fonctions (art. L. 4121-1 C. trav.). Ces
+                équipements demeurent la propriété de l&apos;employeur et devront être restitués en fin de contrat.
               </LegalText>
               {contract.equipment_details && (
                 <InfoBox>
@@ -696,74 +889,66 @@ export default function ContractPage() {
           {/* ── Art – Règlement intérieur ────────────────────────────────── */}
           <Section number={nn()} title="Règlement intérieur et règles applicables">
             <LegalText>
-              Le salarié déclare avoir pris connaissance du règlement intérieur de l&apos;entreprise, disponible à
-              l&apos;accueil et affiché dans les locaux, et s&apos;engage à le respecter ainsi que les consignes de
-              sécurité et les directives de l&apos;employeur.
+              Le salarié déclare avoir pris connaissance du règlement intérieur de l&apos;entreprise et s&apos;engage à
+              le respecter ainsi que les consignes de sécurité et les directives de l&apos;employeur.
             </LegalText>
           </Section>
 
           {/* ── Art – RGPD ───────────────────────────────────────────────── */}
           <Section number={nn()} title="Protection des données personnelles (RGPD)">
             <LegalText>
-              Les données personnelles du salarié sont collectées et traitées par l&apos;employeur aux fins exclusives
-              de la gestion de la relation contractuelle de travail, conformément au RGPD (UE) 2016/679 et à la loi n°
-              78-17 du 6 janvier 1978. La durée de conservation est de 5 ans après la fin du contrat. Le salarié dispose
-              d&apos;un droit d&apos;accès, de rectification, d&apos;effacement et de portabilité auprès de
-              l&apos;employeur ou de la CNIL.
+              Les données personnelles du salarié sont collectées et traitées conformément au Règlement (UE) 2016/679
+              (RGPD) et à la loi n° 78-17 du 6 janvier 1978 modifiée. La durée de conservation est de 5 ans après la fin
+              du contrat. Le salarié dispose d&apos;un droit d&apos;accès, de rectification et d&apos;effacement en
+              contactant l&apos;employeur, et peut introduire une réclamation auprès de la CNIL.
             </LegalText>
           </Section>
 
           {/* ── Signatures ───────────────────────────────────────────────── */}
-          <div className="rounded-2xl border bg-card p-6 shadow-sm">
-            <p className="mb-5 flex items-center gap-2 font-medium text-muted-foreground text-xs uppercase tracking-wider">
-              <Check className="h-3.5 w-3.5" />
-              Signatures des parties
-            </p>
-            <p className="mb-4 text-muted-foreground text-xs">
-              Fait en deux exemplaires originaux, à <strong>{dc?.city || "_______________"}</strong>, le{" "}
-              <strong>{fr(contract.signed_at_candidate || contract.signed_at_company || contract.created_at)}</strong>.
-            </p>
-            <div className="grid grid-cols-2 gap-4">
-              {/* Employer */}
-              <div className="space-y-3 rounded-xl border p-4">
-                <p className="font-medium text-muted-foreground text-xs uppercase tracking-wide">L&apos;Employeur</p>
-                <p className="font-semibold text-sm">{dc?.name || "—"}</p>
-                {dc?.legal_representative && <p className="text-muted-foreground text-xs">{dc.legal_representative}</p>}
-                <div className="flex min-h-[64px] items-center justify-center rounded-lg border border-dashed">
-                  {contract.isProSigned ? (
-                    <div className="space-y-1 text-center">
-                      <CheckCircle2 className="mx-auto h-6 w-6 text-green-500" />
-                      <p className="font-medium text-green-600 text-xs">Signé le {fr(contract.signed_at_company)}</p>
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground text-xs">Signature en attente</p>
-                  )}
-                </div>
-              </div>
-              {/* Candidate */}
-              <div className="space-y-3 rounded-xl border p-4">
-                <p className="font-medium text-muted-foreground text-xs uppercase tracking-wide">Le Salarié</p>
-                <p className="font-semibold text-sm">{candidateName}</p>
-                {dd?.birth_date && <p className="text-muted-foreground text-xs">Né(e) le {fr(dd.birth_date)}</p>}
-                <div className="flex min-h-[64px] items-center justify-center rounded-lg border border-dashed">
-                  {contract.isSigned ? (
-                    <div className="space-y-1 text-center">
-                      <CheckCircle2 className="mx-auto h-6 w-6 text-green-500" />
-                      <p className="font-medium text-green-600 text-xs">Signé le {fr(contract.signed_at_candidate)}</p>
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground text-xs">Signature en attente</p>
-                  )}
-                </div>
-              </div>
+          <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+            <div className="border-b bg-muted/50 px-5 py-3">
+              <p className="font-bold text-foreground text-xs uppercase tracking-widest">Signatures des parties</p>
             </div>
-            {isCDD && (
-              <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800 text-xs leading-relaxed dark:border-amber-800 dark:bg-amber-950/20 dark:text-amber-300">
-                <strong>Art. L. 1242-13 C. trav. :</strong> Le contrat doit être transmis au salarié dans les 2 jours
-                ouvrables suivant l&apos;embauche. L&apos;absence de signature dans ce délai peut entraîner la
-                requalification en CDI.
+            <div className="px-5 py-4 space-y-4">
+              <p className="text-muted-foreground text-xs">
+                Fait en deux exemplaires originaux, à <strong>{dc?.city || "_______________"}</strong>, le{" "}
+                <strong>{fr(contract.signed_at_candidate || contract.signed_at_company || contract.created_at)}</strong>
+                . Chaque partie reconnaît avoir reçu un exemplaire et avoir pris connaissance de l&apos;intégralité du
+                contrat.
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <SigBlock
+                  name={dc?.name || "—"}
+                  sub={[legalRepName !== "—" && legalRepName, dc?.siret && `SIRET : ${formatSiret(dc.siret)}`]
+                    .filter(Boolean)
+                    .join(" · ")}
+                  signed={!!contract.isProSigned}
+                  signedAt={contract.signed_at_company}
+                  sigUrl={companySigUrl}
+                  stampUrl={companyStampUrl}
+                />
+                <SigBlock
+                  name={candidateName}
+                  sub={[
+                    candidateBirthday && `Né(e) le ${fr(candidateBirthday)}`,
+                    dd?.social_security_number && `N° SS : ${dd.social_security_number}`,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                  signed={!!contract.isSigned}
+                  signedAt={contract.signed_at_candidate}
+                  sigUrl={candidateSigUrl}
+                  mention="Mention manuscrite : « Lu et approuvé »"
+                />
               </div>
-            )}
+              {isCDD && (
+                <InfoBox variant="warning">
+                  <strong>Art. L. 1242-13 C. trav. :</strong> Le contrat doit être transmis au salarié dans les 2 jours
+                  ouvrables suivant l&apos;embauche. L&apos;absence de signature dans ce délai peut entraîner la
+                  requalification en CDI.
+                </InfoBox>
+              )}
+            </div>
           </div>
 
           {/* ── Footer ───────────────────────────────────────────────────── */}
