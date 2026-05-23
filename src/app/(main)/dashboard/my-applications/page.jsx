@@ -5,20 +5,32 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 import {
+  Award,
   Banknote,
   CalendarClock,
+  Car,
   CheckCheck,
   CheckCircle,
   ChevronLeft,
   ChevronRight,
   Clock,
+  Dumbbell,
+  ExternalLink,
   FileCheck,
   FileText,
+  Globe,
+  GraduationCap,
+  IdCard,
+  Mail,
   MapPin,
   MessagesSquare,
+  Phone,
   Plus,
   Send,
+  Shield,
+  ShieldCheck,
   Trash2,
+  User,
   Users,
   XCircle,
 } from "lucide-react";
@@ -1893,6 +1905,355 @@ function MessagingSheet({ open, onClose, application, companyId }) {
   );
 }
 
+// ─── Candidate Profile Sheet ──────────────────────────────────────────────────
+
+const CNAPS_LABELS = {
+  SURVEILLANCE_HUMAINE: "Surveillance Humaine",
+  PROTECTION_RAPPROCHEE: "Protection Rapprochée",
+  CYNOPHILE: "Cynophile",
+  SURVEILLANCE_ELECTRONIQUE: "Surveillance Électronique",
+  TRANSPORT_FONDS: "Transport de Fonds",
+};
+const DIPLOMA_LABELS = {
+  TFP_APS: "TFP APS",
+  TFP_APR: "TFP APR",
+  BTS_MSE: "BTS Métiers de la Sécurité",
+  CQP_APS: "CQP APS",
+};
+const CERT_LABELS = {
+  SST: "Sauveteur Secouriste du Travail (SST)",
+  PSC1: "PSC1",
+  HABILITATION_ELECTRIQUE: "Habilitation Électrique",
+  CACES: "CACES",
+};
+
+function DocStatusBadge({ status, expiresAt }) {
+  const expired = expiresAt && new Date(expiresAt) < new Date();
+  if (expired)
+    return (
+      <span className="rounded-full bg-red-100 px-2 py-0.5 font-medium text-[10px] text-red-700 dark:bg-red-900/30 dark:text-red-400">
+        Expiré
+      </span>
+    );
+  if (status === "verified")
+    return (
+      <span className="rounded-full bg-emerald-100 px-2 py-0.5 font-medium text-[10px] text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+        Vérifié
+      </span>
+    );
+  if (status === "pending")
+    return (
+      <span className="rounded-full bg-amber-100 px-2 py-0.5 font-medium text-[10px] text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+        En attente
+      </span>
+    );
+  if (status === "rejected")
+    return (
+      <span className="rounded-full bg-red-100 px-2 py-0.5 font-medium text-[10px] text-red-700 dark:bg-red-900/30 dark:text-red-400">
+        Rejeté
+      </span>
+    );
+  return null;
+}
+
+function DocCard({ title, subtitle, expiresAt, status }) {
+  const expired = expiresAt && new Date(expiresAt) < new Date();
+  return (
+    <div className="flex items-start justify-between gap-2 border-t py-2.5 first:border-0">
+      <div className="min-w-0 flex-1">
+        <p className="font-semibold text-sm">{title}</p>
+        {subtitle && <p className="text-muted-foreground text-xs">{subtitle}</p>}
+        {expiresAt && (
+          <p className={`text-xs ${expired ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}`}>
+            Exp. {new Date(expiresAt).toLocaleDateString("fr-FR")}
+          </p>
+        )}
+      </div>
+      <DocStatusBadge status={status} expiresAt={expiresAt} />
+    </div>
+  );
+}
+
+function ProfileSectionHeader({ icon: Icon_, title, iconColor, iconBg }) {
+  return (
+    <div className="mb-3 flex items-center gap-2.5">
+      <div
+        className="flex size-8 shrink-0 items-center justify-center rounded-full"
+        style={{ backgroundColor: iconBg }}
+      >
+        <Icon_ className="size-4" style={{ color: iconColor }} />
+      </div>
+      <p className="font-bold text-sm">{title}</p>
+    </div>
+  );
+}
+
+function CandidateProfileSheet({ open, onClose, profile }) {
+  const [cnapsCards, setCnapsCards] = useState([]);
+  const [diplomas, setDiplomas] = useState([]);
+  const [certifications, setCertifications] = useState([]);
+  const [loadingDocs, setLoadingDocs] = useState(false);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional — fetch when sheet opens for this profile
+  useEffect(() => {
+    if (!open || !profile?.id) return;
+    setLoadingDocs(true);
+    Promise.all([
+      supabase.from("user_cnaps_cards").select("*").eq("user_id", profile.id).order("created_at", { ascending: false }),
+      supabase.from("user_diplomas").select("*").eq("user_id", profile.id).order("created_at", { ascending: false }),
+      supabase
+        .from("user_certifications")
+        .select("*")
+        .eq("user_id", profile.id)
+        .order("created_at", { ascending: false }),
+    ]).then(([cnaps, dipl, certs]) => {
+      setCnapsCards(cnaps.data ?? []);
+      setDiplomas(dipl.data ?? []);
+      setCertifications(certs.data ?? []);
+      setLoadingDocs(false);
+    });
+  }, [open, profile?.id]);
+
+  if (!profile) return null;
+
+  const fullName = `${profile.firstname ?? ""} ${profile.lastname ?? ""}`.trim() || "Candidat";
+  const calcAge = (b) => {
+    if (!b) return null;
+    const today = new Date(),
+      born = new Date(b);
+    let age = today.getFullYear() - born.getFullYear();
+    if (
+      today.getMonth() - born.getMonth() < 0 ||
+      (today.getMonth() - born.getMonth() === 0 && today.getDate() < born.getDate())
+    )
+      age--;
+    return age;
+  };
+  const age = calcAge(profile.birthday);
+  const activeCnaps = cnapsCards.filter((c) => !c.expires_at || new Date(c.expires_at) >= new Date());
+
+  return (
+    <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
+      <SheetContent side="right" className="flex w-full max-w-lg flex-col gap-0 p-0">
+        <SheetHeader className="shrink-0 border-b px-6 py-4">
+          <div className="flex items-center gap-3">
+            <Avatar className="size-10 border">
+              <AvatarImage src={profile.avatar_url} />
+              <AvatarFallback>{getInitials(profile.firstname, profile.lastname)}</AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+              <SheetTitle className="truncate font-bold text-base">{fullName}</SheetTitle>
+              {profile.category && <p className="text-muted-foreground text-xs">{profile.category}</p>}
+            </div>
+            {profile.profile_status === "verified" && (
+              <span className="rounded-full bg-emerald-100 px-2.5 py-1 font-semibold text-[11px] text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                Vérifié ✓
+              </span>
+            )}
+          </div>
+        </SheetHeader>
+
+        <div className="flex-1 overflow-y-auto">
+          <div className="flex flex-col gap-4 p-6">
+            {/* ── Identity card ── */}
+            <div className="rounded-xl border bg-card p-4">
+              <div className="flex items-start gap-4">
+                <Avatar className="size-16 rounded-xl border">
+                  <AvatarImage src={profile.avatar_url} className="rounded-xl object-cover" />
+                  <AvatarFallback className="rounded-xl text-lg">
+                    {getInitials(profile.firstname, profile.lastname)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold text-base">{fullName}</p>
+                  {profile.category && <p className="mb-2 text-muted-foreground text-xs">{profile.category}</p>}
+                  <div className="flex flex-wrap gap-1.5">
+                    {age !== null && (
+                      <span className="flex items-center gap-1 rounded-lg bg-muted px-2 py-1 text-[11px] text-muted-foreground">
+                        <User className="size-3" />
+                        {age} ans
+                      </span>
+                    )}
+                    {profile.gender && (
+                      <span className="flex items-center gap-1 rounded-lg bg-muted px-2 py-1 text-[11px] text-muted-foreground">
+                        <User className="size-3" />
+                        {profile.gender === "male" ? "Homme" : profile.gender === "female" ? "Femme" : profile.gender}
+                      </span>
+                    )}
+                    {(profile.height || profile.weight) && (
+                      <span className="flex items-center gap-1 rounded-lg bg-muted px-2 py-1 text-[11px] text-muted-foreground">
+                        <Dumbbell className="size-3" />
+                        {[profile.height && `${profile.height} cm`, profile.weight && `${profile.weight} kg`]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </span>
+                    )}
+                    {profile.former_soldier && (
+                      <span className="flex items-center gap-1 rounded-lg bg-emerald-100 px-2 py-1 text-[11px] text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                        <Shield className="size-3" />
+                        Ancien militaire
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {(profile.languages || profile.driving_licenses) && (
+                <>
+                  <div className="my-3 h-px bg-border" />
+                  <div className="flex flex-col gap-2">
+                    {profile.languages && (
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted">
+                          <Globe className="size-3.5 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-muted-foreground">Langues</p>
+                          <p className="font-medium text-sm">{profile.languages}</p>
+                        </div>
+                      </div>
+                    )}
+                    {profile.driving_licenses && (
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted">
+                          <Car className="size-3.5 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-muted-foreground">Permis de conduire</p>
+                          <p className="font-medium text-sm">{profile.driving_licenses}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* ── Contact ── */}
+            <div className="rounded-xl border bg-card p-4">
+              <ProfileSectionHeader icon={Mail} title="Contact" iconColor="#ea580c" iconBg="#ffedd5" />
+              <div className="flex flex-col gap-0">
+                {profile.email && (
+                  <a
+                    href={`mailto:${profile.email}`}
+                    className="flex items-center gap-3 border-t py-2.5 first:border-0 hover:text-primary"
+                  >
+                    <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
+                      <Mail className="size-3.5 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] text-muted-foreground">Email</p>
+                      <p className="truncate font-medium text-sm">{profile.email}</p>
+                    </div>
+                    <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" />
+                  </a>
+                )}
+                {profile.phone && (
+                  <a
+                    href={`tel:${profile.phone}`}
+                    className="flex items-center gap-3 border-t py-2.5 first:border-0 hover:text-primary"
+                  >
+                    <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
+                      <Phone className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] text-muted-foreground">Téléphone</p>
+                      <p className="font-medium text-sm">{profile.phone}</p>
+                    </div>
+                    <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" />
+                  </a>
+                )}
+                {profile.city && (
+                  <div className="flex items-center gap-3 border-t py-2.5 first:border-0">
+                    <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+                      <MapPin className="size-3.5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground">Ville</p>
+                      <p className="font-medium text-sm">{profile.city}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ── Vérifications ── */}
+            <div className="rounded-xl border bg-card p-4">
+              <ProfileSectionHeader icon={ShieldCheck} title="Vérifications" iconColor="#2563eb" iconBg="#dbeafe" />
+              <div className="flex items-center justify-between border-t py-2.5">
+                <div className="flex items-center gap-2">
+                  <IdCard className="size-4 text-muted-foreground" />
+                  <span className="text-sm">Pièce d'identité</span>
+                </div>
+                <DocStatusBadge status={profile.id_verification_status} />
+              </div>
+              <div className="flex items-center justify-between border-t py-2.5">
+                <div className="flex items-center gap-2">
+                  <FileText className="size-4 text-muted-foreground" />
+                  <span className="text-sm">Sécurité sociale</span>
+                </div>
+                <DocStatusBadge status={profile.social_security_verification_status} />
+              </div>
+            </div>
+
+            {/* ── CNAPS ── */}
+            {!loadingDocs && activeCnaps.length > 0 && (
+              <div className="rounded-xl border bg-card p-4">
+                <ProfileSectionHeader icon={Shield} title="Cartes CNAPS" iconColor="#7c3aed" iconBg="#ede9fe" />
+                {activeCnaps.map((card) => (
+                  <DocCard
+                    key={card.id}
+                    title={CNAPS_LABELS[card.type] ?? card.type}
+                    subtitle={card.number ? `N° ${card.number}` : null}
+                    expiresAt={card.expires_at}
+                    status={card.status}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* ── Diplômes ── */}
+            {!loadingDocs && diplomas.length > 0 && (
+              <div className="rounded-xl border bg-card p-4">
+                <ProfileSectionHeader icon={GraduationCap} title="Diplômes" iconColor="#0891b2" iconBg="#cffafe" />
+                {diplomas.map((d) => (
+                  <DocCard
+                    key={d.id}
+                    title={DIPLOMA_LABELS[d.type] ?? d.type}
+                    expiresAt={d.expires_at}
+                    status={d.status}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* ── Certifications ── */}
+            {!loadingDocs && certifications.length > 0 && (
+              <div className="rounded-xl border bg-card p-4">
+                <ProfileSectionHeader icon={Award} title="Certifications" iconColor="#16a34a" iconBg="#dcfce7" />
+                {certifications.map((c) => (
+                  <DocCard
+                    key={c.id}
+                    title={CERT_LABELS[c.type] ?? c.type}
+                    expiresAt={c.expires_at}
+                    status={c.status}
+                  />
+                ))}
+              </div>
+            )}
+
+            {loadingDocs && (
+              <div className="flex justify-center py-4">
+                <p className="text-muted-foreground text-sm">Chargement des documents…</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
 // ─── Section wrapper ──────────────────────────────────────────────────────────
 
 function Section({ title, children }) {
@@ -1916,6 +2277,7 @@ function ApplicationDetail({
   draftRefreshKey,
 }) {
   const [messagingOpen, setMessagingOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
   const [contractId, setContractId] = useState(null);
 
@@ -1964,7 +2326,11 @@ function ApplicationDetail({
       <div className="flex flex-col gap-6 p-6">
         {/* Candidate header */}
         <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => setProfileOpen(true)}
+            className="flex items-center gap-4 rounded-xl text-left transition-opacity hover:opacity-80"
+          >
             <Avatar className="size-14 border text-lg">
               <AvatarImage src={profile?.avatar_url} />
               <AvatarFallback>{getInitials(profile?.firstname, profile?.lastname)}</AvatarFallback>
@@ -1972,8 +2338,9 @@ function ApplicationDetail({
             <div>
               <h2 className="font-bold text-xl">{candidateName || "Candidat"}</h2>
               <p className="text-muted-foreground text-sm">Candidature reçue le {formatDate(application.created_at)}</p>
+              <p className="mt-0.5 font-medium text-primary text-xs">Voir le profil →</p>
             </div>
-          </div>
+          </button>
           {statusCfg && (
             <Badge className={`h-6 shrink-0 px-2 font-medium text-[11px] ${statusCfg.badgeClass}`}>
               {statusCfg.title}
@@ -2135,6 +2502,7 @@ function ApplicationDetail({
         application={application}
         companyId={companyId}
       />
+      <CandidateProfileSheet open={profileOpen} onClose={() => setProfileOpen(false)} profile={profile} />
     </div>
   );
 }
