@@ -44,7 +44,7 @@ export function LoginForm() {
     const { data: profileData } = await supabase.from("profiles").select("id").eq("id", userId).maybeSingle();
     if (profileData) {
       toast.success("Connexion réussie", { description: "Bienvenue !" });
-      router.push("/jobs");
+      router.push("/dashboard/default");
       return;
     }
 
@@ -52,7 +52,7 @@ export function LoginForm() {
     const { data: adminData } = await supabase.from("admins").select("role").eq("id", userId).maybeSingle();
     if (adminData?.role === "super_admin") {
       toast.success("Connexion réussie", { description: "Bienvenue, super admin !" });
-      router.push("/dashboard/users");
+      router.push("/dashboard/default");
       return;
     }
 
@@ -60,14 +60,14 @@ export function LoginForm() {
     const { data: companyData } = await supabase.from("companies").select("id").eq("id", userId).maybeSingle();
     if (companyData) {
       toast.success("Connexion réussie", { description: "Bienvenue !" });
-      router.push("/dashboard/my-jobs");
+      router.push("/dashboard/default");
       return;
     }
 
     // 4. Admin simple
     if (adminData?.role === "admin") {
       toast.success("Connexion réussie", { description: "Bienvenue, admin !" });
-      router.push("/dashboard/users");
+      router.push("/dashboard/default");
       return;
     }
 
