@@ -69,6 +69,11 @@ export async function sendSupportNotification({
   }
 }
 
+export async function checkIsSuperAdmin(userId: string): Promise<boolean> {
+  const { data } = await supabaseAdmin.from("admins").select("role").eq("id", userId).maybeSingle();
+  return data?.role === "super_admin";
+}
+
 export async function getValueFromCookie(key: string): Promise<string | undefined> {
   const cookieStore = await cookies();
   return cookieStore.get(key)?.value;
