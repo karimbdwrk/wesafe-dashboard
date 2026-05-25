@@ -40,9 +40,13 @@ export function LoginForm() {
 
     const userId = authData.user.id;
 
+    const maxAge = data.remember ? `; max-age=${30 * 24 * 60 * 60}` : "";
+    const cookieOptions = `path=/; SameSite=Lax${maxAge}`;
+
     // 1. Candidat → table profiles
     const { data: profileData } = await supabase.from("profiles").select("id").eq("id", userId).maybeSingle();
     if (profileData) {
+      document.cookie = `user_role=candidate; ${cookieOptions}`;
       toast.success("Connexion réussie", { description: "Bienvenue !" });
       router.push("/dashboard/default");
       return;
@@ -51,6 +55,7 @@ export function LoginForm() {
     // 2. Super admin → table admins (role super_admin)
     const { data: adminData } = await supabase.from("admins").select("role").eq("id", userId).maybeSingle();
     if (adminData?.role === "super_admin") {
+      document.cookie = `user_role=super_admin; ${cookieOptions}`;
       toast.success("Connexion réussie", { description: "Bienvenue, super admin !" });
       router.push("/dashboard/default");
       return;
@@ -59,6 +64,7 @@ export function LoginForm() {
     // 3. Entreprise → table companies
     const { data: companyData } = await supabase.from("companies").select("id").eq("id", userId).maybeSingle();
     if (companyData) {
+      document.cookie = `user_role=company; ${cookieOptions}`;
       toast.success("Connexion réussie", { description: "Bienvenue !" });
       router.push("/dashboard/default");
       return;
@@ -66,6 +72,7 @@ export function LoginForm() {
 
     // 4. Admin simple
     if (adminData?.role === "admin") {
+      document.cookie = `user_role=admin; ${cookieOptions}`;
       toast.success("Connexion réussie", { description: "Bienvenue, admin !" });
       router.push("/dashboard/default");
       return;
