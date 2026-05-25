@@ -12,7 +12,7 @@ import { TransactionsTable } from "./_components/transactions-table";
 
 export default function Page() {
   const router = useRouter();
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(true);
   const [transactions, setTransactions] = useState([]);
 
   useEffect(() => {
@@ -20,12 +20,12 @@ export default function Page() {
       const { data: auth } = await supabase.auth.getUser();
       const user = auth?.user;
       if (!user) {
-        router.replace("/unauthorized");
+        router.replace("/dashboard/default");
         return;
       }
       const { data: admin } = await supabase.from("admins").select("role").eq("id", user.id).maybeSingle();
       if (admin?.role !== "super_admin") {
-        router.replace("/unauthorized");
+        router.replace("/dashboard/default");
         return;
       }
       setIsAuthorized(true);
