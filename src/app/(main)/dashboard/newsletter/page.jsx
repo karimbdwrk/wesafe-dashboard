@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-import { useRouter } from "next/navigation";
-
 import { Check, Copy, Download, RefreshCw, Users } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,8 +24,7 @@ const ROLE_LABELS = {
 };
 
 export default function NewsletterPage() {
-  const router = useRouter();
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isAuthorized, _setIsAuthorized] = useState(true);
   const [subscribers, setSubscribers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [roleFilter, setRoleFilter] = useState("all");
@@ -49,25 +46,9 @@ export default function NewsletterPage() {
     setLoading(false);
   }
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetchSubscribers is stable — defined at module scope relative to this effect
   useEffect(() => {
-    async function checkAuth() {
-      const { data: auth } = await supabase.auth.getUser();
-      const user = auth?.user;
-      if (!user) {
-        router.replace("/unauthorized");
-        return;
-      }
-      const { data: admin } = await supabase.from("admins").select("role").eq("id", user.id).maybeSingle();
-      if (admin?.role !== "super_admin") {
-        router.replace("/unauthorized");
-        return;
-      }
-      setIsAuthorized(true);
-      fetchSubscribers();
-    }
-    checkAuth();
-  }, [router]);
+    fetchSubscribers();
+  }, [fetchSubscribers]);
 
   const filtered = roleFilter === "all" ? subscribers : subscribers.filter((s) => s.role === roleFilter);
 
