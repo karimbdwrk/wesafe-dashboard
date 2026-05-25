@@ -1,5 +1,7 @@
 "use client"
 
+import { useEffect, useState } from "react"
+
 import {
   CircleCheckIcon,
   InfoIcon,
@@ -9,14 +11,20 @@ import {
 } from "lucide-react"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 
-import { usePreferencesStore } from "@/stores/preferences/preferences-provider"
-
 const Toaster = ({ ...props }: ToasterProps) => {
-  const resolvedThemeMode = usePreferencesStore((s) => s.resolvedThemeMode)
+  const [theme, setTheme] = useState<"light" | "dark">("light")
+
+  useEffect(() => {
+    const update = () => setTheme(document.documentElement.classList.contains("dark") ? "dark" : "light")
+    update()
+    const observer = new MutationObserver(update)
+    observer.observe(document.documentElement, { attributeFilter: ["class"] })
+    return () => observer.disconnect()
+  }, [])
 
   return (
     <Sonner
-      theme={resolvedThemeMode}
+      theme={theme}
       className="toaster group"
       icons={{
         success: <CircleCheckIcon className="size-4" />,
