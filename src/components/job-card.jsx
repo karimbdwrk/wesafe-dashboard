@@ -59,7 +59,7 @@ export function formatRelativeDate(dateStr) {
 
 export function JobCardSkeleton() {
   return (
-    <div className="animate-pulse rounded-xl border border-border bg-card p-4">
+    <div className="animate-pulse rounded-2xl border border-border bg-card p-4">
       <div className="flex items-start gap-3">
         <div className="h-10 w-10 shrink-0 rounded-lg bg-muted" />
         <div className="flex-1 space-y-2 pr-16">
@@ -77,9 +77,10 @@ export function JobCardSkeleton() {
 
 // ─── Styles partagés ───────────────────────────────────────────────────────────
 
-const cardBase = "group relative rounded-xl border p-4 transition-[border-color,box-shadow]";
-const cardIdle = "border-border bg-card hover:border-primary/40 hover:shadow-sm";
-const cardSelected = "border-primary bg-primary/5 shadow-sm";
+const cardBase = "group relative rounded-2xl border p-4 transition-[border-color,box-shadow,transform]";
+const cardIdle =
+  "border-border bg-card hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_10px_28px_-14px_var(--brand-glow)]";
+const cardSelected = "border-primary bg-primary/5 shadow-[0_10px_28px_-14px_var(--brand-glow)]";
 
 // ─── Contenu interne partagé ───────────────────────────────────────────────────
 
@@ -93,7 +94,7 @@ function JobCardContent({ job, salary, location, relativeDate }) {
       {hasBadge && (
         <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
           {isSponsored && (
-            <div className="flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 font-medium text-[10px] text-purple-700">
+            <div className="flex items-center gap-1 rounded-full bg-brand-accent/15 px-2 py-0.5 font-medium text-[10px] text-primary">
               <Sparkles className="h-2.5 w-2.5" aria-hidden="true" />
               Sponsorisé
             </div>
@@ -136,7 +137,7 @@ function JobCardContent({ job, salary, location, relativeDate }) {
                     onClick={(e) => e.stopPropagation()}
                     className="shrink-0 focus-visible:outline-none"
                   >
-                    <ShieldCheck className="h-3 w-3 text-green-500" aria-label="Entreprise vérifiée" />
+                    <ShieldCheck className="h-3 w-3 text-success" aria-label="Entreprise vérifiée" />
                   </button>
                 </PopoverTrigger>
                 <PopoverContent side="top" className="w-auto px-3 py-1.5 text-xs">

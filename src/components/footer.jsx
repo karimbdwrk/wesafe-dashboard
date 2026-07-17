@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export function Footer() {
   return (
-    <footer id="contact" className="border-border border-t bg-card/50 py-16">
+    <footer id="contact" className="relative border-border/60 border-t bg-secondary/30 py-16">
       <div className="mx-auto max-w-7xl px-6">
         <div className="grid gap-10 md:grid-cols-4">
           <div className="md:col-span-1">
@@ -22,7 +22,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-[family-name:var(--font-heading)] font-semibold text-foreground text-sm">Produit</h4>
+            <h4 className="font-(family-name:--font-heading) font-semibold text-foreground text-sm">Produit</h4>
             <ul className="mt-4 flex flex-col gap-3">
               <li>
                 <Link href="/tarifs" className="text-muted-foreground text-sm transition-colors hover:text-foreground">
@@ -38,7 +38,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-[family-name:var(--font-heading)] font-semibold text-foreground text-sm">Entreprise</h4>
+            <h4 className="font-(family-name:--font-heading) font-semibold text-foreground text-sm">Entreprise</h4>
             <ul className="mt-4 flex flex-col gap-3">
               <li>
                 <Link
@@ -62,7 +62,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-[family-name:var(--font-heading)] font-semibold text-foreground text-sm">Légal</h4>
+            <h4 className="font-(family-name:--font-heading) font-semibold text-foreground text-sm">Légal</h4>
             <ul className="mt-4 flex flex-col gap-3">
               <li>
                 <Link
@@ -100,7 +100,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 border-border border-t pt-8 text-center">
+        <div className="mt-12 border-border/60 border-t pt-8 text-center">
           <p className="text-muted-foreground text-sm">© {new Date().getFullYear()} WeSafe. Tous droits réservés.</p>
         </div>
       </div>

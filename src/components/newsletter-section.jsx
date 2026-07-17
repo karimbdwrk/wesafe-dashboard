@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 
+import { motion } from "framer-motion";
 import { Mail, Send } from "lucide-react";
 import { toast } from "sonner";
 
+import { AmbientBackground } from "@/components/ambient-background";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase/supabaseClient";
@@ -37,21 +39,23 @@ export function NewsletterSection() {
   };
 
   return (
-    <section className="py-20 md:py-32">
+    <section className="relative py-20 md:py-32">
       <div className="mx-auto max-w-7xl px-6">
-        <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-10 md:p-16">
-          {/* Background glow */}
-          <div className="pointer-events-none absolute inset-0">
-            <div className="absolute top-0 right-0 h-[400px] w-[400px] rounded-full bg-primary/8 blur-[100px]" />
-            <div className="absolute bottom-0 left-0 h-[300px] w-[300px] rounded-full bg-primary/5 blur-[80px]" />
-          </div>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="relative overflow-hidden rounded-[24px] border border-border/70 bg-card p-10 md:p-16"
+        >
+          <AmbientBackground />
           <div className="relative mx-auto max-w-3xl text-center">
             <div className="mb-4 flex justify-center">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10">
                 <Mail className="h-5 w-5 text-primary" />
               </div>
             </div>
-            <h2 className="mb-2 font-[family-name:var(--font-heading)] font-bold text-2xl text-foreground md:text-3xl">
+            <h2 className="mb-2 font-(family-name:--font-heading) font-bold text-2xl text-foreground md:text-3xl">
               Restez informé
             </h2>
             <p className="mx-auto mb-8 max-w-md text-muted-foreground text-sm leading-relaxed">
@@ -67,11 +71,11 @@ export function NewsletterSection() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   onBlur={() => setEmailTouched(true)}
-                  className={`h-10 w-full ${showEmailError ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  className={`h-11 w-full rounded-[16px] ${showEmailError ? "border-destructive focus-visible:ring-destructive" : ""}`}
                 />
                 {showEmailError && (
                   <p className="mt-1 text-left text-destructive text-xs">
-                    Adresse email invalide (ex : nom@domaine.fr)
+                    Adresse email invalide (ex : nom@domaine.fr)
                   </p>
                 )}
               </div>
@@ -79,7 +83,7 @@ export function NewsletterSection() {
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 required
-                className="h-10 rounded-md border border-input bg-background px-3 text-foreground text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring sm:w-44"
+                className="h-11 rounded-[16px] border border-input bg-background px-3 text-foreground text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring sm:w-44"
               >
                 <option value="" disabled>
                   Je suis…
@@ -87,7 +91,11 @@ export function NewsletterSection() {
                 <option value="candidat">Candidat</option>
                 <option value="company">Entreprise</option>
               </select>
-              <Button type="submit" disabled={!canSubmit} className="h-10 gap-2">
+              <Button
+                type="submit"
+                disabled={!canSubmit}
+                className="h-11 gap-2 rounded-[16px] bg-linear-to-r from-primary to-brand-secondary text-primary-foreground"
+              >
                 {loading ? (
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
                 ) : (
@@ -108,7 +116,7 @@ export function NewsletterSection() {
               . Désinscription à tout moment.
             </p>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

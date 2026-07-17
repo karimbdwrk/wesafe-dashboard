@@ -1,23 +1,30 @@
+"use client";
+
 import Image from "next/image";
 
+import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+
+import { AmbientBackground } from "@/components/ambient-background";
 
 import appstoreImg from "../../media/appstore.png";
 import playstoreImg from "../../media/playstore.png";
 
 export function CtaSection() {
   return (
-    <section id="telecharger" className="py-20 md:py-32">
+    <section id="telecharger" className="relative py-20 md:py-32">
       <div className="mx-auto max-w-7xl px-6">
-        <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-10 md:p-16">
-          {/* Background glow */}
-          <div className="pointer-events-none absolute inset-0">
-            <div className="absolute top-0 right-0 h-[400px] w-[400px] rounded-full bg-primary/8 blur-[100px]" />
-            <div className="absolute bottom-0 left-0 h-[300px] w-[300px] rounded-full bg-primary/5 blur-[80px]" />
-          </div>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="relative overflow-hidden rounded-[24px] border border-border/70 bg-card p-10 md:p-16"
+        >
+          <AmbientBackground />
 
           <div className="relative mx-auto max-w-2xl text-center">
-            <h2 className="text-balance font-[family-name:var(--font-heading)] font-bold text-3xl text-foreground md:text-4xl">
+            <h2 className="text-balance font-(family-name:--font-heading) font-bold text-3xl text-foreground md:text-4xl">
               Pret a transformer votre recrutement ?
             </h2>
             <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
@@ -39,7 +46,7 @@ export function CtaSection() {
               Inscription gratuite, sans engagement
             </p>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
