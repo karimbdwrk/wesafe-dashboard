@@ -84,12 +84,16 @@ export function HeroSection() {
           <motion.div
             initial={{ opacity: 0, x: 24 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.7, ease: "easeOut", delay: 0.15 }}
+            transition={{
+              duration: 0.7,
+              ease: "easeOut",
+              delay: 0.15,
+            }}
             className="relative flex-shrink-0"
           >
             <div className="relative mx-auto w-[420px] sm:w-140">
               <Image
-                src="https://hzvbylhdptwgblpdondm.supabase.co/storage/v1/object/public/dashboard-assets/mockup-iphone-mac.png"
+                src="https://hzvbylhdptwgblpdondm.supabase.co/storage/v1/object/public/dashboard-assets/mockup-hero-wesafe.png"
                 alt="Aperçu de l'application WeSafe sur MacBook et iPhone"
                 width={1200}
                 height={900}
