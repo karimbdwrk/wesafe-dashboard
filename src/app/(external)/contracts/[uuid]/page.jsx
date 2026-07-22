@@ -10,6 +10,7 @@ import { CheckCircle2, Eye, EyeOff, FileText, Lock, ShieldCheck } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { logActivity } from "@/lib/supabase/activity";
 import { supabase } from "@/lib/supabase/supabaseClient";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -193,6 +194,8 @@ function LoginDialog({ open, contractData, onSuccess }) {
       }
       const uid = authData.user.id;
       if (isContractParty(uid, contractData) || (await isSuperAdmin(uid))) {
+        logActivity(uid, "login", { context: "contract_view" });
+        logActivity(uid, "contract_view", { contractId: contractData.id });
         onSuccess();
       } else {
         await supabase.auth.signOut();
@@ -294,6 +297,7 @@ export default function ContractPage() {
         return;
       }
       const allowed = isContractParty(user.id, contractData) || (await isSuperAdmin(user.id));
+      if (allowed) logActivity(user.id, "contract_view", { contractId: contractData.id });
       setAuthState(allowed ? "authorized" : "unauthorized");
     })();
   }, [uuid]);
