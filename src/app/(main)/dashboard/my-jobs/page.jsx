@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { CATEGORY } from "@/constants/categories";
+import { logActivity } from "@/lib/supabase/activity";
 import { supabase } from "@/lib/supabase/supabaseClient";
 
 import { JobForm } from "./_components/job-form";
@@ -496,6 +497,7 @@ export default function CompanyJobsPage() {
       if (selectedJob?.id === target.id) setSelectedJob(next[0] ?? null);
       return next;
     });
+    logActivity(companyId, "job_delete", { jobId: target.id, jobTitle: target.title });
     toast.success("Offre supprimée.");
   }
 
@@ -509,6 +511,10 @@ export default function CompanyJobsPage() {
     }
     setJobs((prev) => prev.map((j) => (j.id === job.id ? updated : j)));
     if (selectedJob?.id === job.id) setSelectedJob(updated);
+    logActivity(companyId, newStatus === "published" ? "job_publish" : "job_archive", {
+      jobId: job.id,
+      jobTitle: job.title,
+    });
     toast.success(newStatus === "published" ? "Offre publiée." : "Offre archivée.");
   }
 
@@ -519,6 +525,11 @@ export default function CompanyJobsPage() {
 
   async function handleSponsorConfirm() {
     if (!sponsoringJob || !sponsorDuration) return;
+    logActivity(companyId, "job_sponsor", {
+      jobId: sponsoringJob.id,
+      jobTitle: sponsoringJob.title,
+      duration: sponsorDuration,
+    });
     const res = await fetch("/api/stripe/create-sponsorship-session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
