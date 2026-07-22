@@ -59,6 +59,7 @@ import { CATEGORY } from "@/constants/categories";
 import { departements } from "@/constants/departements";
 import { regions } from "@/constants/regions";
 import { formatSalary } from "@/constants/salary";
+import { logActivity } from "@/lib/supabase/activity";
 import { supabase } from "@/lib/supabase/supabaseClient";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -573,7 +574,12 @@ function ContractSheet({ open, onClose, application, companyId, onContractSaved 
       }
       if (error) throw error;
 
+      if (!existingContractId) {
+        logActivity(companyId, "contract_create", { applicationId: application.id });
+      }
+
       if (status === "published" && existingContractStatus !== "published") {
+        logActivity(companyId, "contract_send", { applicationId: application.id });
         const { error: evtError } = await supabase.from("application_status_events").insert({
           application_id: application.id,
           status: "contract_sent",
@@ -1735,6 +1741,7 @@ function MessagingSheet({ open, onClose, application, companyId }) {
       // Remplacer l'optimiste si le realtime ne l'a pas déjà fait
       setMessages((prev) => prev.map((m) => (m.id === tempId ? insertedMsg : m)));
       pendingOptimisticRef.current = null;
+      logActivity(companyId, "message_send", { applicationId: applyId });
 
       // Broadcaster pour que le candidat reçoive immédiatement
       broadcastChannelRef.current?.send({
@@ -2608,6 +2615,7 @@ export default function MyApplicationsPage() {
         is_read: false,
       });
     }
+    logActivity(companyId, "application_select", { applicationId: selectTarget.id });
     setSelectTarget(null);
   }
 
@@ -2627,6 +2635,7 @@ export default function MyApplicationsPage() {
         is_read: false,
       });
     }
+    logActivity(companyId, "application_reject", { applicationId: rejectTarget.id });
     setRejectTarget(null);
   }
 
