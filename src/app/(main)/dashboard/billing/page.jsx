@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { logActivity } from "@/lib/supabase/activity";
 import { supabase } from "@/lib/supabase/supabaseClient";
 
 const PLANS = {
@@ -106,6 +107,7 @@ export default function BillingPage() {
   async function handleCheckout(planKey) {
     if (!company?.id) return;
     setCheckoutLoading(planKey);
+    logActivity(company.id, "subscription_checkout_start", { planKey, cycle: yearly ? "yearly" : "monthly" });
     const res = await fetch("/api/stripe/create-checkout-session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -127,6 +129,7 @@ export default function BillingPage() {
   async function handleBuyCredits() {
     if (!company?.id) return;
     setCreditsLoading(true);
+    logActivity(company.id, "credits_purchase_start");
     const res = await fetch("/api/stripe/buy-credits", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -144,6 +147,7 @@ export default function BillingPage() {
   async function handlePortal() {
     if (!company?.id) return;
     setPortalLoading(true);
+    logActivity(company.id, "billing_portal_open");
     const res = await fetch("/api/stripe/create-portal-session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
