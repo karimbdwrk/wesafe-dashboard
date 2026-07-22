@@ -16,6 +16,7 @@ import { DIPLOMAS } from "@/constants/diplomas";
 import { DRIVING_LICENSES } from "@/constants/drivinglicences";
 import { languages as LANGUAGES } from "@/constants/languages";
 import { regions } from "@/constants/regions";
+import { logActivity } from "@/lib/supabase/activity";
 import { supabase } from "@/lib/supabase/supabaseClient";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -544,6 +545,8 @@ export function JobForm({ companyId, initialData, lastMinuteCredits = 0, onCredi
     const savedJob = result.data;
     const isNew = !isEdit;
 
+    logActivity(companyId, isNew ? "job_create" : "job_update", { jobId: savedJob.id, jobTitle: savedJob.title });
+
     // Last Minute: use a credit if available
     if (!isEdit && form.isLastMinute && lastMinuteCredits > 0) {
       await fetch("/api/jobs/use-credit", {
@@ -551,6 +554,7 @@ export function JobForm({ companyId, initialData, lastMinuteCredits = 0, onCredi
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ companyId, jobTitle: form.title }),
       });
+      logActivity(companyId, "job_credit_used", { jobId: savedJob.id, jobTitle: savedJob.title });
       onCreditsUsed?.();
     }
 
@@ -570,6 +574,11 @@ export function JobForm({ companyId, initialData, lastMinuteCredits = 0, onCredi
 
     // Sponsorship: redirect to Stripe (new or edit)
     if (isSponsored && sponsorshipDuration) {
+      logActivity(companyId, "job_sponsor", {
+        jobId: savedJob.id,
+        jobTitle: savedJob.title,
+        duration: sponsorshipDuration,
+      });
       const res = await fetch("/api/stripe/create-sponsorship-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
