@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { logActivity } from "@/lib/supabase/activity";
 import { supabase } from "@/lib/supabase/supabaseClient";
 
 const FormSchema = z.object({
@@ -47,6 +48,7 @@ export function LoginForm() {
     const { data: profileData } = await supabase.from("profiles").select("id").eq("id", userId).maybeSingle();
     if (profileData) {
       document.cookie = `user_role=candidate; ${cookieOptions}`;
+      logActivity(userId, "login", { role: "candidate" });
       toast.success("Connexion réussie", { description: "Bienvenue !" });
       router.push("/dashboard/default");
       return;
@@ -56,6 +58,7 @@ export function LoginForm() {
     const { data: adminData } = await supabase.from("admins").select("role").eq("id", userId).maybeSingle();
     if (adminData?.role === "super_admin") {
       document.cookie = `user_role=super_admin; ${cookieOptions}`;
+      logActivity(userId, "login", { role: "super_admin" });
       toast.success("Connexion réussie", { description: "Bienvenue, super admin !" });
       router.push("/dashboard/default");
       return;
@@ -65,6 +68,7 @@ export function LoginForm() {
     const { data: companyData } = await supabase.from("companies").select("id").eq("id", userId).maybeSingle();
     if (companyData) {
       document.cookie = `user_role=company; ${cookieOptions}`;
+      logActivity(userId, "login", { role: "company" });
       toast.success("Connexion réussie", { description: "Bienvenue !" });
       router.push("/dashboard/default");
       return;
@@ -73,6 +77,7 @@ export function LoginForm() {
     // 4. Admin simple
     if (adminData?.role === "admin") {
       document.cookie = `user_role=admin; ${cookieOptions}`;
+      logActivity(userId, "login", { role: "admin" });
       toast.success("Connexion réussie", { description: "Bienvenue, admin !" });
       router.push("/dashboard/default");
       return;
