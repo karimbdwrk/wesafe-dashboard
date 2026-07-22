@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { logActivity } from "@/lib/supabase/activity";
 import { supabase } from "@/lib/supabase/supabaseClient";
 
 const COMPANY_STATUS_CONFIG = {
@@ -311,6 +312,7 @@ export default function CompanyPage() {
       toast.success("Informations mises à jour.");
       setCompany((prev) => ({ ...prev, name: form.name, email: form.email, description: form.description }));
       setEditMode(false);
+      logActivity(company.id, "company_profile_update");
     }
     setSaving(false);
   }
@@ -362,6 +364,7 @@ export default function CompanyPage() {
       } else {
         toast.success("Logo mis à jour.");
         setCompany((prev) => ({ ...prev, logo_url: logoUrl }));
+        logActivity(company.id, "company_logo_upload");
       }
     } catch (err) {
       toast.error("Erreur upload logo", { description: err.message });
