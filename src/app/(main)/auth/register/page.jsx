@@ -450,6 +450,15 @@ export default function RegisterPage() {
 
   return (
     <div className="flex h-dvh">
+      {/* Bouton retour */}
+      <Link
+        href="/"
+        className="absolute top-4 left-4 z-10 flex items-center gap-1.5 text-muted-foreground text-sm transition-colors hover:text-foreground"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Accueil
+      </Link>
+
       <div className="flex w-full items-center justify-center bg-background p-8 lg:w-2/3">
         <div className="w-full max-w-md py-12 lg:py-20">
           {role === null && <RoleSelection onSelect={setRole} />}
