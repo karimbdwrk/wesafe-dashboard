@@ -43,7 +43,12 @@ export default function ContactPage() {
   });
 
   const onSubmit = async (data) => {
-    const { error } = await supabase.from("contact_messages").insert([data]);
+    const contactMessageId = crypto.randomUUID();
+    const createdAt = new Date().toISOString();
+
+    const { error } = await supabase
+      .from("contact_messages")
+      .insert([{ ...data, id: contactMessageId, created_at: createdAt }]);
 
     if (error) {
       toast.error("Erreur lors de l'envoi", {
@@ -53,6 +58,18 @@ export default function ContactPage() {
     }
 
     setSent(true);
+
+    supabase.functions
+      .invoke("send-contact-email", {
+        body: {
+          ...data,
+          contact_message_id: contactMessageId,
+          created_at: createdAt,
+        },
+      })
+      .then(({ error: emailError }) => {
+        if (emailError) console.error("[send-contact-email] erreur:", emailError);
+      });
   };
 
   return (
