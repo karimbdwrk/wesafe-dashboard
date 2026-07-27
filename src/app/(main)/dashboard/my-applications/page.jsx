@@ -7,6 +7,7 @@ import Link from "next/link";
 import {
   Award,
   Banknote,
+  Briefcase,
   CalendarClock,
   Car,
   CheckCheck,
@@ -1981,6 +1982,30 @@ function DocCard({ title, subtitle, expiresAt, status }) {
   );
 }
 
+function ExperienceCard({ experience }) {
+  const fmt = (d) => (d ? new Date(d).toLocaleDateString("fr-FR", { month: "short", year: "numeric" }) : null);
+  const period = [fmt(experience.start_date), fmt(experience.end_date)].filter(Boolean).join(" — ");
+  return (
+    <div className="border-t py-2.5 first:border-0">
+      <div className="flex items-start justify-between gap-2">
+        <p className="font-semibold text-sm">{experience.title}</p>
+        {experience.category && (
+          <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+            {experience.category}
+          </span>
+        )}
+      </div>
+      <p className="text-muted-foreground text-xs">
+        {[experience.company, experience.location].filter(Boolean).join(" · ")}
+      </p>
+      {period && <p className="text-muted-foreground text-xs">{period}</p>}
+      {experience.description && (
+        <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed">{experience.description}</p>
+      )}
+    </div>
+  );
+}
+
 function ProfileSectionHeader({ icon: Icon_, title, iconColor, iconBg }) {
   return (
     <div className="mb-3 flex items-center gap-2.5">
@@ -1999,6 +2024,7 @@ function CandidateProfileSheet({ open, onClose, profile }) {
   const [cnapsCards, setCnapsCards] = useState([]);
   const [diplomas, setDiplomas] = useState([]);
   const [certifications, setCertifications] = useState([]);
+  const [experiences, setExperiences] = useState([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: intentional — fetch when sheet opens for this profile
@@ -2013,10 +2039,12 @@ function CandidateProfileSheet({ open, onClose, profile }) {
         .select("*")
         .eq("user_id", profile.id)
         .order("created_at", { ascending: false }),
-    ]).then(([cnaps, dipl, certs]) => {
+      supabase.from("experiences").select("*").eq("profile_id", profile.id).order("start_date", { ascending: false }),
+    ]).then(([cnaps, dipl, certs, exp]) => {
       setCnapsCards(cnaps.data ?? []);
       setDiplomas(dipl.data ?? []);
       setCertifications(certs.data ?? []);
+      setExperiences(exp.data ?? []);
       setLoadingDocs(false);
     });
   }, [open, profile?.id]);
@@ -2183,6 +2211,16 @@ function CandidateProfileSheet({ open, onClose, profile }) {
                 )}
               </div>
             </div>
+
+            {/* ── Expériences ── */}
+            {!loadingDocs && experiences.length > 0 && (
+              <div className="rounded-xl border bg-card p-4">
+                <ProfileSectionHeader icon={Briefcase} title="Expériences" iconColor="#b45309" iconBg="#fef3c7" />
+                {experiences.map((exp) => (
+                  <ExperienceCard key={exp.id} experience={exp} />
+                ))}
+              </div>
+            )}
 
             {/* ── Vérifications ── */}
             <div className="rounded-xl border bg-card p-4">
