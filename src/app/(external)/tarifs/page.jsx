@@ -53,7 +53,7 @@ export default function TarifsPage() {
               ))}
             </ul>
             <div className="mt-4">
-              <Link href="/auth/login">
+              <Link href="/auth/register">
                 <Button variant="outline" className="w-full gap-2">
                   Créer mon profil candidat
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -90,7 +90,7 @@ export default function TarifsPage() {
               ))}
             </ul>
             <div className="mt-4">
-              <Link href="/auth/login">
+              <Link href="/auth/register">
                 <Button className="w-full gap-2">
                   Créer mon compte entreprise
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -264,7 +264,7 @@ export default function TarifsPage() {
             commencer.
           </p>
           <div className="flex flex-col justify-center gap-3 sm:flex-row">
-            <Link href="/auth/login">
+            <Link href="/auth/register">
               <Button size="lg" className="gap-2">
                 Créer un compte gratuit
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
