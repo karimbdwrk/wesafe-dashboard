@@ -9,11 +9,11 @@ export function Footer() {
           <div className="md:col-span-1">
             <Link href="/" className="flex items-center">
               <Image
-                src="/wesafe-recruitment-logo.svg"
-                alt="WeSafe Recruitment"
-                width={140}
+                src="https://hzvbylhdptwgblpdondm.supabase.co/storage/v1/object/public/dashboard-assets/wesafe-logo-inline.svg"
+                alt="WeSafe"
+                width={116}
                 height={39}
-                className="h-9 w-auto dark:invert"
+                className="h-9 w-auto"
               />
             </Link>
             <p className="mt-4 text-muted-foreground text-sm leading-relaxed">
