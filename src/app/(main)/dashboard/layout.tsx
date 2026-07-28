@@ -47,11 +47,11 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
               </div>
               <div className="absolute left-1/2 -translate-x-1/2">
                 <Image
-                  src="/wesafe-recruitment-logo.svg"
-                  alt="WeSafe Recruitment"
-                  width={120}
+                  src="https://hzvbylhdptwgblpdondm.supabase.co/storage/v1/object/public/dashboard-assets/wesafe-logo-inline.svg"
+                  alt="WeSafe"
+                  width={98}
                   height={33}
-                  className="h-7 w-auto dark:invert"
+                  className="h-7 w-auto"
                   priority
                 />
               </div>
