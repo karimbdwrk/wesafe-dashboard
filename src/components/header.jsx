@@ -65,11 +65,11 @@ export function Header() {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <Link href="/" className="flex items-center">
           <Image
-            src="/wesafe-recruitment-logo.svg"
-            alt="WeSafe Recruitment"
-            width={140}
+            src="https://hzvbylhdptwgblpdondm.supabase.co/storage/v1/object/public/dashboard-assets/wesafe-logo-inline.svg"
+            alt="WeSafe"
+            width={116}
             height={39}
-            className="h-8 w-auto dark:invert"
+            className="h-8 w-auto"
             priority
           />
         </Link>
