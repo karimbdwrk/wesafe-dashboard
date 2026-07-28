@@ -86,7 +86,7 @@ const MILESTONES = [
 
 export default function AProposPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background mt-16">
       {/* Hero */}
       <section className="relative overflow-hidden border-border border-b bg-primary pt-32 pb-20">
         <div className="pointer-events-none absolute inset-0">

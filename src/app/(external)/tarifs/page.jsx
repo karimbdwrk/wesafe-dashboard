@@ -7,9 +7,9 @@ import { ADD_ONS, FAQ, PLANS } from "@/lib/pricing-data";
 
 export default function TarifsPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background mt-16">
       {/* Hero */}
-      <section className="mt-14 border-border border-b bg-primary py-20">
+      <section className="border-border border-b bg-primary py-20">
         <div className="mx-auto max-w-4xl px-6 text-center">
           <p className="mb-3 font-medium text-primary-foreground/60 text-sm uppercase tracking-widest">Tarifs</p>
           <h1 className="font-(family-name:--font-heading) mb-5 font-bold text-4xl text-primary-foreground md:text-5xl">
