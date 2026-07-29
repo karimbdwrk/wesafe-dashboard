@@ -103,7 +103,7 @@ export default function ContactPage() {
                     href="mailto:contact@wesafe.fr"
                     className="text-muted-foreground text-sm transition-colors hover:text-primary"
                   >
-                    contact@wesafe.fr
+                    contact@wesafeapp.fr
                   </a>
                 </div>
               </li>
@@ -114,10 +114,10 @@ export default function ContactPage() {
                 <div>
                   <p className="font-medium text-foreground text-sm">Téléphone</p>
                   <a
-                    href="tel:+33100000000"
+                    href="tel:+33756944060"
                     className="text-muted-foreground text-sm transition-colors hover:text-primary"
                   >
-                    +33 1 00 00 00 00
+                    +33 7 56 94 40 60
                   </a>
                 </div>
               </li>
