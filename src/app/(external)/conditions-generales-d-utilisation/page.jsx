@@ -2,6 +2,15 @@ import Link from "next/link";
 
 import { ArrowLeft } from "lucide-react";
 
+const TITLE = "Conditions générales d'utilisation";
+const DESCRIPTION = "Conditions générales d'utilisation du site et de l'application WeSafe.";
+
+export const metadata = {
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: { canonical: "/conditions-generales-d-utilisation" },
+};
+
 const SECTIONS = [
   { id: "art1", label: "1. Objet" },
   { id: "art2", label: "2. Définitions" },

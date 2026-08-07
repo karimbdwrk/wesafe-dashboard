@@ -12,6 +12,29 @@ import { PricingSection } from "@/components/pricing-section";
 import { ProcessSection } from "@/components/process-section";
 import { StatsSection } from "@/components/stats-section";
 
+const TITLE = "WeSafe - Recrutement en sécurité privée : agents & entreprises";
+const DESCRIPTION =
+  "Trouvez les meilleurs agents de sécurité ou décrochez votre prochain poste en quelques clics. Offres classiques, missions last minute et contrats générés automatiquement.";
+
+export const metadata = {
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: "/",
+    siteName: "WeSafe",
+    locale: "fr_FR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
+};
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-background">

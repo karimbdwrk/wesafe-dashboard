@@ -7,8 +7,7 @@ export const APP_CONFIG = {
   version: packageJson.version,
   copyright: `© ${currentYear}, WeSafe App Admin.`,
   meta: {
-    title: "WeSafe Admin - Modern Next.js Dashboard Starter Template",
-    description:
-      "WeSafe Admin is a modern, open-source dashboard starter template built with Next.js 16, Tailwind CSS v4, and shadcn/ui. Perfect for SaaS apps, admin panels, and internal tools—fully customizable and production-ready.",
+    title: "WeSafe Admin",
+    description: "Espace d'administration WeSafe, la plateforme de recrutement dédiée à la sécurité privée.",
   },
 };

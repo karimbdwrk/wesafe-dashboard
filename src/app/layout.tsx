@@ -12,7 +12,11 @@ import { PreferencesStoreProvider } from "@/stores/preferences/preferences-provi
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: APP_CONFIG.meta.title,
+  metadataBase: new URL("https://wesafeapp.fr"),
+  title: {
+    default: APP_CONFIG.meta.title,
+    template: "%s | WeSafe",
+  },
   description: APP_CONFIG.meta.description,
 };
 
@@ -21,7 +25,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
     PREFERENCE_DEFAULTS;
   return (
     <html
-      lang="en"
+      lang="fr"
       data-theme-mode={theme_mode}
       data-theme-preset={theme_preset}
       data-content-layout={content_layout}

@@ -2,6 +2,16 @@ import Link from "next/link";
 
 import { ArrowLeft } from "lucide-react";
 
+const TITLE = "Mentions légales";
+const DESCRIPTION =
+  "Mentions légales du site et de l'application WeSafe : éditeur, hébergement, propriété intellectuelle.";
+
+export const metadata = {
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: { canonical: "/mentions-legales" },
+};
+
 const SECTIONS = [
   { id: "editeur", label: "1. Éditeur" },
   { id: "hebergement", label: "2. Hébergement" },

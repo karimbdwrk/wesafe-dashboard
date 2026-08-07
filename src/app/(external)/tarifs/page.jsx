@@ -5,6 +5,25 @@ import { ArrowRight, Building2, CheckCircle2, Info, Star, UserCheck, XCircle } f
 import { Button } from "@/components/ui/button";
 import { ADD_ONS, FAQ, PLANS } from "@/lib/pricing-data";
 
+const TITLE = "Tarifs";
+const DESCRIPTION =
+  "Des formules simples et transparentes pour les entreprises de sécurité privée. Les candidats accèdent à toutes les fonctionnalités gratuitement, sans conditions.";
+
+export const metadata = {
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: { canonical: "/tarifs" },
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: "/tarifs",
+    siteName: "WeSafe",
+    locale: "fr_FR",
+    type: "website",
+  },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
+};
+
 export default function TarifsPage() {
   return (
     <div className="min-h-screen bg-background mt-16">

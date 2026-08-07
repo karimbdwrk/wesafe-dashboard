@@ -2,6 +2,15 @@ import Link from "next/link";
 
 import { ArrowLeft } from "lucide-react";
 
+const TITLE = "Politique de confidentialité";
+const DESCRIPTION = "Comment WeSafe collecte, utilise et protège vos données personnelles conformément au RGPD.";
+
+export const metadata = {
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: { canonical: "/politique-de-confidentialite" },
+};
+
 const SECTIONS = [
   { id: "s1", label: "1. Qui sommes-nous ?" },
   { id: "s2", label: "2. Données collectées" },

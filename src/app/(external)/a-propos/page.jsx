@@ -4,6 +4,25 @@ import { ArrowRight, Award, CheckCircle2, Heart, Mail, MapPin, Shield, Target, U
 
 import { Button } from "@/components/ui/button";
 
+const TITLE = "À propos";
+const DESCRIPTION =
+  "WeSafe est né d'un constat simple : le secteur de la sécurité privée manquait d'outils adaptés à ses réalités. Découvrez notre histoire et nos valeurs.";
+
+export const metadata = {
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: { canonical: "/a-propos" },
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: "/a-propos",
+    siteName: "WeSafe",
+    locale: "fr_FR",
+    type: "website",
+  },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
+};
+
 const VALUES = [
   {
     icon: Shield,
