@@ -1,9 +1,12 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { ArrowRight, Award, CheckCircle2, Heart, Mail, MapPin, Shield, Target, Users, Zap } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
+// Page dépubliée temporairement (contenu/chiffres pas encore représentatifs) :
+// redirection vers l'accueil, le contenu ci-dessous est conservé pour une republication future.
 const TITLE = "À propos";
 const DESCRIPTION =
   "WeSafe est né d'un constat simple : le secteur de la sécurité privée manquait d'outils adaptés à ses réalités. Découvrez notre histoire et nos valeurs.";
@@ -104,6 +107,9 @@ const MILESTONES = [
 ];
 
 export default function AProposPage() {
+  redirect("/");
+
+  // biome-ignore lint/correctness/noUnreachable: contenu conservé pour une republication future
   return (
     <div className="min-h-screen bg-background mt-16">
       {/* Hero */}

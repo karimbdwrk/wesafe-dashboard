@@ -13,7 +13,6 @@ const STATIC_ROUTES: {
   { path: "/tarifs", changeFrequency: "monthly", priority: 0.9 },
   { path: "/jobs", changeFrequency: "daily", priority: 0.9 },
   { path: "/blog", changeFrequency: "daily", priority: 0.7 },
-  { path: "/a-propos", changeFrequency: "monthly", priority: 0.6 },
   { path: "/contact", changeFrequency: "yearly", priority: 0.5 },
   { path: "/mentions-legales", changeFrequency: "yearly", priority: 0.2 },
   { path: "/politique-de-confidentialite", changeFrequency: "yearly", priority: 0.2 },

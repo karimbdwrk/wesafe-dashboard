@@ -29,7 +29,6 @@ const PLAYSTORE_URL = "https://play.google.com/store/apps/details?id=com.wesafe"
 const navLinks = [
   { label: "Offres", href: "/jobs" },
   { label: "Tarifs", href: "/tarifs" },
-  { label: "À Propos", href: "/a-propos" },
   { label: "Blog", href: "/blog" },
   { label: "Contact", href: "/contact" },
 ];

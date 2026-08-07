@@ -41,14 +41,6 @@ export function Footer() {
             <h4 className="font-(family-name:--font-heading) font-semibold text-foreground text-sm">Entreprise</h4>
             <ul className="mt-4 flex flex-col gap-3">
               <li>
-                <Link
-                  href="/a-propos"
-                  className="text-muted-foreground text-sm transition-colors hover:text-foreground"
-                >
-                  À propos
-                </Link>
-              </li>
-              <li>
                 <Link href="/blog" className="text-muted-foreground text-sm transition-colors hover:text-foreground">
                   Blog
                 </Link>
