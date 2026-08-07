@@ -147,9 +147,11 @@ export default function JobPage() {
         {/* Header entreprise */}
         <div className="mb-6 flex items-center gap-4">
           {company?.logo_url ? (
-            <img
+            <Image
               src={company.logo_url}
               alt={company.name}
+              width={56}
+              height={56}
               loading="lazy"
               className="h-14 w-14 shrink-0 rounded-xl border object-cover"
             />

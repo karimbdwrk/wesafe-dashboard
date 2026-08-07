@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
@@ -96,8 +97,15 @@ export default function ArticlePage() {
         <>
           {/* Image de couverture */}
           {article.cover_image && (
-            <div className="h-72 w-full overflow-hidden md:h-96">
-              <img src={article.cover_image} alt={article.title} className="h-full w-full object-cover" />
+            <div className="relative h-72 w-full overflow-hidden md:h-96">
+              <Image
+                src={article.cover_image}
+                alt={article.title}
+                fill
+                priority
+                sizes="100vw"
+                className="object-cover"
+              />
             </div>
           )}
 
@@ -175,12 +183,14 @@ export default function ArticlePage() {
                       href={`/blog/${rel.slug}`}
                       className="group block overflow-hidden rounded-xl border border-border bg-card transition-all hover:border-primary/40 hover:shadow-sm"
                     >
-                      <div className="h-32 overflow-hidden bg-muted">
+                      <div className="relative h-32 overflow-hidden bg-muted">
                         {rel.cover_image ? (
-                          <img
+                          <Image
                             src={rel.cover_image}
                             alt={rel.title}
-                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            fill
+                            sizes="(min-width: 1024px) 33vw, 50vw"
+                            className="object-cover transition-transform duration-300 group-hover:scale-105"
                           />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">

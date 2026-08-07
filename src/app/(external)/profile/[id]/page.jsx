@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import Image from "next/image";
 import { useParams } from "next/navigation";
 
 import {
@@ -93,11 +94,12 @@ function ProfileAvatar({ avatarUrl, firstname, lastname, size = 96 }) {
     );
   }
   return (
-    <img
+    <Image
       src={avatarUrl}
       alt={`${firstname} ${lastname}`}
+      width={size}
+      height={size}
       className="shrink-0 rounded-full border-2 border-border object-cover"
-      style={{ width: size, height: size }}
       onError={() => setImgError(true)}
     />
   );
