@@ -16,6 +16,7 @@ export default function robots(): MetadataRoute.Robots {
         "/profile/",
         "/contracts/",
         "/reset-password",
+        "/supprimer-mon-compte",
         "/unauthorized",
       ],
     },
