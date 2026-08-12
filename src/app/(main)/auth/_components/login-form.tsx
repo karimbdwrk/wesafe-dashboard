@@ -49,8 +49,20 @@ export function LoginForm() {
     const cookieOptions = `path=/; SameSite=Lax${maxAge}`;
 
     // 1. Candidat → table profiles
-    const { data: profileData } = await supabase.from("profiles").select("id").eq("id", userId).maybeSingle();
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("id, profile_status")
+      .eq("id", userId)
+      .maybeSingle();
     if (profileData) {
+      if (profileData.profile_status === "deleted") {
+        await supabase.auth.signOut();
+        toast.error("Compte supprimé", {
+          description:
+            "Ce compte a été supprimé et n'est plus accessible. Besoin d'aide ? Contactez support@wesafeapp.fr.",
+        });
+        return;
+      }
       document.cookie = `user_role=candidate; ${cookieOptions}`;
       logActivity(userId, "login", { role: "candidate" });
       toast.success("Connexion réussie", { description: "Bienvenue !" });
@@ -69,8 +81,20 @@ export function LoginForm() {
     }
 
     // 3. Entreprise → table companies
-    const { data: companyData } = await supabase.from("companies").select("id").eq("id", userId).maybeSingle();
+    const { data: companyData } = await supabase
+      .from("companies")
+      .select("id, company_status")
+      .eq("id", userId)
+      .maybeSingle();
     if (companyData) {
+      if (companyData.company_status === "deleted") {
+        await supabase.auth.signOut();
+        toast.error("Compte supprimé", {
+          description:
+            "Ce compte a été supprimé et n'est plus accessible. Besoin d'aide ? Contactez support@wesafeapp.fr.",
+        });
+        return;
+      }
       document.cookie = `user_role=company; ${cookieOptions}`;
       logActivity(userId, "login", { role: "company" });
       toast.success("Connexion réussie", { description: "Bienvenue !" });
