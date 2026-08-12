@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 
+import Image from "next/image";
 import Link from "next/link";
 
 import { AlertTriangle, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import wesafeLogo from "@/assets/wesafe-logo-inline.svg";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,9 +75,9 @@ export default function DeleteAccountPage() {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-background px-4 py-24">
       <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <Link href="/" className="font-bold text-2xl tracking-tight">
-            WeSafe
+        <div className="mb-8 flex justify-center">
+          <Link href="/">
+            <Image src={wesafeLogo} alt="WeSafe" width={116} height={39} className="h-8 w-auto" priority />
           </Link>
         </div>
 
