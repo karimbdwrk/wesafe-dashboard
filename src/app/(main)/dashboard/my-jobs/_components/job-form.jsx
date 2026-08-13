@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { Loader2, MapPin, Plus, Sparkles, Trash2, X, Zap } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -467,12 +468,19 @@ export function JobForm({ companyId, initialData, lastMinuteCredits = 0, onCredi
     if (form.salary_type === "annual_range" && (!form.salary_annual_min || !form.salary_annual_max))
       errs.salary_range = "Fourchette min. et max. requises";
     setErrors(errs);
-    return Object.keys(errs).length === 0;
+    return errs;
   }
 
   async function onSubmit(e) {
     e.preventDefault();
-    if (!validate()) return;
+    const errs = validate();
+    const errorCount = Object.keys(errs).length;
+    if (errorCount > 0) {
+      toast.error(errorCount > 1 ? "Informations manquantes" : "Information manquante", {
+        description: Object.values(errs).join(" · "),
+      });
+      return;
+    }
     setSaving(true);
 
     const { region, region_code } = getRegionFromDeptCode(form.department_code);
