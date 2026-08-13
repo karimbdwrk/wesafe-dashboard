@@ -9,10 +9,10 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Briefcase, Eye, EyeOff, Loader2, Shield, Smartphone, Star, TrendingUp, Users } from "lucide-react";
 import { toast } from "sonner";
 
-import wesafeLogo from "@/assets/wesafe-logo-inline.svg";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { WesafeLogo } from "@/components/wesafe-logo";
 import { supabase } from "@/lib/supabase/supabaseClient";
 
 const APPSTORE_URL = "https://apps.apple.com/app/wesafe";
@@ -464,7 +464,7 @@ export default function RegisterPage() {
       <div className="flex w-full items-center justify-center bg-background p-8 lg:w-2/3">
         <div className="w-full max-w-md py-12 lg:py-20">
           <Link href="/" className="mb-8 flex justify-center">
-            <Image src={wesafeLogo} alt="WeSafe" width={116} height={39} className="h-8 w-auto" priority />
+            <WesafeLogo width={116} height={39} className="h-8 w-auto" priority />
           </Link>
           {role === null && <RoleSelection onSelect={setRole} />}
           {role === "pro" && <ProRegistration onBack={() => setRole(null)} />}
@@ -472,16 +472,27 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      <div className="hidden bg-primary lg:block lg:w-1/3">
-        <div className="flex h-full flex-col items-center justify-center p-12 text-center">
-          <div className="space-y-6">
-            <Shield className="mx-auto size-12 text-primary-foreground" />
-            <div className="space-y-2">
-              <h1 className="font-light text-5xl text-primary-foreground">WeSafe</h1>
-              <p className="text-primary-foreground/80 text-xl">La sécurité, réinventée.</p>
-            </div>
-          </div>
+      <div className="hidden bg-primary lg:flex lg:w-1/3 lg:flex-col lg:justify-between lg:p-12">
+        <Image src="/W-fff.svg" alt="" aria-hidden="true" width={40} height={46} className="h-9 w-auto" />
+
+        <div className="space-y-3 text-center">
+          <h1 className="font-light text-4xl text-primary-foreground leading-tight">
+            Rejoignez la nouvelle génération
+            <br />
+            du recrutement en sécurité
+          </h1>
+          <p className="text-primary-foreground/80 text-lg">
+            Candidats ou entreprises, créez votre compte en quelques minutes.
+          </p>
         </div>
+
+        <blockquote className="space-y-2">
+          <p className="text-primary-foreground/90 text-lg italic leading-relaxed">
+            « On a construit WeSafe parce que le secteur de la sécurité méritait mieux qu&apos;un CV en PDF égaré dans
+            une boîte mail. »
+          </p>
+          <footer className="text-primary-foreground/60 text-sm not-italic">— L&apos;équipe WeSafe</footer>
+        </blockquote>
       </div>
     </div>
   );
