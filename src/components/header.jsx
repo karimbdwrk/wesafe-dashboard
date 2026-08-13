@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -18,6 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { WesafeLogo } from "@/components/wesafe-logo";
 import { persistPreference } from "@/lib/preferences/preferences-storage";
 import { usePreferencesStore } from "@/stores/preferences/preferences-provider";
 
@@ -85,14 +85,7 @@ export function Header() {
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <Link href="/" className="flex items-center">
-          <Image
-            src="https://hzvbylhdptwgblpdondm.supabase.co/storage/v1/object/public/dashboard-assets/wesafe-logo-inline.svg"
-            alt="WeSafe"
-            width={116}
-            height={39}
-            className="h-8 w-auto"
-            priority
-          />
+          <WesafeLogo width={116} height={39} className="h-8 w-auto" priority />
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">
