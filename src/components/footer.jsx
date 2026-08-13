@@ -1,5 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
+
+import { WesafeLogo } from "@/components/wesafe-logo";
 
 export function Footer() {
   return (
@@ -8,13 +9,7 @@ export function Footer() {
         <div className="grid gap-10 md:grid-cols-4">
           <div className="md:col-span-1">
             <Link href="/" className="flex items-center">
-              <Image
-                src="https://hzvbylhdptwgblpdondm.supabase.co/storage/v1/object/public/dashboard-assets/wesafe-logo-inline.svg"
-                alt="WeSafe"
-                width={116}
-                height={39}
-                className="h-9 w-auto"
-              />
+              <WesafeLogo width={116} height={39} className="h-9 w-auto" />
             </Link>
             <p className="mt-4 text-muted-foreground text-sm leading-relaxed">
               La plateforme de recrutement dédiée aux professionnels de la sécurité privée.
