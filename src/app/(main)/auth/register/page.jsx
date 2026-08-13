@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { ArrowLeft, Briefcase, Eye, EyeOff, Loader2, Shield, Smartphone, Star, TrendingUp, Users } from "lucide-react";
 import { toast } from "sonner";
 
+import wesafeLogo from "@/assets/wesafe-logo-inline.svg";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -461,6 +463,9 @@ export default function RegisterPage() {
 
       <div className="flex w-full items-center justify-center bg-background p-8 lg:w-2/3">
         <div className="w-full max-w-md py-12 lg:py-20">
+          <Link href="/" className="mb-8 flex justify-center">
+            <Image src={wesafeLogo} alt="WeSafe" width={116} height={39} className="h-8 w-auto" priority />
+          </Link>
           {role === null && <RoleSelection onSelect={setRole} />}
           {role === "pro" && <ProRegistration onBack={() => setRole(null)} />}
           {role === "candidate" && <CandidateMessage onBack={() => setRole(null)} />}
