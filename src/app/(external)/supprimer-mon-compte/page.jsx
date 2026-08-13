@@ -2,17 +2,16 @@
 
 import { useState } from "react";
 
-import Image from "next/image";
 import Link from "next/link";
 
 import { AlertTriangle, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-import wesafeLogo from "@/assets/wesafe-logo-inline.svg";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { WesafeLogo } from "@/components/wesafe-logo";
 import { supabase } from "@/lib/supabase/supabaseClient";
 
 export default function DeleteAccountPage() {
@@ -77,7 +76,7 @@ export default function DeleteAccountPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8 flex justify-center">
           <Link href="/">
-            <Image src={wesafeLogo} alt="WeSafe" width={116} height={39} className="h-8 w-auto" priority />
+            <WesafeLogo width={116} height={39} className="h-8 w-auto" priority />
           </Link>
         </div>
 
