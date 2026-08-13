@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
 
 import { cookies } from "next/headers";
-import Image from "next/image";
 import Link from "next/link";
 
 import { AppSidebar } from "@/app/(main)/dashboard/_components/sidebar/app-sidebar";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { WesafeLogo } from "@/components/wesafe-logo";
 import { SIDEBAR_COLLAPSIBLE_VALUES, SIDEBAR_VARIANT_VALUES } from "@/lib/preferences/layout";
 import { cn } from "@/lib/utils";
 import { getPreference } from "@/server/server-actions";
@@ -48,14 +48,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
               </div>
               <div className="absolute left-1/2 -translate-x-1/2">
                 <Link href="/" className="flex items-center">
-                  <Image
-                    src="https://hzvbylhdptwgblpdondm.supabase.co/storage/v1/object/public/dashboard-assets/wesafe-logo-inline.svg"
-                    alt="WeSafe"
-                    width={98}
-                    height={33}
-                    className="h-7 w-auto"
-                    priority
-                  />
+                  <WesafeLogo width={98} height={33} className="h-7 w-auto" priority />
                 </Link>
               </div>
               <div className="flex items-center gap-2">
