@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckCircle, Mail, MapPin, Phone, Send } from "lucide-react";
+import { CheckCircle, ChevronDown, Mail, MapPin, Phone, Send } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -201,17 +201,20 @@ export default function ContactPage() {
                       <FormItem>
                         <FormLabel>Sujet</FormLabel>
                         <FormControl>
-                          <select
-                            {...field}
-                            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                          >
-                            <option value="">Choisir un sujet…</option>
-                            {SUBJECTS.map((s) => (
-                              <option key={s} value={s}>
-                                {s}
-                              </option>
-                            ))}
-                          </select>
+                          <div className="relative">
+                            <select
+                              {...field}
+                              className="flex h-9 w-full appearance-none rounded-md border border-input bg-transparent px-3 py-1 pr-8 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            >
+                              <option value="">Choisir un sujet…</option>
+                              {SUBJECTS.map((s) => (
+                                <option key={s} value={s}>
+                                  {s}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-3 h-4 w-4 text-muted-foreground opacity-50" />
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
