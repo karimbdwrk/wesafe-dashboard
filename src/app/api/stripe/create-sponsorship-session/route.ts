@@ -11,63 +11,81 @@ const SPONSORSHIP_PRICES: Record<string, { amount: number; label: string }> = {
 };
 
 export async function POST(req: Request) {
-  const { companyId, jobId, duration } = await req.json();
+  try {
+    const { companyId, jobId, duration } = await req.json();
 
-  if (!companyId || !jobId || !duration) {
-    return NextResponse.json({ error: "companyId, jobId et duration sont requis." }, { status: 400 });
-  }
+    if (!companyId || !jobId || !duration) {
+      return NextResponse.json({ error: "companyId, jobId et duration sont requis." }, { status: 400 });
+    }
 
-  const priceInfo = SPONSORSHIP_PRICES[duration];
-  if (!priceInfo) {
-    return NextResponse.json({ error: "Durée de sponsoring invalide." }, { status: 400 });
-  }
+    const priceInfo = SPONSORSHIP_PRICES[duration];
+    if (!priceInfo) {
+      return NextResponse.json({ error: "Durée de sponsoring invalide." }, { status: 400 });
+    }
 
-  const { data: company, error } = await supabaseAdmin
-    .from("companies")
-    .select("id, name, email, stripe_customer_id")
-    .eq("id", companyId)
-    .single();
+    const { data: company, error } = await supabaseAdmin
+      .from("companies")
+      .select("id, name, email, stripe_customer_id")
+      .eq("id", companyId)
+      .single();
 
-  if (error || !company) {
-    return NextResponse.json({ error: "Entreprise introuvable." }, { status: 404 });
-  }
+    if (error || !company) {
+      return NextResponse.json({ error: "Entreprise introuvable." }, { status: 404 });
+    }
 
-  let customerId = company.stripe_customer_id;
+    let customerId = company.stripe_customer_id;
 
-  if (!customerId) {
-    const customer = await stripe.customers.create({
-      name: company.name ?? undefined,
-      email: company.email ?? undefined,
-      metadata: { company_id: companyId },
-    });
-    customerId = customer.id;
-    await supabaseAdmin.from("companies").update({ stripe_customer_id: customerId }).eq("id", companyId);
-  }
+    // Un customer_id stocké avant un changement de clé Stripe (test → live) n'existe plus
+    // dans le mode courant : on vérifie qu'il est toujours valide avant de le réutiliser.
+    if (customerId) {
+      try {
+        await stripe.customers.retrieve(customerId);
+      } catch {
+        customerId = null;
+      }
+    }
 
-  const appUrl = getAppUrl(req);
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        name: company.name ?? undefined,
+        email: company.email ?? undefined,
+        metadata: { company_id: companyId },
+      });
+      customerId = customer.id;
+      await supabaseAdmin.from("companies").update({ stripe_customer_id: customerId }).eq("id", companyId);
+    }
 
-  const session = await stripe.checkout.sessions.create({
-    customer: customerId,
-    mode: "payment",
-    line_items: [
-      {
-        price_data: {
-          currency: "eur",
-          unit_amount: priceInfo.amount,
-          product_data: { name: `Sponsoring d'annonce — ${priceInfo.label}` },
+    const appUrl = getAppUrl(req);
+
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      mode: "payment",
+      line_items: [
+        {
+          price_data: {
+            currency: "eur",
+            unit_amount: priceInfo.amount,
+            product_data: { name: `Sponsoring d'annonce — ${priceInfo.label}` },
+          },
+          quantity: 1,
         },
-        quantity: 1,
+      ],
+      success_url: `${appUrl}/dashboard/my-jobs?sponsorship_success=true&job_id=${jobId}`,
+      cancel_url: `${appUrl}/dashboard/my-jobs?cancelled=true&job_id=${jobId}&source=sponsoring`,
+      metadata: {
+        company_id: companyId,
+        job_id: jobId,
+        type: "job_sponsorship",
+        sponsorship_duration: duration,
       },
-    ],
-    success_url: `${appUrl}/dashboard/my-jobs?sponsorship_success=true&job_id=${jobId}`,
-    cancel_url: `${appUrl}/dashboard/my-jobs?cancelled=true&job_id=${jobId}&source=sponsoring`,
-    metadata: {
-      company_id: companyId,
-      job_id: jobId,
-      type: "job_sponsorship",
-      sponsorship_duration: duration,
-    },
-  });
+    });
 
-  return NextResponse.json({ url: session.url });
+    return NextResponse.json({ url: session.url });
+  } catch (err) {
+    console.error("[create-sponsorship-session] Erreur:", err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Erreur lors de la création de la session de paiement." },
+      { status: 500 },
+    );
+  }
 }
