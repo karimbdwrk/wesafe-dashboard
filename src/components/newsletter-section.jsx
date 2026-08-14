@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { motion } from "framer-motion";
-import { Mail, Send } from "lucide-react";
+import { ChevronDown, Mail, Send } from "lucide-react";
 import { toast } from "sonner";
 
 import { AmbientBackground } from "@/components/ambient-background";
@@ -79,18 +79,21 @@ export function NewsletterSection() {
                   </p>
                 )}
               </div>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                required
-                className="h-11 rounded-[16px] border border-input bg-background px-3 text-foreground text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring sm:w-44"
-              >
-                <option value="" disabled>
-                  Je suis…
-                </option>
-                <option value="candidat">Candidat</option>
-                <option value="company">Entreprise</option>
-              </select>
+              <div className="relative sm:w-44">
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  required
+                  className="h-11 w-full appearance-none rounded-[16px] border border-input bg-background px-3 pr-8 text-foreground text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                >
+                  <option value="" disabled>
+                    Je suis…
+                  </option>
+                  <option value="candidat">Candidat</option>
+                  <option value="company">Entreprise</option>
+                </select>
+                <ChevronDown className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-3 h-4 w-4 text-muted-foreground opacity-50" />
+              </div>
               <Button
                 type="submit"
                 disabled={!canSubmit}
