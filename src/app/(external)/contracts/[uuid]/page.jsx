@@ -196,7 +196,7 @@ function LoginDialog({ open, contractData, onSuccess }) {
       if (isContractParty(uid, contractData) || (await isSuperAdmin(uid))) {
         logActivity(uid, "login", { context: "contract_view" });
         logActivity(uid, "contract_view", { contractId: contractData.id });
-        onSuccess();
+        onSuccess(authData.user);
       } else {
         await supabase.auth.signOut();
         setError("Ce contrat ne vous appartient pas. Connectez-vous avec le bon compte.");
@@ -269,6 +269,142 @@ function LoginDialog({ open, contractData, onSuccess }) {
   );
 }
 
+// ─── Signature (pro) dialog ────────────────────────────────────────────────────
+
+function SignContractDialog({ open, onOpenChange, contract, dc, legalRepName, candidateName, currentUser, onSigned }) {
+  const [step, setStep] = useState("confirm"); // "confirm" | "otp"
+  const [otp, setOtp] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  function reset() {
+    setStep("confirm");
+    setOtp("");
+    setError("");
+  }
+
+  async function handleSendOtp() {
+    setError("");
+    setSubmitting(true);
+    try {
+      const { error: fnError } = await supabase.functions.invoke("send-contract-otp", {
+        body: {
+          candidate_email: currentUser.email,
+          candidate_name: legalRepName && legalRepName !== "—" ? legalRepName : (dc?.name ?? "vous"),
+          company_name: dc?.name ?? "votre entreprise",
+          contract_id: contract.id,
+          role: "pro",
+          job_title: contract.job_title ?? "",
+          candidate_display_name: candidateName,
+        },
+      });
+      if (fnError) throw fnError;
+      setStep("otp");
+    } catch {
+      setError("Impossible d'envoyer le code. Réessayez.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleVerifyOtp(e) {
+    e.preventDefault();
+    if (otp.length !== 6) return;
+    setError("");
+    setSubmitting(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("verify-contract-otp", {
+        body: { contract_id: contract.id, otp },
+      });
+      if (fnError) throw fnError;
+      if (!data?.success) {
+        setError(data?.error ?? "Code invalide.");
+        return;
+      }
+      const signedAt = new Date().toISOString();
+      const { error: updateError } = await supabase
+        .from("contracts")
+        .update({ isProSigned: true, signed_at_company: signedAt })
+        .eq("id", contract.id);
+      if (updateError) throw updateError;
+      logActivity(currentUser.id, "contract_sign", { contractId: contract.id, role: "pro" });
+      onSigned(signedAt);
+      onOpenChange(false);
+      reset();
+    } catch {
+      setError("Erreur lors de la vérification. Réessayez.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (submitting) return;
+        onOpenChange(v);
+        if (!v) reset();
+      }}
+    >
+      <DialogContent className="sm:max-w-sm">
+        {step === "confirm" && (
+          <>
+            <DialogHeader>
+              <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-[#1B3A6B]/10">
+                <ShieldCheck className="h-5 w-5 text-[#1B3A6B]" />
+              </div>
+              <DialogTitle className="text-center">Signer ce contrat</DialogTitle>
+              <DialogDescription className="text-center">
+                Un code de vérification à 6 chiffres va être envoyé à <strong>{currentUser?.email}</strong> pour
+                confirmer la signature électronique et le tampon de {dc?.name ?? "votre entreprise"}.
+              </DialogDescription>
+            </DialogHeader>
+            {error && <p className="text-destructive text-xs">{error}</p>}
+            <Button onClick={handleSendOtp} className="w-full bg-[#1B3A6B] hover:bg-[#1B3A6B]/90" disabled={submitting}>
+              {submitting ? "Envoi…" : "Recevoir le code"}
+            </Button>
+          </>
+        )}
+        {step === "otp" && (
+          <>
+            <DialogHeader>
+              <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-[#1B3A6B]/10">
+                <ShieldCheck className="h-5 w-5 text-[#1B3A6B]" />
+              </div>
+              <DialogTitle className="text-center">Code de signature</DialogTitle>
+              <DialogDescription className="text-center">
+                Entrez le code à 6 chiffres envoyé à {currentUser?.email}.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleVerifyOtp} className="space-y-3 pt-1">
+              <Input
+                type="text"
+                inputMode="numeric"
+                placeholder="123456"
+                maxLength={6}
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                className="text-center font-mono text-xl tracking-[0.5em]"
+                autoFocus
+                required
+              />
+              {error && <p className="text-destructive text-xs">{error}</p>}
+              <Button
+                type="submit"
+                className="w-full bg-[#1B3A6B] hover:bg-[#1B3A6B]/90"
+                disabled={submitting || otp.length !== 6}
+              >
+                {submitting ? "Vérification…" : "Confirmer la signature"}
+              </Button>
+            </form>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ContractPage() {
@@ -276,6 +412,8 @@ export default function ContractPage() {
   const [contract, setContract] = useState(null);
   const [notFound, setNotFound] = useState(false);
   const [authState, setAuthState] = useState("loading");
+  const [currentUser, setCurrentUser] = useState(null);
+  const [signDialogOpen, setSignDialogOpen] = useState(false);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: intentional — only re-run when uuid changes
   useEffect(() => {
@@ -297,7 +435,10 @@ export default function ContractPage() {
         return;
       }
       const allowed = isContractParty(user.id, contractData) || (await isSuperAdmin(user.id));
-      if (allowed) logActivity(user.id, "contract_view", { contractId: contractData.id });
+      if (allowed) {
+        logActivity(user.id, "contract_view", { contractId: contractData.id });
+        setCurrentUser({ id: user.id, email: user.email });
+      }
       setAuthState(allowed ? "authorized" : "unauthorized");
     })();
   }, [uuid]);
@@ -424,7 +565,20 @@ export default function ContractPage() {
       <LoginDialog
         open={authState === "unauthenticated"}
         contractData={contract}
-        onSuccess={() => setAuthState("authorized")}
+        onSuccess={(user) => {
+          setCurrentUser({ id: user.id, email: user.email });
+          setAuthState("authorized");
+        }}
+      />
+      <SignContractDialog
+        open={signDialogOpen}
+        onOpenChange={setSignDialogOpen}
+        contract={contract}
+        dc={dc}
+        legalRepName={legalRepName}
+        candidateName={candidateName}
+        currentUser={currentUser}
+        onSigned={(signedAt) => setContract((c) => ({ ...c, isProSigned: true, signed_at_company: signedAt }))}
       />
       <div
         className={`min-h-dvh bg-muted/30 px-4 pt-20 pb-10 transition-[filter] duration-300 ${authState === "unauthenticated" ? "pointer-events-none select-none blur-sm" : ""}`}
@@ -945,6 +1099,11 @@ export default function ContractPage() {
                   mention="Mention manuscrite : « Lu et approuvé »"
                 />
               </div>
+              {currentUser?.id === contract.company_id && !contract.isProSigned && (
+                <Button onClick={() => setSignDialogOpen(true)} className="w-full bg-[#1B3A6B] hover:bg-[#1B3A6B]/90">
+                  Signer en tant qu&apos;entreprise
+                </Button>
+              )}
               {isCDD && (
                 <InfoBox variant="warning">
                   <strong>Art. L. 1242-13 C. trav. :</strong> Le contrat doit être transmis au salarié dans les 2 jours
