@@ -128,7 +128,7 @@ function SigBlock({ role, name, sub, signed, signedAt, sigUrl, stampUrl, mention
       <p className="font-semibold text-muted-foreground text-[10px] uppercase tracking-widest">{role}</p>
       <p className="font-bold text-sm">{name}</p>
       {sub && <p className="text-muted-foreground text-xs">{sub}</p>}
-      <div className="relative flex min-h-[72px] items-center justify-center overflow-hidden rounded-lg border border-dashed bg-muted/20">
+      <div className="relative flex min-h-[72px] items-center justify-center overflow-hidden rounded-lg border border-dashed bg-white">
         {stampUrl && (
           <Image
             src={stampUrl}
@@ -327,6 +327,36 @@ function SignContractDialog({ open, onOpenChange, contract, dc, legalRepName, ca
         .update({ isProSigned: true, signed_at_company: signedAt })
         .eq("id", contract.id);
       if (updateError) throw updateError;
+
+      // Synchronise le statut de la candidature, comme lors de l'envoi du contrat
+      // (voir ContractSheet dans my-applications/page.jsx).
+      const applicationId = contract.apply_id;
+      if (applicationId) {
+        await supabase.from("application_status_events").insert({
+          application_id: applicationId,
+          status: "contract_signed_pro",
+          updated_by: "company",
+        });
+        await supabase
+          .from("applications")
+          .update({ current_status: "contract_signed_pro", updated_at: signedAt })
+          .eq("id", applicationId);
+
+        const candidateId = contract.candidate_id;
+        if (candidateId) {
+          await supabase.from("notifications").insert({
+            actor_id: currentUser.id,
+            recipient_id: candidateId,
+            type: "contract",
+            title: contract.job_title ?? "Contrat de mission",
+            entity_type: "contract",
+            entity_id: applicationId,
+            body: "Le contrat de mission a été finalisé par l'entreprise.",
+            is_read: false,
+          });
+        }
+      }
+
       logActivity(currentUser.id, "contract_sign", { contractId: contract.id, role: "pro" });
       onSigned(signedAt);
       onOpenChange(false);
@@ -1099,10 +1129,13 @@ export default function ContractPage() {
                   mention="Mention manuscrite : « Lu et approuvé »"
                 />
               </div>
-              {currentUser?.id === contract.company_id && !contract.isProSigned && (
+              {currentUser?.id === contract.company_id && !contract.isProSigned && contract.isSigned && (
                 <Button onClick={() => setSignDialogOpen(true)} className="w-full bg-[#1B3A6B] hover:bg-[#1B3A6B]/90">
                   Signer en tant qu&apos;entreprise
                 </Button>
+              )}
+              {currentUser?.id === contract.company_id && !contract.isProSigned && !contract.isSigned && (
+                <InfoBox>En attente de la signature du candidat avant de pouvoir signer.</InfoBox>
               )}
               {isCDD && (
                 <InfoBox variant="warning">
