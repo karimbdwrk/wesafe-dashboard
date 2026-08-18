@@ -5,12 +5,13 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 
-import { CheckCircle2, Eye, EyeOff, FileText, Lock, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Download, Eye, EyeOff, FileText, Lock, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { buildCddHtml, buildCdiHtml, buildVacationsHtml, DAY_FR as PDF_DAY_FR } from "@/lib/contract-pdf-templates";
 import { logActivity } from "@/lib/supabase/activity";
 import { supabase } from "@/lib/supabase/supabaseClient";
 
@@ -616,6 +617,34 @@ export default function ContractPage() {
       ? "CDD – Contrat à durée déterminée"
       : "CDI – Contrat à durée indéterminée";
 
+  // Téléchargement PDF — même template HTML que l'app (contract-pdf-templates.js),
+  // rendu dans un nouvel onglet puis imprimé (l'utilisateur choisit "Enregistrer en PDF").
+  function handleDownloadPdf() {
+    const d = {
+      dc,
+      dd,
+      contract,
+      company: { signature_url: companySigUrl, stamp_url: companyStampUrl },
+      candidate: { signature_url: candidateSigUrl },
+      apply: { id: contract.apply_id || contract.id },
+      ws,
+      vacs,
+      schedKnown,
+      DAY_FR: PDF_DAY_FR,
+      monthlyHours,
+      hourlyRate,
+      monthlySalary,
+    };
+    const html = isVacations ? buildVacationsHtml(d) : isCDD ? buildCddHtml(d) : buildCdiHtml(d);
+    const win = window.open("", "_blank");
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+    win.onload = () => {
+      setTimeout(() => win.print(), 250);
+    };
+  }
+
   return (
     <>
       <LoginDialog
@@ -682,6 +711,13 @@ export default function ContractPage() {
                 ))}
             </div>
           </div>
+
+          {(currentUser?.id === contract.company_id || currentUser?.id === contract.candidate_id) && (
+            <Button variant="outline" className="w-full gap-2" onClick={handleDownloadPdf}>
+              <Download className="h-4 w-4" />
+              Télécharger le contrat (PDF)
+            </Button>
+          )}
 
           {/* ── Art – Parties ────────────────────────────────────────────── */}
           <Section number={nn()} title="Parties au contrat">
