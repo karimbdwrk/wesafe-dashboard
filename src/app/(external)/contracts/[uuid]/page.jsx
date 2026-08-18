@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useParams } from "next/navigation";
 
 import { CheckCircle2, Eye, EyeOff, FileText, Lock, ShieldCheck } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -271,7 +272,17 @@ function LoginDialog({ open, contractData, onSuccess }) {
 
 // ─── Signature (pro) dialog ────────────────────────────────────────────────────
 
-function SignContractDialog({ open, onOpenChange, contract, dc, legalRepName, candidateName, currentUser, onSigned }) {
+function SignContractDialog({
+  open,
+  onOpenChange,
+  contract,
+  dc,
+  legalRepName,
+  candidateName,
+  candidateEmail,
+  currentUser,
+  onSigned,
+}) {
   const [step, setStep] = useState("confirm"); // "confirm" | "otp"
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
@@ -347,17 +358,32 @@ function SignContractDialog({ open, onOpenChange, contract, dc, legalRepName, ca
           await supabase.from("notifications").insert({
             actor_id: currentUser.id,
             recipient_id: candidateId,
-            type: "contract",
-            title: contract.job_title ?? "Contrat de mission",
-            entity_type: "contract",
+            type: "contract_signed_pro",
+            title: "Contrat signé et tamponné par l'entreprise",
+            entity_type: "application",
             entity_id: applicationId,
-            body: "Le contrat de mission a été finalisé par l'entreprise.",
+            body: "L'entreprise a signé et tamponné le contrat.",
             is_read: false,
           });
+        }
+
+        if (candidateEmail) {
+          const { error: emailError } = await supabase.functions.invoke("send-recruitment-status-email", {
+            body: {
+              recipientEmail: candidateEmail,
+              recipientName: candidateName,
+              actorName: dc?.name ?? "l'entreprise",
+              status: "contract_signed_pro",
+              jobTitle: contract.job_title ?? "",
+              recipientType: "candidate",
+            },
+          });
+          if (emailError) console.error("[send-recruitment-status-email] Erreur:", emailError);
         }
       }
 
       logActivity(currentUser.id, "contract_sign", { contractId: contract.id, role: "pro" });
+      toast.success("Contrat signé et tamponné !");
       onSigned(signedAt);
       onOpenChange(false);
       reset();
@@ -607,6 +633,7 @@ export default function ContractPage() {
         dc={dc}
         legalRepName={legalRepName}
         candidateName={candidateName}
+        candidateEmail={dd?.email}
         currentUser={currentUser}
         onSigned={(signedAt) => setContract((c) => ({ ...c, isProSigned: true, signed_at_company: signedAt }))}
       />
