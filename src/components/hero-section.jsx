@@ -61,7 +61,7 @@ export function HeroSection() {
               </Button>
             </div>
 
-            {/* Stats */}
+            {/* Stats — désactivés : chiffres à rétablir une fois la vraie traction disponible.
             <div className="mt-12 flex items-center justify-center gap-8 lg:justify-start">
               <div>
                 <p className="font-(family-name:--font-heading) font-bold text-2xl text-foreground">12K+</p>
@@ -78,6 +78,7 @@ export function HeroSection() {
                 <p className="text-muted-foreground text-sm">Satisfaction</p>
               </div>
             </div>
+            */}
           </motion.div>
 
           {/* Right - mockup image */}
