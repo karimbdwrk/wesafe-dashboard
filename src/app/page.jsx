@@ -10,7 +10,8 @@ import { NewsletterSection } from "@/components/newsletter-section";
 import { OffersSection } from "@/components/offers-section";
 import { PricingSection } from "@/components/pricing-section";
 import { ProcessSection } from "@/components/process-section";
-import { StatsSection } from "@/components/stats-section";
+
+// import { StatsSection } from "@/components/stats-section"; // désactivé : chiffres faux/trop faibles, à rétablir plus tard
 
 const TITLE = "WeSafe - Recrutement en sécurité privée : agents & entreprises";
 const DESCRIPTION =
@@ -40,7 +41,7 @@ export default function Home() {
     <main className="min-h-screen bg-background">
       <Header />
       <HeroSection />
-      <StatsSection />
+      {/* <StatsSection /> désactivé : chiffres faux/trop faibles, à rétablir plus tard */}
       <FeaturesSection />
       <DashboardPreviewSection />
       <MobilePreviewSection />
