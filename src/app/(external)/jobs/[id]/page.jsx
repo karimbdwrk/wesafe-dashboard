@@ -39,8 +39,8 @@ import { supabase } from "@/lib/supabase/supabaseClient";
 import appstoreImg from "../../../../../media/appstore.png";
 import playstoreImg from "../../../../../media/playstore.png";
 
-const APPSTORE_URL = "https://apps.apple.com/app/wesafe";
-const PLAYSTORE_URL = "https://play.google.com/store/apps/details?id=com.wesafe";
+const APPSTORE_URL = "https://apps.apple.com/fr/app/wesafe-recruitment/id6737527469";
+const PLAYSTORE_URL = "https://play.google.com/store/apps/details?id=com.aizensecu.wesafe";
 
 // Mapping complet des types de contrat (inclut formats legacy Supabase)
 const contractTypeLabel = {

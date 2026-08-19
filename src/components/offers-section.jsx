@@ -19,8 +19,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase/supabaseClient";
 
-const APPSTORE_URL = "https://apps.apple.com/app/wesafe";
-const PLAYSTORE_URL = "https://play.google.com/store/apps/details?id=com.wesafe";
+const APPSTORE_URL = "https://apps.apple.com/fr/app/wesafe-recruitment/id6737527469";
+const PLAYSTORE_URL = "https://play.google.com/store/apps/details?id=com.aizensecu.wesafe";
 
 export function OffersSection() {
   const [jobs, setJobs] = useState([]);

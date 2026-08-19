@@ -33,10 +33,20 @@ export function CtaSection() {
             </p>
 
             <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <a href="#" className="transition-opacity hover:opacity-80">
+              <a
+                href="https://apps.apple.com/fr/app/wesafe-recruitment/id6737527469"
+                target="_blank"
+                className="transition-opacity hover:opacity-80"
+                rel="noopener"
+              >
                 <Image src={appstoreImg} alt="Télécharger sur l'App Store" height={48} />
               </a>
-              <a href="#" className="transition-opacity hover:opacity-80">
+              <a
+                href="https://play.google.com/store/apps/details?id=com.aizensecu.wesafe"
+                target="_blank"
+                className="transition-opacity hover:opacity-80"
+                rel="noopener"
+              >
                 <Image src={playstoreImg} alt="Disponible sur Google Play" height={48} />
               </a>
             </div>
