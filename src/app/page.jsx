@@ -5,6 +5,7 @@ import { FeaturesSection } from "@/components/features-section";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { HeroSection } from "@/components/hero-section";
+import { LandingMotion } from "@/components/landing/motion/landing-motion";
 import { MobilePreviewSection } from "@/components/mobile-preview-section";
 import { NewsletterSection } from "@/components/newsletter-section";
 import { OffersSection } from "@/components/offers-section";
@@ -38,20 +39,22 @@ export const metadata = {
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-background">
-      <Header />
-      <HeroSection />
-      {/* <StatsSection /> désactivé : chiffres faux/trop faibles, à rétablir plus tard */}
-      <FeaturesSection />
-      <DashboardPreviewSection />
-      <MobilePreviewSection />
-      <ProcessSection />
-      <OffersSection />
-      <PricingSection />
-      <FaqSection />
-      <CtaSection />
-      <NewsletterSection />
-      <Footer />
-    </main>
+    <LandingMotion>
+      <main className="min-h-screen bg-background">
+        <Header />
+        <HeroSection />
+        {/* <StatsSection /> désactivé : chiffres faux/trop faibles, à rétablir plus tard */}
+        <FeaturesSection />
+        <DashboardPreviewSection />
+        <MobilePreviewSection />
+        <ProcessSection />
+        <OffersSection />
+        <PricingSection />
+        <FaqSection />
+        <CtaSection />
+        <NewsletterSection />
+        <Footer />
+      </main>
+    </LandingMotion>
   );
 }

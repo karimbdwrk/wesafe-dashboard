@@ -1,42 +1,42 @@
-"use client";
-
-import { motion } from "framer-motion";
 import { Clock, FileText, Search, Shield, Users, Zap } from "lucide-react";
+
+import { Press } from "@/components/landing/motion/press";
+import { Reveal } from "@/components/landing/motion/reveal";
 
 const features = [
   {
     icon: Search,
     title: "Processus de recrutement",
     description:
-      "Un parcours de recrutement structure et transparent, du depot de candidature a l'embauche, entierement digitalise.",
+      "Un parcours de recrutement structuré et transparent, du dépôt de candidature à l'embauche, entièrement digitalisé.",
   },
   {
     icon: FileText,
-    title: "Generation de contrats",
+    title: "Génération de contrats",
     description:
-      "Generez vos contrats de travail en quelques clics grace a nos modeles pre-remplis et conformes a la legislation.",
+      "Générez vos contrats de travail en quelques clics grâce à nos modèles pré-remplis et conformes à la législation.",
   },
   {
     icon: Clock,
     title: "Offres Last Minute",
-    description: "Besoin urgent d'un agent ? Publiez une offre last minute et recevez des candidatures en temps reel.",
+    description: "Besoin urgent d'un agent ? Publiez une offre last minute et recevez des candidatures en temps réel.",
   },
   {
     icon: Shield,
-    title: "Profils verifies",
-    description: "Chaque agent est verifie : diplomes, certifications CNAPS, experience. Recrutez en toute confiance.",
+    title: "Profils vérifiés",
+    description: "Chaque agent est vérifié : diplômes, certifications CNAPS, expérience. Recrutez en toute confiance.",
   },
   {
     icon: Zap,
     title: "Matching intelligent",
     description:
-      "Notre algorithme vous propose les candidats les plus pertinents selon vos criteres et votre localisation.",
+      "Notre algorithme vous propose les candidats les plus pertinents selon vos critères et votre localisation.",
   },
   {
     icon: Users,
-    title: "Gestion d'equipe",
+    title: "Gestion d'équipe",
     description:
-      "Planifiez vos equipes, gerez les plannings et suivez la disponibilite de vos agents depuis l'application.",
+      "Planifiez vos équipes, gérez les plannings et suivez la disponibilité de vos agents depuis l'application.",
   },
 ];
 
@@ -44,41 +44,29 @@ export function FeaturesSection() {
   return (
     <section id="fonctionnalites" className="relative py-20 md:py-32">
       <div className="mx-auto max-w-7xl px-6">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-          className="mx-auto max-w-2xl text-center"
-        >
-          <p className="font-medium text-primary text-sm uppercase tracking-widest">Fonctionnalites</p>
-          <h2 className="mt-4 text-balance font-(family-name:--font-heading) font-bold text-3xl text-foreground md:text-4xl">
-            Tout ce dont vous avez besoin pour recruter dans la securite
+        <Reveal className="mx-auto max-w-2xl text-center">
+          <p className="text-eyebrow text-primary">Fonctionnalités</p>
+          <h2 className="mt-4 text-title text-foreground">
+            Tout ce dont vous avez besoin pour recruter dans la sécurité
           </h2>
-          <p className="mt-4 text-lg text-muted-foreground">
-            Une plateforme complete pensee pour les professionnels de la securite privee.
+          <p className="mt-4 text-body-lg text-muted-foreground">
+            Une plateforme complète pensée pour les professionnels de la sécurité privée.
           </p>
-        </motion.div>
+        </Reveal>
 
         <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature, i) => (
-            <motion.div
-              key={feature.title}
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.45, ease: "easeOut", delay: (i % 3) * 0.08 }}
-              whileHover={{ y: -4 }}
-              className="group rounded-[24px] border border-border/70 bg-card/60 p-8 shadow-sm backdrop-blur-sm transition-colors hover:border-primary/40 hover:shadow-[0_12px_40px_-16px_var(--brand-glow)]"
-            >
-              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-primary/15 to-brand-accent/10">
-                <feature.icon className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="font-(family-name:--font-heading) font-semibold text-foreground text-lg">
-                {feature.title}
-              </h3>
-              <p className="mt-3 text-muted-foreground leading-relaxed">{feature.description}</p>
-            </motion.div>
+            <Reveal key={feature.title} index={i % 3} className="flex">
+              <Press lift={4} tap={false} className="flex w-full">
+                <div className="w-full rounded-[24px] border border-border/70 bg-card p-8 shadow-sm transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-[0_12px_40px_-16px_var(--brand-glow)]">
+                  <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-primary/15 to-brand-accent/10">
+                    <feature.icon className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="text-headline text-foreground">{feature.title}</h3>
+                  <p className="mt-3 text-muted-foreground leading-relaxed">{feature.description}</p>
+                </div>
+              </Press>
+            </Reveal>
           ))}
         </div>
       </div>

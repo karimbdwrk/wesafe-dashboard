@@ -1,8 +1,4 @@
-"use client";
-
 import type { ReactNode } from "react";
-
-import { motion, useReducedMotion } from "framer-motion";
 
 type MacbookFrameProps = {
   children: ReactNode;
@@ -13,17 +9,11 @@ type MacbookFrameProps = {
 /**
  * CSS-drawn MacBook Pro chrome (no photo/mockup asset). `children` renders
  * the recreated screen content — keeps the hero free of stock imagery.
+ * Statique (Server Component) : pas de boucle de flottement.
  */
 export function MacbookFrame({ children, className = "", tilt = true }: MacbookFrameProps) {
-  const reduceMotion = useReducedMotion();
-
   return (
-    <motion.div
-      className={`relative ${className}`}
-      style={{ perspective: 1600 }}
-      animate={reduceMotion ? undefined : { y: [0, -10, 0] }}
-      transition={reduceMotion ? undefined : { duration: 7, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
-    >
+    <div className={`relative ${className}`} style={{ perspective: 1600 }}>
       {/* Glow */}
       <div
         className="-translate-x-1/2 absolute top-1/3 left-1/2 h-[70%] w-[85%] rounded-full blur-[90px]"
@@ -50,6 +40,6 @@ export function MacbookFrame({ children, className = "", tilt = true }: MacbookF
           <div className="-translate-x-1/2 absolute top-0 left-1/2 h-[10px] w-[22%] rounded-b-[6px] bg-zinc-950" />
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

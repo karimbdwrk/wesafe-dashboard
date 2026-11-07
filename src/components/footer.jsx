@@ -17,7 +17,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-(family-name:--font-heading) font-semibold text-foreground text-sm">Produit</h4>
+            <h4 className="text-eyebrow text-[0.75rem] text-foreground">Produit</h4>
             <ul className="mt-4 flex flex-col gap-3">
               <li>
                 <Link href="/tarifs" className="text-muted-foreground text-sm transition-colors hover:text-foreground">
@@ -33,7 +33,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-(family-name:--font-heading) font-semibold text-foreground text-sm">Entreprise</h4>
+            <h4 className="text-eyebrow text-[0.75rem] text-foreground">Entreprise</h4>
             <ul className="mt-4 flex flex-col gap-3">
               <li>
                 <Link href="/blog" className="text-muted-foreground text-sm transition-colors hover:text-foreground">
@@ -49,7 +49,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-(family-name:--font-heading) font-semibold text-foreground text-sm">Légal</h4>
+            <h4 className="text-eyebrow text-[0.75rem] text-foreground">Légal</h4>
             <ul className="mt-4 flex flex-col gap-3">
               <li>
                 <Link

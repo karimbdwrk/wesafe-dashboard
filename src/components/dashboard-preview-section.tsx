@@ -1,8 +1,6 @@
-"use client";
-
-import { motion } from "framer-motion";
 import { BarChart3, FileText, LayoutGrid, Search, Sparkles, Users } from "lucide-react";
 
+import { Reveal } from "@/components/landing/motion/reveal";
 import { MacbookFrame } from "@/components/macbook-frame";
 
 const callouts = [
@@ -109,53 +107,36 @@ export function DashboardPreviewSection() {
     <section className="relative py-20 md:py-32">
       <div className="mx-auto max-w-7xl px-6">
         <div className="grid items-center gap-16 lg:grid-cols-2 lg:gap-12">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-          >
+          <Reveal y={32} scale={0.96}>
             <MacbookFrame tilt={false} className="mx-auto w-full max-w-xl">
               <DashboardScreen />
             </MacbookFrame>
-          </motion.div>
+          </Reveal>
 
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
-          >
-            <p className="font-medium text-primary text-sm uppercase tracking-widest">Dashboard entreprise</p>
-            <h2 className="mt-4 text-balance font-(family-name:--font-heading) font-bold text-3xl text-foreground md:text-4xl">
-              Pilotez votre recrutement depuis un seul écran
-            </h2>
-            <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
-              Offres, candidatures, contrats et statistiques : tout est centralisé pour vous faire gagner un temps
-              précieux.
-            </p>
+          <div>
+            <Reveal index={1}>
+              <p className="text-eyebrow text-primary">Dashboard entreprise</p>
+              <h2 className="mt-4 text-title text-foreground">Pilotez votre recrutement depuis un seul écran</h2>
+              <p className="mt-4 text-body-lg text-muted-foreground">
+                Offres, candidatures, contrats et statistiques : tout est centralisé pour vous faire gagner un temps
+                précieux.
+              </p>
+            </Reveal>
 
             <div className="mt-10 space-y-6">
               {callouts.map((item, i) => (
-                <motion.div
-                  key={item.title}
-                  initial={{ opacity: 0, y: 12 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, ease: "easeOut", delay: i * 0.1 }}
-                  className="flex gap-4"
-                >
+                <Reveal key={item.title} index={i + 1} y={16} className="flex gap-4">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
                     <item.icon className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-foreground">{item.title}</h3>
+                    <h3 className="text-headline text-[1rem] text-foreground">{item.title}</h3>
                     <p className="mt-1 text-muted-foreground text-sm leading-relaxed">{item.description}</p>
                   </div>
-                </motion.div>
+                </Reveal>
               ))}
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>

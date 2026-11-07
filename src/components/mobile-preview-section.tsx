@@ -1,9 +1,7 @@
-"use client";
-
-import { motion } from "framer-motion";
 import { Bell, FileCheck, MousePointerClick, Zap } from "lucide-react";
 
 import { IphoneFrame } from "@/components/iphone-frame";
+import { Reveal } from "@/components/landing/motion/reveal";
 
 const callouts = [
   {
@@ -78,55 +76,36 @@ export function MobilePreviewSection() {
     <section className="relative border-border/60 border-y bg-secondary/30 py-20 md:py-32">
       <div className="mx-auto max-w-7xl px-6">
         <div className="grid items-center gap-16 lg:grid-cols-2 lg:gap-12">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            className="order-2 lg:order-1"
-          >
-            <p className="font-medium text-primary text-sm uppercase tracking-widest">Application mobile</p>
-            <h2 className="mt-4 text-balance font-(family-name:--font-heading) font-bold text-3xl text-foreground md:text-4xl">
-              Toutes les missions dans votre poche
-            </h2>
-            <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
-              L&apos;application WeSafe suit les candidats partout : nouvelles offres, candidatures et contrats,
-              accessibles en quelques secondes.
-            </p>
+          <div className="order-2 lg:order-1">
+            <Reveal>
+              <p className="text-eyebrow text-primary">Application mobile</p>
+              <h2 className="mt-4 text-title text-foreground">Toutes les missions dans votre poche</h2>
+              <p className="mt-4 text-body-lg text-muted-foreground">
+                L&apos;application WeSafe suit les candidats partout : nouvelles offres, candidatures et contrats,
+                accessibles en quelques secondes.
+              </p>
+            </Reveal>
 
             <div className="mt-10 space-y-6">
               {callouts.map((item, i) => (
-                <motion.div
-                  key={item.title}
-                  initial={{ opacity: 0, y: 12 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, ease: "easeOut", delay: i * 0.1 }}
-                  className="flex gap-4"
-                >
+                <Reveal key={item.title} index={i + 1} y={16} className="flex gap-4">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
                     <item.icon className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-foreground">{item.title}</h3>
+                    <h3 className="text-headline text-[1rem] text-foreground">{item.title}</h3>
                     <p className="mt-1 text-muted-foreground text-sm leading-relaxed">{item.description}</p>
                   </div>
-                </motion.div>
+                </Reveal>
               ))}
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
-            className="order-1 flex justify-center lg:order-2"
-          >
+          <Reveal index={1} y={32} scale={0.96} className="order-1 flex justify-center lg:order-2">
             <IphoneFrame className="w-[260px]">
               <PhoneScreen />
             </IphoneFrame>
-          </motion.div>
+          </Reveal>
         </div>
       </div>
     </section>

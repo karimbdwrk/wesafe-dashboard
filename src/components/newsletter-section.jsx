@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 
-import { motion } from "framer-motion";
 import { ChevronDown, Mail, Send } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { toast } from "sonner";
 
 import { AmbientBackground } from "@/components/ambient-background";
+import { Press } from "@/components/landing/motion/press";
+import { Reveal } from "@/components/landing/motion/reveal";
+import { spring } from "@/components/landing/motion/springs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase/supabaseClient";
@@ -41,11 +44,9 @@ export function NewsletterSection() {
   return (
     <section className="relative py-20 md:py-32">
       <div className="mx-auto max-w-7xl px-6">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
+        <Reveal
+          y={32}
+          scale={0.98}
           className="relative overflow-hidden rounded-[24px] border border-border/70 bg-card p-10 md:p-16"
         >
           <AmbientBackground />
@@ -55,7 +56,7 @@ export function NewsletterSection() {
                 <Mail className="h-5 w-5 text-primary" />
               </div>
             </div>
-            <h2 className="mb-2 font-(family-name:--font-heading) font-bold text-2xl text-foreground md:text-3xl">
+            <h2 className="mb-2 font-(family-name:--font-heading) font-bold text-[1.75rem] text-foreground leading-[1.15] tracking-[-0.02em] md:text-[2rem]">
               Restez informé
             </h2>
             <p className="mx-auto mb-8 max-w-md text-muted-foreground text-sm leading-relaxed">
@@ -73,11 +74,21 @@ export function NewsletterSection() {
                   onBlur={() => setEmailTouched(true)}
                   className={`h-11 w-full rounded-[16px] ${showEmailError ? "border-destructive focus-visible:ring-destructive" : ""}`}
                 />
-                {showEmailError && (
-                  <p className="mt-1 text-left text-destructive text-xs">
-                    Adresse email invalide (ex : nom@domaine.fr)
-                  </p>
-                )}
+                <AnimatePresence initial={false}>
+                  {showEmailError && (
+                    <motion.p
+                      key="email-error"
+                      role="alert"
+                      className="overflow-hidden text-left text-destructive text-xs"
+                      initial={{ height: 0, opacity: 0, y: -4 }}
+                      animate={{ height: "auto", opacity: 1, y: 0 }}
+                      exit={{ height: 0, opacity: 0, y: -4 }}
+                      transition={spring.snappy}
+                    >
+                      <span className="block pt-1">Adresse email invalide (ex : nom@domaine.fr)</span>
+                    </motion.p>
+                  )}
+                </AnimatePresence>
               </div>
               <div className="relative sm:w-44">
                 <select
@@ -94,18 +105,20 @@ export function NewsletterSection() {
                 </select>
                 <ChevronDown className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-3 h-4 w-4 text-muted-foreground opacity-50" />
               </div>
-              <Button
-                type="submit"
-                disabled={!canSubmit}
-                className="h-11 gap-2 rounded-[16px] bg-linear-to-r from-primary to-brand-secondary text-primary-foreground"
-              >
-                {loading ? (
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-                S&apos;inscrire
-              </Button>
+              <Press className="flex w-full sm:w-auto">
+                <Button
+                  type="submit"
+                  disabled={!canSubmit}
+                  className="h-11 w-full gap-2 rounded-[16px] bg-linear-to-r from-primary to-brand-secondary font-semibold text-primary-foreground tracking-[-0.01em] sm:w-auto"
+                >
+                  {loading ? (
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                  S&apos;inscrire
+                </Button>
+              </Press>
             </form>
 
             <p className="mt-4 text-muted-foreground text-xs">
@@ -119,7 +132,7 @@ export function NewsletterSection() {
               . Désinscription à tout moment.
             </p>
           </div>
-        </motion.div>
+        </Reveal>
       </div>
     </section>
   );

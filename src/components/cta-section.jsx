@@ -1,11 +1,10 @@
-"use client";
-
 import Image from "next/image";
 
-import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 
 import { AmbientBackground } from "@/components/ambient-background";
+import { Press } from "@/components/landing/motion/press";
+import { Reveal } from "@/components/landing/motion/reveal";
 
 import appstoreImg from "../../media/appstore.png";
 import playstoreImg from "../../media/playstore.png";
@@ -14,41 +13,41 @@ export function CtaSection() {
   return (
     <section id="telecharger" className="relative py-20 md:py-32">
       <div className="mx-auto max-w-7xl px-6">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
+        <Reveal
+          y={32}
+          scale={0.98}
           className="relative overflow-hidden rounded-[24px] border border-border/70 bg-card p-10 md:p-16"
         >
           <AmbientBackground />
 
           <div className="relative mx-auto max-w-2xl text-center">
-            <h2 className="text-balance font-(family-name:--font-heading) font-bold text-3xl text-foreground md:text-4xl">
-              Pret a transformer votre recrutement ?
-            </h2>
-            <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
-              Rejoignez des milliers de professionnels de la securite qui font deja confiance a SecuRecruit. Telechargez
+            <h2 className="text-title text-foreground">Prêt à transformer votre recrutement ?</h2>
+            <p className="mt-4 text-body-lg text-muted-foreground">
+              Rejoignez des milliers de professionnels de la sécurité qui font déjà confiance à WeSafe. Téléchargez
               l&apos;application gratuitement.
             </p>
 
             <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <a
-                href="https://apps.apple.com/fr/app/wesafe-recruitment/id6737527469"
-                target="_blank"
-                className="transition-opacity hover:opacity-80"
-                rel="noopener"
-              >
-                <Image src={appstoreImg} alt="Télécharger sur l'App Store" height={48} />
-              </a>
-              <a
-                href="https://play.google.com/store/apps/details?id=com.aizensecu.wesafe"
-                target="_blank"
-                className="transition-opacity hover:opacity-80"
-                rel="noopener"
-              >
-                <Image src={playstoreImg} alt="Disponible sur Google Play" height={48} />
-              </a>
+              <Press scale={0.95} lift={2}>
+                <a
+                  href="https://apps.apple.com/fr/app/wesafe-recruitment/id6737527469"
+                  target="_blank"
+                  className="block"
+                  rel="noopener"
+                >
+                  <Image src={appstoreImg} alt="Télécharger sur l'App Store" height={48} />
+                </a>
+              </Press>
+              <Press scale={0.95} lift={2}>
+                <a
+                  href="https://play.google.com/store/apps/details?id=com.aizensecu.wesafe"
+                  target="_blank"
+                  className="block"
+                  rel="noopener"
+                >
+                  <Image src={playstoreImg} alt="Disponible sur Google Play" height={48} />
+                </a>
+              </Press>
             </div>
 
             <p className="mt-6 flex items-center justify-center gap-2 text-muted-foreground text-sm">
@@ -56,7 +55,7 @@ export function CtaSection() {
               Inscription gratuite, sans engagement
             </p>
           </div>
-        </motion.div>
+        </Reveal>
       </div>
     </section>
   );
